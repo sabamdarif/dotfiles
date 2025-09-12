@@ -1,0 +1,21 @@
+# ~/.config/ghostty/config
+
+# Font settings
+font-family = "MesloLGLDZ Nerd Font"
+font-size = 13
+
+# Appearance
+theme = "tokyonight"
+window-padding-balance = true
+window-decoration = auto
+
+# Shell + behavior
+shell-integration = detect
+window-save-state = always
+
+# Keybinds
+keybind = f11=toggle_window_decorations
+keybind = ctrl+shift+f=toggle_fullscreen
+
+clipboard-paste-protection = false
+
