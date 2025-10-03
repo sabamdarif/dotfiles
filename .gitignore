@@ -1,2 +1,5 @@
 
 *.pyc
+.var/app/org.libreoffice.LibreOffice/cache
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/cache
+.var/app/org.libreoffice.LibreOffice/.ld.so
