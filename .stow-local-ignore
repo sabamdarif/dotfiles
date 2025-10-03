@@ -1,19 +1,15 @@
 \.git
 \.zshrc\.old
 fastfetch\.bak
-__pycache__
-
-# git
-\.git
-\.gitignore
 
 # any Backup files
 .*\.old$
 .*\.bak$
 
 # Python
-__pycache__
+^__pycache__$
 \.pyc$
+\.pyo$
 
 # Common patterns
 \.DS_Store
