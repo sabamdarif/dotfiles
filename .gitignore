@@ -1,0 +1,17 @@
+*.pyc
+*.log
+.var/app/org.libreoffice.LibreOffice/cache/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/cache/
+.var/app/org.libreoffice.LibreOffice/.ld.so/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/additions/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/autotext/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/backup/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/basic/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/database/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/gallery/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/pack/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/uno_packages/
+.var/app/org.libreoffice.LibreOffice/data/
+.var/app/org.libreoffice.LibreOffice/config/libreoffice/4/user/extensions/tmp/
+.config/GIMP/3.0/tool-options
+.config/GIMP/3.0/internal-data

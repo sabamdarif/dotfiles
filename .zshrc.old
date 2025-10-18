@@ -1,0 +1,276 @@
+# Add deno completions to search path
+if [[ ":$FPATH:" != *":/home/arif/.zsh/completions:"* ]]; then export FPATH="/home/arif/.zsh/completions:$FPATH"; fi
+# If you come from bash you might have to change your $PATH.
+# export PATH=$HOME/bin:/usr/local/bin:$PATH
+
+# Path to your oh-my-zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time oh-my-zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+ZSH_THEME="kalistyle"
+
+# Set list of themes to pick from when loading at random
+# Setting this variable when ZSH_THEME=random will cause zsh to load
+# a theme from this variable instead of looking in $ZSH/themes/
+# If set to an empty array, this variable will have no effect.
+# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
+
+# Uncomment the following line to use hyphen-insensitive completion.
+# Case-sensitive completion must be off. _ and - will be interchangeable.
+# HYPHEN_INSENSITIVE="true"
+
+# Uncomment one of the following lines to change the auto-update behavior
+# zstyle ':omz:update' mode disabled  # disable automatic updates
+# zstyle ':omz:update' mode auto      # update automatically without asking
+# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+
+# Uncomment the following line to change how often to auto-update (in days).
+# zstyle ':omz:update' frequency 13
+
+# Uncomment the following line if pasting URLs and other text is messed up.
+# DISABLE_MAGIC_FUNCTIONS="true"
+
+# Uncomment the following line to disable colors in ls.
+# DISABLE_LS_COLORS="true"
+
+# Uncomment the following line to disable auto-setting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment the following line to enable command auto-correction.
+# ENABLE_CORRECTION="true"
+
+# Uncomment the following line to display red dots whilst waiting for completion.
+# You can also set it to another string to have that shown instead of the default red dots.
+# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
+# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Uncomment the following line if you want to change the command execution time
+# stamp shown in the history command output.
+# You can set one of the optional three formats:
+# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
+# or set a custom format using the strftime function format specifications,
+# see 'man strftime' for details.
+# HIST_STAMPS="mm/dd/yyyy"
+
+# Would you like to use another custom folder than $ZSH/custom?
+# ZSH_CUSTOM=/path/to/new-custom-folder
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+
+# export MANPATH="/usr/local/man:$MANPATH"
+
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='mvim'
+# fi
+
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
+
+# Set personal aliases, overriding those provided by oh-my-zsh libs,
+# plugins, and themes. Aliases can be placed here, though oh-my-zsh
+# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
+setopt nonomatch
+alias dnf='sudo dnf'
+alias apt='sudo apt'
+alias cat='bat $@'
+alias ls='eza --icons $@'
+alias neofetch='fastfetch'
+export GPG_TTY=$(tty)
+#set zoxide as cd
+eval "$(zoxide init --cmd cd zsh)"
+# Alias's to change the directory
+alias web='cd /var/www/html'
+# Alias's to modified commands
+alias rm='trash -v'
+alias trashlist='trash-list'
+alias cleantrash='trash-empty'
+alias mkdir='mkdir -p'
+alias vi='nvim'
+alias vim='nvim'
+# Search files in the current folder
+alias f="find . | grep "
+alias c="clear"
+alias spoofdpi="~/.config/spoofdpi/spoofdpi"
+# fzf
+alias preview="fzf --preview='bat --color=always --style=numbers --theme OneHalfDark {}' --preview-window=down"
+alias fnvim='nvim $(fzf -m --preview="bat --color=always --style=numbers --theme OneHalfDark {}" --preview-window=down)'
+alias fvim='vim $(fzf -m --preview="bat --color=always --style=numbers --theme OneHalfDark {}" --preview-window=down)'
+alias fcd="cd \$(find . -type d | fzf)"  # Fuzzy search directories and cd into them
+
+#######################################################
+# SPECIAL FUNCTIONS
+#######################################################
+fkill() {
+  local selected pid
+
+  # Use a temp file to hold selected lines
+  local tmpfile
+  tmpfile=$(mktemp)
+
+  ps -eo user,pid,cmd --sort=-%mem \
+    | sed 1d \
+    | fzf --multi \
+          --reverse \
+          --header=" Select processes to kill (Tab to mark, Enter to kill)" \
+          --preview 'ps -p {2} -o pid,user,%cpu,%mem,cmd' \
+          --bind 'ctrl-s:toggle-sort' > "$tmpfile"
+
+  if [[ ! -s $tmpfile ]]; then
+    echo "No processes selected." >&2
+    rm -f "$tmpfile"
+    return 1
+  fi
+
+  while IFS= read -r line; do
+    pid=$(echo "$line" | awk '{print $2}')
+    if [[ -n "$pid" ]]; then
+      echo "Killing PID $pid…" >&2
+      if kill -TERM "$pid" 2>/dev/null; then
+        echo "Sent SIGTERM to $pid" >&2
+      else
+        echo "SIGTERM failed for $pid, sending SIGKILL…" >&2
+        kill -KILL "$pid" 2>/dev/null \
+          && echo "Sent SIGKILL to $pid" >&2 \
+          || echo "Failed to kill $pid" >&2
+      fi
+    fi
+  done < "$tmpfile"
+
+  rm -f "$tmpfile"
+}
+
+# Extracts any archive(s) (if unp isn't installed)
+extract() {
+    local archive="$1"
+
+    # Colors for output
+    local R='\033[1;31m'  # Red
+    local G='\033[1;32m'  # Green
+    local C='\033[1;36m'  # Cyan
+    local W='\033[0m'     # Reset color
+
+    # Check if the archive exists
+    if [[ ! -f "$archive" ]]; then
+        echo -e "${R}[☓]${R} $archive doesn't exist${W}"
+        return 1
+    fi
+
+    # Get the total size of the archive
+    local total_size
+    total_size=$(stat -c '%s' "$archive")
+
+    # Handle different archive formats
+    case "$archive" in
+        *.tar.gz|*.tgz)
+            echo -e "${G}[✔] Extracting ${C}$archive${W}"
+            pv -s "$total_size" -p -r "$archive" | tar xzf - || { echo -e "${R}Failed to extract ${C}$archive${W}"; return 1; }
+            ;;
+        *.tar.xz)
+            echo -e "${G}[✔] Extracting ${C}$archive${W}"
+            pv -s "$total_size" -p -r "$archive" | tar xJf - || { echo -e "${R}Failed to extract ${C}$archive${W}"; return 1; }
+            ;;
+        *.tar.bz2|*.tbz2)
+            echo -e "${G}[✔] Extracting ${C}$archive${W}"
+            pv -s "$total_size" -p -r "$archive" | tar xjf - || { echo -e "${R}Failed to extract ${C}$archive${W}"; return 1; }
+            ;;
+        *.tar)
+            echo -e "${G}[✔] Extracting ${C}$archive${W}"
+            pv -s "$total_size" -p -r "$archive" | tar xf - || { echo -e "${R}Failed to extract ${C}$archive${W}"; return 1; }
+            ;;
+        *.bz2)
+            echo -e "${G}[✔] Extracting ${C}$archive${W}"
+            pv -s "$total_size" -p -r "$archive" | bunzip2 > "${archive%.bz2}" || { echo -e "${R}Failed to extract ${C}$archive${W}"; return 1; }
+            ;;
+        *.gz)
+            echo -e "${G}[✔] Extracting ${C}$archive${W}"
+            pv -s "$total_size" -p -r "$archive" | gunzip > "${archive%.gz}" || { echo -e "${R}Failed to extract ${C}$archive${W}"; return 1; }
+            ;;
+        *.7z)
+            echo -e "${G}[✔] Extracting ${C}$archive${W}"
+            pv -s "$total_size" -p -r "$archive" | 7z x -si -y > /dev/null || { echo -e "${R}Failed to extract ${C}$archive${W}"; return 1; }
+            ;;
+        *.rar)
+            echo -e "${G}[✔] Extracting ${C}$archive${W}"
+            unrar x "$archive" || { echo -e "${R}Failed to extract ${C}$archive${W}"; return 1; }
+            ;;
+        *)
+            echo -e "${R}[☓] Unsupported archive format: ${C}$archive${W}"
+            return 1
+            ;;
+    esac
+
+    echo -e "${G}[✔] Successfully extracted ${C}$archive${W}"
+}
+
+# Searches for text in all files in the current folder
+ftext() {
+	# -i case-insensitive
+	# -I ignore binary files
+	# -H causes filename to be printed
+	# -r recursive search
+	# -n causes line number to be printed
+	# optional: -F treat search term as a literal, not a regular expression
+	# optional: -l only print filenames and not the matching lines ex. grep -irl "$1" *
+	grep -iIHrn --color=always "$1" . | less -r
+}
+# Copy and go to the directory
+cpg() {
+	if [ -d "$2" ]; then
+		cp "$1" "$2" && cd "$2"
+	else
+		cp "$1" "$2"
+	fi
+}
+# Move and go to the directory
+mvg() {
+	if [ -d "$2" ]; then
+		mv "$1" "$2" && cd "$2"
+	else
+		mv "$1" "$2"
+	fi
+}
+# Create and go to the directory
+mkdirg() {
+	mkdir -p "$1"
+	cd "$1"
+}
+#eval "$(starship init zsh)"
+export PATH="$HOME/.local/bin:$PATH"
+
+# Generated for envman. Do not edit.
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+source ~/.config/envman/load.sh
+. "/home/arif/.deno/env" export PATH="$HOME/.npm-global/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$PATH"

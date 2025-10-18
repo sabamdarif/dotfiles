@@ -1,0 +1,55 @@
+alias dnf='sudo dnf'
+alias apt='sudo apt'
+if command -v batcat &>/dev/null; then
+    alias cat='batcat --theme OneHalfDark -p'
+else
+    alias cat='bat --theme OneHalfDark -p'
+fi
+alias ls='eza --icons'
+alias neofetch='fastfetch'
+export GPG_TTY=$(tty)
+#set zoxiide as cd
+# eval "$(zoxide init --cmd cd zsh)"
+# Alias's to change the directory
+alias web='cd /var/www/html'
+# Alias's to modified commands
+alias rm='trash -v'
+alias trashlist='trash-list'
+alias cleantrash='trash-empty'
+alias mkdir='mkdir -p'
+alias vi='nvim'
+alias vi='nvim'
+alias vim='nvim'
+alias n='nvim'
+# Search files in the current folder
+alias f="find . | grep "
+alias c="clear"
+alias g="git"
+alias ya="yazi"
+# fzf
+alias preview="fzf --preview='bat --color=always --style=numbers --theme OneHalfDark {}' --preview-window=down"
+alias fnvim='nvim $(fzf -m --preview="bat --color=always --style=numbers --theme OneHalfDark {}" --preview-window=down)'
+alias fvim='vim $(fzf -m --preview="bat --color=always --style=numbers --theme OneHalfDark {}" --preview-window=down)'
+alias fcd="cd \$(find . -type d | fzf)" # Fuzzy search directories and cd into them
+# shortcuts for navigation
+alias '..'='cd ..'
+alias '...'='cd ../..'
+alias '....'='cd ../../..'
+alias '.....'='cd ../../../..'
+alias ls="eza --icons"
+alias la="eza --icons -lgha --group-directories-first"
+alias l="eza --icons -lgha --group-directories-first"
+alias ly="eza --icons -lgha --group-directories-first"
+alias lt="eza --icons --tree"
+alias lta="eza --icons --tree -lgha"
+# others
+alias kill9="kill -9"
+alias myip="curl ifconfig.me" # Show public IP
+alias speedtest="curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python -"
+alias nvchad="XDG_CONFIG_HOME=/home/arif/Downloads/test-configs NVIM_APPNAME=NvChad nvim"
+alias largefile="du -h -x -s -- * | sort -r -h | head -20"
+alias syncconfig="python $HOME/Documents/GitHub/config/sync.py"
+alias listfont="magick convert -list font | grep -iE 'font:.*'"
+alias psu="ps aux"
+alias psg="ps aux | grep -i" # Usage: psg process_name
+alias docker-cleanup="docker system prune -a --volumes"

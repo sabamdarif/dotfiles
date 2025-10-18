@@ -1,0 +1,798 @@
+fkill() {
+    local selected pid
+
+    # Use a temp file to hold selected lines
+    local tmpfile
+    tmpfile=$(mktemp)
+
+    ps -eo user,pid,cmd --sort=-%mem |
+        sed 1d |
+        fzf --multi \
+            --reverse \
+            --header=" Select processes to kill (Tab to mark, Enter to kill)" \
+            --preview 'ps -p {2} -o pid,user,%cpu,%mem,cmd' \
+            --bind 'ctrl-s:toggle-sort' >"$tmpfile"
+
+    if [[ ! -s "$tmpfile" ]]; then
+        echo "No processes selected." >&2
+        rm -f "$tmpfile"
+        return 1
+    fi
+
+    while IFS= read -r line; do
+        pid=$(echo "$line" | awk '{print $2}')
+        if [[ -n "$pid" ]]; then
+            echo "Killing PID $pid…" >&2
+            if kill -TERM "$pid" 2>/dev/null; then
+                echo "Sent SIGTERM to $pid" >&2
+            else
+                echo "SIGTERM failed for $pid, sending SIGKILL…" >&2
+                kill -KILL "$pid" 2>/dev/null &&
+                    echo "Sent SIGKILL to $pid" >&2 ||
+                    echo "Failed to kill $pid" >&2
+            fi
+        fi
+    done <"$tmpfile"
+
+    rm -f "$tmpfile"
+}
+
+# Extracts any archive(s) with verbose output and expanded format support
+extract() {
+    local archive="$1"
+
+    # Check if the archive exists
+    if [[ ! -f "$archive" ]]; then
+        echo "[x] $archive doesn't exist"
+        return 1
+    fi
+
+    echo "[i] Archive: $archive"
+    echo "[i] Size: $(du -h "$archive" | cut -f1)"
+    echo "[i] Type: $(file -b "$archive")"
+    echo
+
+    # Get absolute paths
+    local archive_dir=$(dirname "$(realpath "$archive")")
+    local archive_name=$(basename "$archive")
+
+    # Remember existing files before extraction
+    local temp_before=$(mktemp)
+    ls -1A "$archive_dir" 2>/dev/null | sort >"$temp_before"
+
+    # Handle different archive formats with verbose output
+    case "$archive" in
+    *.tar.gz | *.tgz)
+        echo "[✓] Extracting tar.gz archive: $archive"
+        (cd "$archive_dir" && tar -xzvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.tar.xz | *.txz)
+        echo "[✓] Extracting tar.xz archive: $archive"
+        (cd "$archive_dir" && tar -xJvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.tar.bz2 | *.tbz2 | *.tbz)
+        echo "[✓] Extracting tar.bz2 archive: $archive"
+        (cd "$archive_dir" && tar -xjvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.tar.Z | *.tZ)
+        echo "[✓] Extracting tar.Z archive: $archive"
+        (cd "$archive_dir" && tar -xZvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.tar.lz | *.tlz)
+        echo "[✓] Extracting tar.lz archive: $archive"
+        (cd "$archive_dir" && tar --lzip -xvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.tar.lzma)
+        echo "[✓] Extracting tar.lzma archive: $archive"
+        (cd "$archive_dir" && tar --lzma -xvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.tar.lzo)
+        echo "[✓] Extracting tar.lzo archive: $archive"
+        (cd "$archive_dir" && tar --lzop -xvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.tar.zst | *.tzst)
+        echo "[✓] Extracting tar.zst archive: $archive"
+        (cd "$archive_dir" && tar --zstd -xvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.tar)
+        echo "[✓] Extracting tar archive: $archive"
+        (cd "$archive_dir" && tar -xvf "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.bz2)
+        echo "[✓] Extracting bz2 file: $archive"
+        (cd "$archive_dir" && bunzip2 -v "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.gz)
+        echo "[✓] Extracting gz file: $archive"
+        (cd "$archive_dir" && gunzip -v "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.xz)
+        echo "[✓] Extracting xz file: $archive"
+        (cd "$archive_dir" && unxz -v "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.lzma)
+        echo "[✓] Extracting lzma file: $archive"
+        (cd "$archive_dir" && unlzma -v "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.Z)
+        echo "[✓] Extracting Z file: $archive"
+        (cd "$archive_dir" && uncompress -v "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.lz)
+        echo "[✓] Extracting lz file: $archive"
+        (cd "$archive_dir" && lzip -dv "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.lzo)
+        echo "[✓] Extracting lzo file: $archive"
+        (cd "$archive_dir" && lzop -dv "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.zst)
+        echo "[✓] Extracting zstd file: $archive"
+        (cd "$archive_dir" && zstd -dv "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.7z)
+        echo "[✓] Extracting 7z archive: $archive"
+        (cd "$archive_dir" && 7z x "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.zip | *.jar | *.war | *.ear | *.apk)
+        echo "[✓] Extracting zip-based archive: $archive"
+        (cd "$archive_dir" && unzip "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.rar)
+        echo "[✓] Extracting rar archive: $archive"
+        (cd "$archive_dir" && unrar x "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.ace)
+        echo "[✓] Extracting ace archive: $archive"
+        (cd "$archive_dir" && unace x "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.arj)
+        echo "[✓] Extracting arj archive: $archive"
+        (cd "$archive_dir" && arj e "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.cab)
+        echo "[✓] Extracting cab archive: $archive"
+        (cd "$archive_dir" && cabextract "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.lha | *.lzh)
+        echo "[✓] Extracting lha/lzh archive: $archive"
+        (cd "$archive_dir" && lha x "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.rpm)
+        echo "[✓] Extracting rpm package: $archive"
+        (cd "$archive_dir" && rpm2cpio "$archive_name" | cpio -idmv) || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.deb)
+        echo "[✓] Extracting deb package: $archive"
+        (cd "$archive_dir" && ar x "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.iso)
+        echo "[✓] Mounting/extracting iso image: $archive"
+        local extract_dir="${archive_dir}/${archive_name%.iso}_extracted"
+        mkdir -p "$extract_dir"
+        if command -v 7z &>/dev/null; then
+            7z x "$archive" -o"$extract_dir" || {
+                echo "[x] Failed to extract $archive"
+                return 1
+            }
+        else
+            echo "[i] Creating loop mount for ISO extraction"
+            sudo mkdir -p "/mnt/${archive_name%.iso}"
+            sudo mount -o loop "$archive" "/mnt/${archive_name%.iso}"
+            cp -rv "/mnt/${archive_name%.iso}"/* "$extract_dir/"
+            sudo umount "/mnt/${archive_name%.iso}"
+            sudo rmdir "/mnt/${archive_name%.iso}"
+        fi
+        ;;
+    *.cpio)
+        echo "[✓] Extracting cpio archive: $archive"
+        (cd "$archive_dir" && cpio -idmv <"$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.shar)
+        echo "[✓] Extracting shell archive: $archive"
+        (cd "$archive_dir" && sh "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *.a)
+        echo "[✓] Extracting ar archive: $archive"
+        (cd "$archive_dir" && ar x "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            return 1
+        }
+        ;;
+    *)
+        (cd "$archive_dir" && 7z x "$archive_name") || {
+            echo "[x] Failed to extract $archive"
+            echo "[i] Supported formats:"
+            echo "    Tar: .tar, .tar.gz/.tgz, .tar.xz/.txz, .tar.bz2/.tbz2/.tbz"
+            echo "    Tar: .tar.Z/.tZ, .tar.lz/.tlz, .tar.lzma, .tar.lzo, .tar.zst/.tzst"
+            echo "    Compressed: .gz, .bz2, .xz, .lzma, .Z, .lz, .lzo, .zst"
+            echo "    Archives: .zip, .7z, .rar, .ace, .arj, .cab, .lha/.lzh"
+            echo "    Packages: .rpm, .deb, .jar, .war, .ear, .apk"
+            echo "    Other: .iso, .cpio, .shar, .a"
+            return 1
+        }
+        ;;
+    esac
+
+    echo
+    echo "[✓] Successfully extracted $archive"
+
+    # Get current files after extraction
+    local temp_after=$(mktemp)
+    ls -1A "$archive_dir" 2>/dev/null | sort >"$temp_after"
+
+    # Find newly added files
+    local newly_added=$(comm -13 "$temp_before" "$temp_after")
+
+    if [[ -n "$newly_added" ]]; then
+        echo "[i] Extracted files:"
+        while IFS= read -r file; do
+            if [[ -n "$file" ]]; then
+                echo "    $file"
+            fi
+        done <<<"$newly_added"
+    else
+        echo "[i] No new files found (files may have been extracted to subdirectories)"
+    fi
+
+    # Clean up temporary files
+    rm -f "$temp_before" "$temp_after" 2>/dev/null
+
+    # Change to the archive directory if not already there
+    local current_dir=$(pwd)
+    if [[ "$current_dir" != "$archive_dir" ]]; then
+        cd "$archive_dir"
+        echo "[i] Changed to directory: $archive_dir"
+    fi
+}
+
+# Searches for text in all files in the current folder
+ftext() {
+    # -i case-insensitive
+    # -I ignore binary files
+    # -H causes filename to be printed
+    # -r recursive search
+    # -n causes line number to be printed
+    # optional: -F treat search term as a literal, not a regular expression
+    # optional: -l only print filenames and not the matching lines ex. grep -irl "$1" *
+    grep -iIHrn --color=always "$1" . | less -r
+}
+
+# Copy and go to the directory
+cpg() {
+    if [ -d "$2" ]; then
+        cp "$1" "$2" && cd "$2" || return 1
+    else
+        cp "$1" "$2"
+    fi
+}
+
+# Move and go to the directory
+mvg() {
+    if [ -d "$2" ]; then
+        mv "$1" "$2" && cd "$2" || return 1
+    else
+        mv "$1" "$2"
+    fi
+}
+
+# Create and go to the directory
+mkdirg() {
+    mkdir -p "$1"
+    cd "$1" || return 1
+}
+
+# Quick backup of a file or directory
+backup() {
+    local item="$1"
+    if [[ -z "$item" ]]; then
+        echo "[x] Usage: backup <file_or_directory>"
+        return 1
+    fi
+
+    local backup_name="${item}.backup.$(date +%Y%m%d_%H%M%S)"
+    echo "[i] Creating backup: $backup_name"
+
+    if [[ -d "$item" ]]; then
+        cp -rv "$item" "$backup_name"
+    else
+        cp -v "$item" "$backup_name"
+    fi
+
+    echo "[✓] Backup created: $backup_name"
+}
+
+# Find and replace text in files
+freplace() {
+    if [[ $# -ne 3 ]]; then
+        echo "[x] Usage: freplace <search_text> <replace_text> <file_pattern>"
+        echo "    Example: freplace 'old_text' 'new_text' '*.txt'"
+        return 1
+    fi
+
+    local search="$1"
+    local replace="$2"
+    local pattern="$3"
+
+    echo "[i] Searching for '$search' in files matching '$pattern'"
+    echo "[i] Will replace with '$replace'"
+
+    # Show what will be changed first
+    echo "[i] Files that will be modified:"
+    grep -l "$search" $pattern 2>/dev/null || {
+        echo "[x] No files found containing '$search'"
+        return 1
+    }
+
+    read -p "Continue with replacement? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        sed -i.bak "s/$search/$replace/g" $pattern
+        echo "[✓] Replacement completed. Original files backed up with .bak extension"
+    else
+        echo "[i] Operation cancelled"
+    fi
+}
+
+# Show disk usage of directories in current path
+duf() {
+    local target="${1:-.}"
+    echo "[i] Disk usage for: $target"
+    du -h "$target"/* 2>/dev/null | sort -hr | head -20
+}
+
+# Quick HTTP server in current directory
+serve() {
+    local port="${1:-8000}"
+    echo "[i] Starting HTTP server on port $port"
+    echo "[i] Serving files from: $(pwd)"
+    echo "[i] Access at: http://localhost:$port"
+    echo "[i] Press Ctrl+C to stop"
+
+    if command -v python3 &>/dev/null; then
+        python3 -m http.server "$port"
+    elif command -v python &>/dev/null; then
+        python -m SimpleHTTPServer "$port"
+    else
+        echo "[x] Python not found. Cannot start HTTP server"
+        return 1
+    fi
+}
+
+# Apache-based HTTP server for current directory
+serve_apache() {
+    local port="${1:-8000}"
+    local doc_root="$(pwd)"
+    local config_dir="/tmp/apache-serve-$$"
+    local log_dir="$config_dir/logs"
+    local pid_file="$config_dir/httpd.pid"
+    local error_log="$log_dir/error.log"
+    local access_log="$log_dir/access.log"
+
+    # Check if Apache is installed
+    local apache_bin=""
+    if command -v httpd &>/dev/null; then
+        apache_bin="httpd"
+    elif command -v apache2 &>/dev/null; then
+        apache_bin="apache2"
+    else
+        echo "[x] Apache not found. Please install Apache HTTP Server"
+        echo "    Ubuntu/Debian: sudo apt-get install apache2"
+        echo "    CentOS/RHEL:   sudo yum install httpd"
+        echo "    macOS:         brew install httpd"
+        return 1
+    fi
+
+    # Create temporary config directory
+    mkdir -p "$config_dir" "$log_dir"
+
+    # Detect Apache modules directory
+    local modules_dir=""
+    for dir in /usr/lib/apache2/modules /usr/lib64/httpd/modules /usr/libexec/apache2 /opt/homebrew/lib/httpd/modules; do
+        if [ -d "$dir" ]; then
+            modules_dir="$dir"
+            break
+        fi
+    done
+
+    if [ -z "$modules_dir" ]; then
+        echo "[x] Cannot find Apache modules directory"
+        rm -rf "$config_dir"
+        return 1
+    fi
+
+    # Create Apache configuration
+    cat >"$config_dir/httpd.conf" <<EOF
+# Minimal Apache configuration for local development
+ServerRoot "$config_dir"
+PidFile "$pid_file"
+Listen $port
+
+# Load essential modules
+LoadModule mpm_prefork_module $modules_dir/mod_mpm_prefork.so
+LoadModule authz_core_module $modules_dir/mod_authz_core.so
+LoadModule authz_host_module $modules_dir/mod_authz_host.so
+LoadModule log_config_module $modules_dir/mod_log_config.so
+LoadModule mime_module $modules_dir/mod_mime.so
+LoadModule dir_module $modules_dir/mod_dir.so
+LoadModule autoindex_module $modules_dir/mod_autoindex.so
+LoadModule negotiation_module $modules_dir/mod_negotiation.so
+LoadModule setenvif_module $modules_dir/mod_setenvif.so
+LoadModule unixd_module $modules_dir/mod_unixd.so
+
+# Load .htaccess support modules
+LoadModule rewrite_module $modules_dir/mod_rewrite.so
+LoadModule headers_module $modules_dir/mod_headers.so
+LoadModule expires_module $modules_dir/mod_expires.so
+LoadModule alias_module $modules_dir/mod_alias.so
+LoadModule env_module $modules_dir/mod_env.so
+
+# Load authentication modules
+LoadModule auth_basic_module $modules_dir/mod_auth_basic.so
+LoadModule authn_file_module $modules_dir/mod_authn_file.so
+LoadModule authn_core_module $modules_dir/mod_authn_core.so
+LoadModule authz_user_module $modules_dir/mod_authz_user.so
+LoadModule access_compat_module $modules_dir/mod_access_compat.so
+
+# PHP support (if available)
+EOF
+
+    # Try to add PHP module if available
+    for php_mod in libphp7.so libphp8.so libphp.so; do
+        if [ -f "$modules_dir/$php_mod" ]; then
+            echo "LoadModule php_module $modules_dir/$php_mod" >>"$config_dir/httpd.conf"
+            echo "AddHandler php-script .php" >>"$config_dir/httpd.conf"
+            break
+        fi
+    done
+
+    # Continue configuration
+    cat >>"$config_dir/httpd.conf" <<EOF
+
+# Basic server configuration
+ServerName localhost:$port
+DocumentRoot "$doc_root"
+
+# User and Group (use current user for local development)
+User $(id -un)
+Group $(id -gn)
+
+# Error and access logs
+ErrorLog "$error_log"
+LogLevel warn
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+CustomLog "$access_log" combined
+
+# MIME types
+TypesConfig /etc/mime.types
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+AddType text/html .shtml
+AddType application/x-httpd-php .php
+
+# Directory indexing
+DirectoryIndex index.html index.htm index.php
+
+# Enable .htaccess (must be at server level)
+AccessFileName .htaccess
+
+# Directory configuration with full .htaccess support
+<Directory "$doc_root">
+    Options Indexes FollowSymLinks MultiViews
+    AllowOverride All
+    Require all granted
+    
+    # Deny access to .htaccess files (security)
+    <Files ".htaccess">
+        Require all denied
+    </Files>
+    
+    # Deny access to .git and other hidden files
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+</Directory>
+
+# Performance: Disable KeepAlive for local dev
+KeepAlive Off
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+EOF
+
+    echo "[i] Starting Apache HTTP server on port $port"
+    echo "[i] Serving files from: $doc_root"
+    echo "[i] Access at: http://localhost:$port"
+    echo "[i] Configuration: $config_dir/httpd.conf"
+    echo "[i] Error log: $error_log"
+    echo "[i] Access log: $access_log"
+    echo "[i] .htaccess files will be processed"
+    echo "[i] Press Ctrl+C to stop"
+    echo ""
+
+    # Cleanup function
+    # shellcheck disable=SC2329
+    cleanup() {
+        echo ""
+        echo "[i] Stopping Apache server..."
+        if [ -f "$pid_file" ]; then
+            local pid=$(cat "$pid_file" 2>/dev/null)
+            if [ -n "$pid" ]; then
+                kill "$pid" 2>/dev/null
+                wait "$pid" 2>/dev/null
+            fi
+        fi
+        rm -rf "$config_dir"
+        echo "[i] Server stopped and cleaned up"
+    }
+
+    # Set trap for cleanup
+    trap cleanup EXIT INT TERM
+
+    # Start Apache
+    $apache_bin -f "$config_dir/httpd.conf" -DFOREGROUND
+}
+
+# Alias for convenience
+alias apacheserver='serve_apache'
+
+# Show listening ports
+ports() {
+    echo "[i] Listening ports and processes:"
+    if command -v netstat &>/dev/null; then
+        netstat -tuln | grep LISTEN
+    elif command -v ss &>/dev/null; then
+        ss -tuln | grep LISTEN
+    else
+        echo "[x] Neither netstat nor ss found"
+        return 1
+    fi
+}
+
+# Generate random password
+genpass() {
+    local length="${1:-16}"
+    echo "[i] Generating password of length $length"
+
+    if command -v openssl &>/dev/null; then
+        openssl rand -base64 $((length * 3 / 4)) | head -c "$length"
+    elif [[ -e /dev/urandom ]]; then
+        tr -dc 'A-Za-z0-9!@#$%^&*' </dev/urandom | head -c "$length"
+    else
+        echo "[x] Cannot generate password: no suitable random source found"
+        return 1
+    fi
+    echo
+}
+
+# Convert between different bases (hex, decimal, binary, octal)
+base() {
+    if [[ $# -ne 2 ]]; then
+        echo "[x] Usage: base <from_base> <number>"
+        echo "    Bases: bin, oct, dec, hex"
+        echo "    Example: base hex ff"
+        return 1
+    fi
+
+    local from_base="$1"
+    local number="$2"
+
+    echo "[i] Converting $number from $from_base:"
+
+    case "$from_base" in
+    bin | binary)
+        local decimal=$((2#$number))
+        ;;
+    oct | octal)
+        local decimal=$((8#$number))
+        ;;
+    dec | decimal)
+        local decimal="$number"
+        ;;
+    hex | hexadecimal)
+        local decimal=$((16#$number))
+        ;;
+    *)
+        echo "[x] Unsupported base: $from_base"
+        return 1
+        ;;
+    esac
+
+    printf "  Decimal:     %d\n" "$decimal"
+    printf "  Hexadecimal: %x\n" "$decimal"
+    printf "  Octal:       %o\n" "$decimal"
+    printf "  Binary:      %s\n" "$(echo "obase=2; $decimal" | bc)"
+}
+
+# Quick note taking
+note() {
+    local note_file="$HOME/.notes"
+    if [[ $# -eq 0 ]]; then
+        echo "[i] Current notes:"
+        cat "$note_file" 2>/dev/null || echo "[i] No notes found"
+    else
+        echo "$(date '+%Y-%m-%d %H:%M:%S'): $*" >>"$note_file"
+        echo "[✓] Note added"
+    fi
+}
+
+# Find large files
+findbig() {
+    local size="${1:-100M}"
+    local path="${2:-.}"
+    echo "[i] Finding files larger than $size in $path"
+    find "$path" -type f -size "+$size" -exec ls -lh {} + 2>/dev/null | sort -k5 -hr
+}
+
+# Quick file encryption/decryption with openssl
+encrypt() {
+    local file="$1"
+    if [[ -z "$file" ]]; then
+        echo "[x] Usage: encrypt <file>"
+        return 1
+    fi
+
+    echo "[i] Encrypting $file"
+    openssl enc -aes-256-cbc -salt -in "$file" -out "${file}.enc" &&
+        echo "[✓] Encrypted to ${file}.enc"
+}
+
+decrypt() {
+    local file="$1"
+    if [[ -z "$file" ]]; then
+        echo "[x] Usage: decrypt <encrypted_file>"
+        return 1
+    fi
+
+    local output="${file%.enc}"
+    echo "[i] Decrypting $file"
+    openssl enc -d -aes-256-cbc -in "$file" -out "$output" &&
+        echo "[✓] Decrypted to $output"
+}
+
+# Calculate file checksums
+checksum() {
+    local file="$1"
+    if [[ -z "$file" ]] || [[ ! -f "$file" ]]; then
+        echo "[x] Usage: checksum <file>"
+        return 1
+    fi
+
+    echo "[i] Checksums for: $file"
+    echo "  MD5:    $(md5sum "$file" | cut -d' ' -f1)"
+    echo "  SHA1:   $(sha1sum "$file" | cut -d' ' -f1)"
+    echo "  SHA256: $(sha256sum "$file" | cut -d' ' -f1)"
+}
+
+cp2clip() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: cp2clip <filename>"
+        return 1
+    fi
+
+    if [ ! -f "$1" ]; then
+        echo "Error: File '$1' not found"
+        return 1
+    fi
+
+    if command -v xclip >/dev/null; then
+        cat "$1" | xclip -selection clipboard
+    elif command -v xsel >/dev/null; then
+        cat "$1" | xsel --clipboard --input
+    else
+        echo "Error: No clipboard utility found."
+        echo "Please install either xclip or xsel"
+        return 1
+    fi
+
+    echo "Content of '$1' copied to clipboard"
+}
+
+# Transcode any image to compressed-but-lossless PNG
+img2png() {
+    magick "$1" -strip -define png:compression-filter=5 \
+        -define png:compression-level=9 \
+        -define png:compression-strategy=1 \
+        -define png:exclude-chunk=all \
+        "${1%.*}.png"
+}
+
+# Write iso file to sd card
+iso2sd() {
+    if [ $# -ne 2 ]; then
+        echo "Usage: iso2sd <input_file> <output_device>"
+        echo "Example: iso2sd ~/Downloads/ubuntu-25.04-desktop-amd64.iso /dev/sda"
+        echo -e "\nAvailable SD cards:"
+        lsblk -d -o NAME | grep -E '^sd[a-z]' | awk '{print "/dev/"$1}'
+    else
+        sudo dd bs=4M status=progress oflag=sync if="$1" of="$2"
+        sudo eject $2
+    fi
+}

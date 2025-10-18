@@ -1,0 +1,17 @@
+\.git
+\.zshrc\.old
+fastfetch\.bak
+
+# any Backup files
+.*\.old$
+.*\.bak$
+
+# Python
+^__pycache__$
+\.pyc$
+\.pyo$
+
+# Common patterns
+\.DS_Store
+\.swp$
+\.swo$
