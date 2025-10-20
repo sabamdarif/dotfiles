@@ -7,7 +7,7 @@ theme = "TokyoNight Night"
 #tokyonight
 
 # Window Configuration
-window-decoration = false
+window-decoration = true
 window-padding-balance = true
 
 # Cursor Configuration
@@ -38,7 +38,7 @@ keybind = f11=toggle_window_decorations
 keybind = ctrl+shift+f=toggle_fullscreen
 
 # Tab configuration
-gtk-titlebar = false
+gtk-titlebar = true
 
 # Shell integration
 shell-integration = detect
