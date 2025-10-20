@@ -11,6 +11,7 @@ DCONF_BACKUP="${CONFIG_DIR}/dconf-settings.ini"
 
 detect_distro() {
     if [ -f /etc/os-release ]; then
+        # shellcheck source=/dev/null
         . /etc/os-release
         echo "$ID"
     else
@@ -416,9 +417,15 @@ EOF
     esac
 }
 
-show_help() {
+show_version() {
     cat << EOF
 sysconfig-manager v${VERSION}
+EOF
+}
+
+show_help() {
+    show_version
+    cat << EOF
 Manage system packages, flatpaks, GNOME extensions, and dconf settings
 
 USAGE:
@@ -513,8 +520,11 @@ main() {
         status)
             show_status
             ;;
-        help)
+        help|"-help"|"--help"|"-h")
             show_help
+            ;;
+        version|"--version")
+            show_version
             ;;
         menu)
             interactive_menu
