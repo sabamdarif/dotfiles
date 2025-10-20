@@ -1,4 +1,5 @@
 #!/usr/bin/env zsh
+
 # =============================================================================
 # ZSH Configuration File (.zshrc)
 # A modern, clean setup with Zinit plugin manager and Powerlevel10k theme
@@ -11,21 +12,12 @@
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+    source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
 # -----------------------------------------------------------------------------
-# ENVIRONMENT VARIABLES & PATH
+# LOAD ALIAS
 # -----------------------------------------------------------------------------
-# Essential PATH exports
-export PATH="$HOME/bin:/usr/local/bin:$PATH"
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.npm-global/bin:$PATH"
-export PATH="$HOME/.local/share/zinit/polaris/bin:$PATH"
-
-# Editor preferences
-export EDITOR="nvim"
-export VISUAL="nvim"
 
 # Load custom configurations (only if files exist to avoid console output)
 [[ -f "$HOME/.shell_aliases" ]] && source "$HOME/.shell_aliases"
@@ -37,14 +29,14 @@ setopt AUTO_CD
 setopt nonomatch
 
 # -----------------------------------------------------------------------------
-# ZINIT PLUGIN MANAGER INSTALLATION  
+# ZINIT PLUGIN MANAGER INSTALLATION
 # -----------------------------------------------------------------------------
 # Auto-install Zinit if not present
 if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
     # Only show output if not using instant prompt
     if [[ -z "$P9K_INSTANT_PROMPT" ]]; then
         print -P "%F{33}Installing %F{220}ZDHARMA-CONTINUUM%F{220} Initiative Plugin Manager...%f"
-        
+
         # Create directory structure
         if command mkdir -p "$HOME/.local/share/zinit" && command chmod g-rwX "$HOME/.local/share/zinit"; then
             # Try to clone the repository
@@ -73,12 +65,12 @@ autoload -Uz _zinit
 # -----------------------------------------------------------------------------
 # HELPER FUNCTIONS (moved after instant prompt to avoid console output)
 # -----------------------------------------------------------------------------
-function error() { 
-    print -P "%F{red}[ERROR]%f: %F{yellow}$1%f" && return 1 
+function error() {
+    print -P "%F{red}[ERROR]%f: %F{yellow}$1%f" && return 1
 }
 
-function info() { 
-    print -P "%F{blue}[INFO]%f: %F{cyan}$1%f" 
+function info() {
+    print -P "%F{blue}[INFO]%f: %F{cyan}$1%f"
 }
 
 # -----------------------------------------------------------------------------
@@ -186,8 +178,8 @@ compctl -K _pip_completion pip3
 
 # Install trash-cli via pip
 zi ice atclone"pip install --user trash-cli" \
-      atpull"pip install --user --upgrade trash-cli" \
-      run-atpull
+    atpull"pip install --user --upgrade trash-cli" \
+    run-atpull
 
 # -----------------------------------------------------------------------------
 # ZSH ENHANCEMENT PLUGINS
@@ -198,15 +190,15 @@ zi ice zsh-users/zsh-completions
 
 # Auto-suggestions - Suggests commands as you type based on history
 zi ice atload'_zsh_autosuggest_start' \
-       atinit'
-           ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=50
-           bindkey "^_" autosuggest-execute
-           bindkey "^ " autosuggest-accept'
+    atinit'
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=50
+bindkey "^_" autosuggest-execute
+bindkey "^ " autosuggest-accept'
 zi light zsh-users/zsh-autosuggestions
 
 # Fast syntax highlighting - Real-time command syntax validation
 zi light-mode for \
-      $ZI_REPO/fast-syntax-highlighting
+    $ZI_REPO/fast-syntax-highlighting
 
 
 # FZF history search - Fuzzy search through command history
@@ -214,8 +206,8 @@ zi ice joshskidmore/zsh-fzf-history-search
 
 # Zsh autocomplete - Real-time type-ahead autocompletion
 zi ice atload'
-        bindkey              "^I" menu-select
-        bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete'
+bindkey              "^I" menu-select
+bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete'
 zi light marlonrichert/zsh-autocomplete
 
 # -----------------------------------------------------------------------------
@@ -223,14 +215,14 @@ zi light marlonrichert/zsh-autocomplete
 # -----------------------------------------------------------------------------
 # Initialize completions and replay cached completions
 # at the end of a Zinit configuration to ensure that after all plugins are loaded,
-# the completion system is properly initialized and 
+# the completion system is properly initialized and
 # syntax highlighting/autosuggestion widgets are correctly bound
 # zi for atload'
 #       zicompinit; zicdreplay
 #       _zsh_highlight_bind_widgets
 #       _zsh_autosuggest_bind_widgets' \
-#     as'null' id-as'zinit/cleanup' lucid nocd wait \
-#   $ZI_REPO/null
+    #     as'null' id-as'zinit/cleanup' lucid nocd wait \
+    #   $ZI_REPO/null
 #
 
 # -----------------------------------------------------------------------------
@@ -244,8 +236,8 @@ if [[ ! -f ~/.config/.mynvim-installed ]]; then
     echo "Cloning nvim config..."
     mkdir -p ~/.config
     git clone https://github.com/sabamdarif/mynvim ~/.config/nvim && \
-    touch ~/.config/.mynvim-installed && \
-    echo "Neovim config installed to ~/.config/nvim"
+        touch ~/.config/.mynvim-installed && \
+        echo "Neovim config installed to ~/.config/nvim"
 fi
 
 unset ZI_REPO ZI_REPO
