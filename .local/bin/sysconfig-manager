@@ -1,0 +1,530 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+VERSION="1.0.0"
+CONFIG_DIR="${HOME}/.config/sysconfig"
+PACKAGES_CONFIG="${CONFIG_DIR}/packages.conf"
+FLATPAKS_CONFIG="${CONFIG_DIR}/flatpaks.conf"
+EXTENSIONS_CONFIG="${CONFIG_DIR}/gnome-extensions.conf"
+DCONF_BACKUP="${CONFIG_DIR}/dconf-settings.ini"
+
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$ID"
+    else
+        echo "unknown"
+    fi
+}
+
+DISTRO=$(detect_distro)
+
+get_package_manager() {
+    case "$DISTRO" in
+        fedora)
+            echo "dnf"
+            ;;
+        ubuntu|debian)
+            echo "apt"
+            ;;
+        *)
+            echo "unknown"
+            ;;
+    esac
+}
+
+PKG_MANAGER=$(get_package_manager)
+
+init_config() {
+    mkdir -p "$CONFIG_DIR"
+
+    [ ! -f "$PACKAGES_CONFIG" ] && cat > "$PACKAGES_CONFIG" << 'EOF'
+# System packages to install (one per line)
+# Lines starting with # are comments
+# Example:
+# vim
+# git
+# htop
+
+EOF
+
+    [ ! -f "$FLATPAKS_CONFIG" ] && cat > "$FLATPAKS_CONFIG" << 'EOF'
+# Flatpak applications to install (one per line)
+# Use full application ID
+# Example:
+# org.mozilla.firefox
+# com.spotify.Client
+
+EOF
+
+    [ ! -f "$EXTENSIONS_CONFIG" ] && cat > "$EXTENSIONS_CONFIG" << 'EOF'
+# GNOME extensions to install (UUID@domain format)
+# Example:
+# dash-to-dock@micxgx.gmail.com
+# appindicatorsupport@rgcjonas.gmail.com
+
+EOF
+
+    echo "Configuration initialized at $CONFIG_DIR"
+}
+
+read_config() {
+    local config_file="$1"
+    [ ! -f "$config_file" ] && return
+    grep -v '^#' "$config_file" | grep -v '^[[:space:]]*$' || true
+}
+
+list_installed_packages() {
+    case "$PKG_MANAGER" in
+        dnf)
+            rpm -qa --queryformat '%{NAME}\n' 2>/dev/null | sort -u
+            ;;
+        apt)
+            dpkg-query -W -f='${Package}\n' 2>/dev/null
+            ;;
+        *)
+            echo "Unsupported package manager" >&2
+            return 1
+            ;;
+    esac
+}
+
+list_installed_flatpaks() {
+    flatpak list --app --columns=application 2>/dev/null || true
+}
+
+list_installed_extensions() {
+    if command -v gnome-extensions &>/dev/null; then
+        gnome-extensions list 2>/dev/null || true
+    fi
+}
+
+interactive_package_select() {
+    if ! command -v fzf &>/dev/null; then
+        echo "fzf is not installed. Please install it first."
+        return 1
+    fi
+
+    local config_file="$1"
+    local list_command="$2"
+    local title="$3"
+
+    echo "Loading installed items..." >&2
+    local temp_list
+    temp_list=$(mktemp)
+    local filtered_list
+    filtered_list=$(mktemp)
+
+    $list_command > "$temp_list" 2>&1
+
+    local current_items
+    current_items=$(read_config "$config_file")
+
+    if [ -n "$current_items" ]; then
+        local temp_current
+        temp_current=$(mktemp)
+        echo "$current_items" > "$temp_current"
+        grep -vxFf "$temp_current" "$temp_list" > "$filtered_list" || true
+        rm -f "$temp_current"
+    else
+        cp "$temp_list" "$filtered_list"
+    fi
+
+    local item_count
+    item_count=$(wc -l < "$filtered_list")
+
+    if [ "$item_count" -eq 0 ]; then
+        echo "No new items to add (all items already in config or none found)" >&2
+        rm -f "$temp_list" "$filtered_list"
+        return
+    fi
+
+    echo "Found $item_count new items" >&2
+
+    local selected
+    selected=$(cat "$filtered_list" | fzf --multi --prompt="$title > " \
+            --preview="echo {}" \
+            --preview-window=up:1 \
+            --bind='tab:toggle+down' \
+        --header='TAB to select, ENTER to confirm')
+
+    rm -f "$temp_list" "$filtered_list"
+
+    if [ -n "$selected" ]; then
+        echo "$selected" >> "$config_file"
+        echo "Added $(echo "$selected" | wc -l) item(s) to configuration"
+    fi
+}
+
+interactive_remove_from_config() {
+    if ! command -v fzf &>/dev/null; then
+        echo "fzf is not installed. Please install it first."
+        return 1
+    fi
+
+    local config_file="$1"
+    local title="$2"
+
+    local current_items
+    current_items=$(read_config "$config_file")
+
+    if [ -z "$current_items" ]; then
+        echo "No items in configuration"
+        return
+    fi
+
+    local selected
+    selected=$(echo "$current_items" | fzf --multi --prompt="$title (Remove) > " \
+            --bind='tab:toggle+down' \
+        --header='TAB to select, ENTER to confirm removal')
+
+    if [ -n "$selected" ]; then
+        local temp_file
+        temp_file=$(mktemp)
+        cp "$config_file" "$temp_file"
+
+        while IFS= read -r item; do
+            sed -i "\|^${item}$|d" "$temp_file"
+        done <<< "$selected"
+
+        mv "$temp_file" "$config_file"
+        echo "Removed $(echo "$selected" | wc -l) item(s) from configuration"
+    fi
+}
+
+install_packages() {
+    local packages
+    packages=$(read_config "$PACKAGES_CONFIG")
+
+    if [ -z "$packages" ]; then
+        echo "No packages to install"
+        return
+    fi
+
+    echo "Installing system packages..."
+    case "$PKG_MANAGER" in
+        dnf)
+            sudo dnf install -y $packages
+            ;;
+        apt)
+            sudo apt update
+            sudo apt install -y $packages
+            ;;
+        *)
+            echo "Unsupported package manager"
+            return 1
+            ;;
+    esac
+}
+
+install_flatpaks() {
+    local flatpaks
+    flatpaks=$(read_config "$FLATPAKS_CONFIG")
+
+    if [ -z "$flatpaks" ]; then
+        echo "No flatpaks to install"
+        return
+    fi
+
+    echo "Installing flatpaks..."
+    while IFS= read -r app; do
+        flatpak install -y flathub "$app" 2>/dev/null || echo "Failed to install $app"
+    done <<< "$flatpaks"
+}
+
+install_extensions() {
+    local extensions
+    extensions=$(read_config "$EXTENSIONS_CONFIG")
+
+    if [ -z "$extensions" ]; then
+        echo "No extensions to install"
+        return
+    fi
+
+    if ! command -v gnome-extensions &>/dev/null; then
+        echo "GNOME extensions manager not found"
+        return 1
+    fi
+
+    echo "Installing GNOME extensions..."
+    echo "Note: Manual installation via extensions.gnome.org may be required"
+    while IFS= read -r ext; do
+        echo "  - $ext"
+    done <<< "$extensions"
+}
+
+backup_dconf() {
+    echo "Backing up dconf settings..."
+    dconf dump / > "$DCONF_BACKUP"
+    echo "dconf settings backed up to $DCONF_BACKUP"
+}
+
+restore_dconf() {
+    if [ ! -f "$DCONF_BACKUP" ]; then
+        echo "No dconf backup found at $DCONF_BACKUP"
+        return 1
+    fi
+
+    echo "Restoring dconf settings..."
+    dconf load / < "$DCONF_BACKUP"
+    echo "dconf settings restored"
+}
+
+sync_config() {
+    echo "Synchronizing current system state to configuration..."
+
+    echo "Updating packages configuration..."
+    local temp_packages
+    temp_packages=$(mktemp)
+    echo "# Generated on $(date)" > "$temp_packages"
+    echo "# System packages" >> "$temp_packages"
+    echo "" >> "$temp_packages"
+    list_installed_packages >> "$temp_packages"
+    mv "$temp_packages" "$PACKAGES_CONFIG"
+
+    echo "Updating flatpaks configuration..."
+    local temp_flatpaks
+    temp_flatpaks=$(mktemp)
+    echo "# Generated on $(date)" > "$temp_flatpaks"
+    echo "# Flatpak applications" >> "$temp_flatpaks"
+    echo "" >> "$temp_flatpaks"
+    list_installed_flatpaks >> "$temp_flatpaks"
+    if [ -s "$temp_flatpaks" ]; then
+        mv "$temp_flatpaks" "$FLATPAKS_CONFIG"
+    else
+        rm -f "$temp_flatpaks"
+    fi
+
+    echo "Updating extensions configuration..."
+    local temp_extensions
+    temp_extensions=$(mktemp)
+    echo "# Generated on $(date)" > "$temp_extensions"
+    echo "# GNOME extensions" >> "$temp_extensions"
+    echo "" >> "$temp_extensions"
+    list_installed_extensions >> "$temp_extensions"
+    if [ -s "$temp_extensions" ]; then
+        mv "$temp_extensions" "$EXTENSIONS_CONFIG"
+    else
+        rm -f "$temp_extensions"
+    fi
+
+    backup_dconf
+
+    echo "Configuration synchronized"
+}
+
+restore_system() {
+    echo "Restoring system configuration..."
+    install_packages
+    install_flatpaks
+    install_extensions
+    restore_dconf
+    echo "System restoration complete"
+}
+
+show_status() {
+    echo "System Configuration Status"
+    echo "============================"
+    echo "Config directory: $CONFIG_DIR"
+    echo "Distribution: $DISTRO"
+    echo "Package manager: $PKG_MANAGER"
+    echo ""
+
+    echo "Packages in config: $(read_config "$PACKAGES_CONFIG" | wc -l)"
+    echo "Flatpaks in config: $(read_config "$FLATPAKS_CONFIG" | wc -l)"
+    echo "Extensions in config: $(read_config "$EXTENSIONS_CONFIG" | wc -l)"
+    echo "dconf backup exists: $([ -f "$DCONF_BACKUP" ] && echo "Yes" || echo "No")"
+}
+
+interactive_menu() {
+    if ! command -v fzf &>/dev/null; then
+        echo "fzf is not installed. Please install it first."
+        return 1
+    fi
+
+    local choice
+    choice=$(cat << 'EOF' | fzf --prompt="Select action > " --height=40% --reverse
+Initialize configuration
+Add packages to config
+Add flatpaks to config
+Add GNOME extensions to config
+Remove packages from config
+Remove flatpaks from config
+Remove extensions from config
+Install packages
+Install flatpaks
+Install extensions
+Backup dconf settings
+Restore dconf settings
+Sync current system to config
+Restore entire system
+Show status
+Exit
+EOF
+    )
+
+    case "$choice" in
+        "Initialize configuration")
+            init_config
+            ;;
+        "Add packages to config")
+            interactive_package_select "$PACKAGES_CONFIG" list_installed_packages "Select packages to add"
+            ;;
+        "Add flatpaks to config")
+            interactive_package_select "$FLATPAKS_CONFIG" list_installed_flatpaks "Select flatpaks to add"
+            ;;
+        "Add GNOME extensions to config")
+            interactive_package_select "$EXTENSIONS_CONFIG" list_installed_extensions "Select extensions to add"
+            ;;
+        "Remove packages from config")
+            interactive_remove_from_config "$PACKAGES_CONFIG" "Remove packages"
+            ;;
+        "Remove flatpaks from config")
+            interactive_remove_from_config "$FLATPAKS_CONFIG" "Remove flatpaks"
+            ;;
+        "Remove extensions from config")
+            interactive_remove_from_config "$EXTENSIONS_CONFIG" "Remove extensions"
+            ;;
+        "Install packages")
+            install_packages
+            ;;
+        "Install flatpaks")
+            install_flatpaks
+            ;;
+        "Install extensions")
+            install_extensions
+            ;;
+        "Backup dconf settings")
+            backup_dconf
+            ;;
+        "Restore dconf settings")
+            restore_dconf
+            ;;
+        "Sync current system to config")
+            sync_config
+            ;;
+        "Restore entire system")
+            restore_system
+            ;;
+        "Show status")
+            show_status
+            ;;
+        "Exit"|"")
+            exit 0
+            ;;
+    esac
+}
+
+show_help() {
+    cat << EOF
+sysconfig-manager v${VERSION}
+Manage system packages, flatpaks, GNOME extensions, and dconf settings
+
+USAGE:
+    sysconfig-manager [COMMAND]
+
+COMMANDS:
+    init                Initialize configuration directory
+    add-packages        Interactively add packages to config
+    add-flatpaks        Interactively add flatpaks to config
+    add-extensions      Interactively add extensions to config
+    remove-packages     Interactively remove packages from config
+    remove-flatpaks     Interactively remove flatpaks from config
+    remove-extensions   Interactively remove extensions from config
+    install-packages    Install packages from config
+    install-flatpaks    Install flatpaks from config
+    install-extensions  Install extensions from config
+    backup-dconf        Backup dconf settings
+    restore-dconf       Restore dconf settings
+    sync                Sync current system state to config
+    restore             Restore entire system from config
+    status              Show configuration status
+    help                Show this help message
+
+    (no command)        Show interactive menu
+
+CONFIGURATION:
+    Config directory: $CONFIG_DIR
+    Packages config:  $PACKAGES_CONFIG
+    Flatpaks config:  $FLATPAKS_CONFIG
+    Extensions:       $EXTENSIONS_CONFIG
+    dconf backup:     $DCONF_BACKUP
+
+EXAMPLES:
+    sysconfig-manager                    # Interactive menu
+    sysconfig-manager init               # Initialize config
+    sysconfig-manager add-packages       # Add packages interactively
+    sysconfig-manager sync               # Backup current system state
+    sysconfig-manager restore            # Restore system from config
+
+EOF
+}
+
+main() {
+    if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+        show_help
+        exit 0
+    fi
+
+    case "${1:-menu}" in
+        init)
+            init_config
+            ;;
+        add-packages)
+            interactive_package_select "$PACKAGES_CONFIG" list_installed_packages "Select packages to add"
+            ;;
+        add-flatpaks)
+            interactive_package_select "$FLATPAKS_CONFIG" list_installed_flatpaks "Select flatpaks to add"
+            ;;
+        add-extensions)
+            interactive_package_select "$EXTENSIONS_CONFIG" list_installed_extensions "Select extensions to add"
+            ;;
+        remove-packages)
+            interactive_remove_from_config "$PACKAGES_CONFIG" "Remove packages"
+            ;;
+        remove-flatpaks)
+            interactive_remove_from_config "$FLATPAKS_CONFIG" "Remove flatpaks"
+            ;;
+        remove-extensions)
+            interactive_remove_from_config "$EXTENSIONS_CONFIG" "Remove extensions"
+            ;;
+        install-packages)
+            install_packages
+            ;;
+        install-flatpaks)
+            install_flatpaks
+            ;;
+        install-extensions)
+            install_extensions
+            ;;
+        backup-dconf)
+            backup_dconf
+            ;;
+        restore-dconf)
+            restore_dconf
+            ;;
+        sync)
+            sync_config
+            ;;
+        restore)
+            restore_system
+            ;;
+        status)
+            show_status
+            ;;
+        help)
+            show_help
+            ;;
+        menu)
+            interactive_menu
+            ;;
+        *)
+            echo "Unknown command: $1"
+            echo "Run 'sysconfig-manager help' for usage information"
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
