@@ -206,10 +206,12 @@ install_packages() {
     echo "Installing system packages..."
     case "$PKG_MANAGER" in
         dnf)
+            # shellcheck disable=SC2086
             sudo dnf install -y $packages
             ;;
         apt)
             sudo apt update
+            # shellcheck disable=SC2086
             sudo apt install -y $packages
             ;;
         *)
@@ -278,18 +280,22 @@ sync_config() {
     echo "Updating packages configuration..."
     local temp_packages
     temp_packages=$(mktemp)
-    echo "# Generated on $(date)" > "$temp_packages"
-    echo "# System packages" >> "$temp_packages"
-    echo "" >> "$temp_packages"
+    {
+        echo "# Generated on $(date)"
+        echo "# System packages"
+        echo ""
+    } > "$temp_packages"
     list_installed_packages >> "$temp_packages"
     mv "$temp_packages" "$PACKAGES_CONFIG"
 
     echo "Updating flatpaks configuration..."
     local temp_flatpaks
     temp_flatpaks=$(mktemp)
-    echo "# Generated on $(date)" > "$temp_flatpaks"
-    echo "# Flatpak applications" >> "$temp_flatpaks"
-    echo "" >> "$temp_flatpaks"
+    {
+        echo "# Generated on $(date)"
+        echo "# Flatpak applications"
+        echo ""
+    } > "$temp_flatpaks"
     list_installed_flatpaks >> "$temp_flatpaks"
     if [ -s "$temp_flatpaks" ]; then
         mv "$temp_flatpaks" "$FLATPAKS_CONFIG"
@@ -300,9 +306,11 @@ sync_config() {
     echo "Updating extensions configuration..."
     local temp_extensions
     temp_extensions=$(mktemp)
-    echo "# Generated on $(date)" > "$temp_extensions"
-    echo "# GNOME extensions" >> "$temp_extensions"
-    echo "" >> "$temp_extensions"
+    {
+        echo "# Generated on $(date)"
+        echo "# GNOME extensions"
+        echo ""
+    } > "$temp_extensions"
     list_installed_extensions >> "$temp_extensions"
     if [ -s "$temp_extensions" ]; then
         mv "$temp_extensions" "$EXTENSIONS_CONFIG"
