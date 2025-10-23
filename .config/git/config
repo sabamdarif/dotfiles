@@ -1,0 +1,44 @@
+[user]
+    name = Md Arif
+    email = 111168803+sabamdarif@users.noreply.github.com
+    signingkey = 60546CCF1568F24E
+
+[commit]
+    gpgSign = true
+
+[core]
+    compression = 9  # trade cpu for network
+    whitespace = error  # threat incorrect whitespace as errors
+    preloadindex = true  # preload index for faster status
+
+[advice]  # disable advices
+    addEmptyPathspec = false
+    pushNonFastForward = false
+    statusHints = false
+
+[status]
+    branch = true
+    short = true
+    showStash = true
+    showUntrackedFiles = all  # show individual untracked files
+
+[push]
+    autoSetupRemote = true  # easier to push new branches
+    default = current  # push only current branch by default
+
+[pull]
+    rebase = true
+    default = current
+
+[rebase]
+    autoStash = true
+    missingCommitsCheck = warn  # warn if rebasing with missing commits
+
+[log]
+    abbrevCommit = true  # short commits
+
+[branch]
+    sort = -committerdate
+
+[tag]
+    sort = -taggerdate
