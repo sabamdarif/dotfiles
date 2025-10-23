@@ -2,12 +2,19 @@
 
 set -euo pipefail
 
-VERSION="1.0.5"
+VERSION="2.0"
 CONFIG_DIR="${HOME}/.config/sysconfig"
 PACKAGES_CONFIG="${CONFIG_DIR}/packages.conf"
 FLATPAKS_CONFIG="${CONFIG_DIR}/flatpaks.conf"
 EXTENSIONS_CONFIG="${CONFIG_DIR}/gnome-extensions.conf"
 REPOS_CONFIG="${CONFIG_DIR}/repos.conf"
+SERVICES_CONFIG="${CONFIG_DIR}/services.conf"
+FIREWALL_CONFIG="${CONFIG_DIR}/firewall.conf"
+PYTHON_CONFIG="${CONFIG_DIR}/python-packages.conf"
+NODE_CONFIG="${CONFIG_DIR}/node-packages.conf"
+CARGO_CONFIG="${CONFIG_DIR}/cargo-packages.conf"
+GROUPS_CONFIG="${CONFIG_DIR}/groups.conf"
+CONTAINERS_CONFIG="${CONFIG_DIR}/containers.conf"
 CUSTOM_COMMANDS_CONFIG="${CONFIG_DIR}/custom-commands.sh"
 DCONF_BACKUP="${CONFIG_DIR}/dconf-settings.ini"
 
@@ -102,6 +109,119 @@ EOF
 
 EOF
 
+    [ ! -f "$SERVICES_CONFIG" ] && cat >"$SERVICES_CONFIG" <<'EOF'
+# Systemd services configuration
+# Format: SERVICE_NAME:TYPE:STATE
+# TYPE: system or user
+# STATE: enabled or disabled
+#
+# Examples:
+# docker.service:system:enabled
+# sshd.service:system:enabled
+# ssh-agent.service:user:enabled
+# bluetooth.service:system:disabled
+
+EOF
+
+    [ ! -f "$FIREWALL_CONFIG" ] && cat >"$FIREWALL_CONFIG" <<'EOF'
+# Firewall configuration
+# Format depends on firewall type
+#
+# For firewalld (Fedora):
+#   service:SERVICE_NAME
+#   port:PORT/PROTOCOL
+#   zone:ZONE_NAME
+#
+# For ufw (Ubuntu/Debian):
+#   allow:PORT/PROTOCOL
+#   deny:PORT/PROTOCOL
+#   rule:RULE_TEXT
+#
+# Examples:
+# service:ssh
+# service:http
+# port:8080/tcp
+# allow:22/tcp
+
+EOF
+
+    [ ! -f "$PYTHON_CONFIG" ] && cat >"$PYTHON_CONFIG" <<'EOF'
+# Python packages to install globally (pip)
+# One package per line
+# Use exact package names from PyPI
+#
+# Examples:
+# requests
+# numpy
+# pandas
+# black
+# pylint
+
+EOF
+
+    [ ! -f "$NODE_CONFIG" ] && cat >"$NODE_CONFIG" <<'EOF'
+# Node.js global packages to install (npm)
+# One package per line
+#
+# Examples:
+# typescript
+# eslint
+# prettier
+# yarn
+# pm2
+
+EOF
+
+    [ ! -f "$CARGO_CONFIG" ] && cat >"$CARGO_CONFIG" <<'EOF'
+# Rust packages to install (cargo)
+# One package per line
+#
+# Examples:
+# ripgrep
+# fd-find
+# bat
+# exa
+# tokei
+
+EOF
+
+    [ ! -f "$GROUPS_CONFIG" ] && cat >"$GROUPS_CONFIG" <<'EOF'
+# User groups configuration
+# List groups the current user should belong to
+# One group per line
+#
+# Examples:
+# docker
+# libvirt
+# wheel
+# audio
+# video
+
+EOF
+
+    [ ! -f "$CONTAINERS_CONFIG" ] && cat >"$CONTAINERS_CONFIG" <<'EOF'
+# Container/VM configuration
+# Format: TYPE:IDENTIFIER:OPTIONS
+#
+# For Docker images:
+#   docker-image:IMAGE_NAME
+#   docker-image:IMAGE_NAME:TAG
+#
+# For Docker containers to run:
+#   docker-run:CONTAINER_NAME:IMAGE:PORTS:VOLUMES
+#
+# For Podman (similar to Docker):
+#   podman-image:IMAGE_NAME
+#   podman-run:CONTAINER_NAME:IMAGE:PORTS:VOLUMES
+#
+# Examples:
+# docker-image:postgres:latest
+# docker-image:redis
+# docker-run:postgres-dev:postgres:5432:5432:/var/lib/postgresql/data
+# podman-image:nginx:alpine
+
+EOF
+
     [ ! -f "$CUSTOM_COMMANDS_CONFIG" ] && cat >"$CUSTOM_COMMANDS_CONFIG" <<'EOF'
 #!/usr/bin/env bash
 # Custom commands to run during system restore
@@ -164,7 +284,6 @@ list_enabled_repos() {
             [ -f "$repo_file" ] || continue
             local repo_name
             repo_name=$(basename "$repo_file" .repo)
-            # Extract user/project from _copr:user:project.repo format
             repo_name=${repo_name#_copr:}
             repo_name=${repo_name//://}
             echo "copr:$repo_name"
@@ -179,17 +298,99 @@ list_enabled_repos() {
         echo "rpmfusion:nonfree"
     fi
 
-    # List other third-party repos (excluding copr and rpmfusion)
+    # List other third-party repos
     dnf repolist enabled 2>/dev/null | tail -n +2 | awk '{print $1}' | while read -r repo; do
         case "$repo" in
-        *copr* | *rpmfusion* | fedora* | updates* | rawhide*)
-            # Skip Copr, RPM Fusion, and default Fedora repos
-            ;;
+        *copr* | *rpmfusion* | fedora* | updates* | rawhide*) ;;
         *)
             echo "fedora-third-party:$repo"
             ;;
         esac
     done
+}
+
+list_enabled_services() {
+    {
+        # System services
+        systemctl list-unit-files --type=service --state=enabled --no-pager --no-legend 2>/dev/null |
+            awk '{print $1":system:enabled"}'
+
+        # User services
+        systemctl --user list-unit-files --type=service --state=enabled --no-pager --no-legend 2>/dev/null |
+            awk '{print $1":user:enabled"}'
+    } | sort -u
+}
+
+list_user_groups() {
+    groups "$USER" 2>/dev/null | tr ' ' '\n' | tail -n +2 | sort
+}
+
+list_python_packages() {
+    if command -v pip3 &>/dev/null; then
+        pip3 list --user --format=freeze 2>/dev/null | cut -d'=' -f1
+    elif command -v pip &>/dev/null; then
+        pip list --user --format=freeze 2>/dev/null | cut -d'=' -f1
+    fi
+}
+
+list_node_packages() {
+    if command -v npm &>/dev/null; then
+        npm list -g --depth=0 --parseable 2>/dev/null |
+            tail -n +2 |
+            xargs -n1 basename
+    fi
+}
+
+list_cargo_packages() {
+    if command -v cargo &>/dev/null; then
+        cargo install --list 2>/dev/null |
+            grep -v '^\s' |
+            cut -d' ' -f1 |
+            sort -u
+    fi
+}
+
+backup_firewall() {
+    echo "Backing up firewall configuration..."
+    local temp_firewall
+    temp_firewall=$(mktemp)
+    {
+        echo "# Generated on $(date)"
+        echo "# Firewall configuration"
+        echo ""
+    } >"$temp_firewall"
+
+    if command -v firewall-cmd &>/dev/null; then
+        # firewalld (Fedora)
+        echo "# Detected: firewalld" >>"$temp_firewall"
+
+        # Get default zone
+        local default_zone
+        default_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "public")
+        echo "zone:$default_zone" >>"$temp_firewall"
+
+        # List services
+        firewall-cmd --list-services 2>/dev/null | tr ' ' '\n' | while read -r svc; do
+            [ -n "$svc" ] && echo "service:$svc" >>"$temp_firewall"
+        done
+
+        # List ports
+        firewall-cmd --list-ports 2>/dev/null | tr ' ' '\n' | while read -r port; do
+            [ -n "$port" ] && echo "port:$port" >>"$temp_firewall"
+        done
+    elif command -v ufw &>/dev/null; then
+        # ufw (Ubuntu/Debian)
+        echo "# Detected: ufw" >>"$temp_firewall"
+        sudo ufw status numbered 2>/dev/null | grep -E '^\[' |
+            sed 's/\[.*\] //' | while read -r rule; do
+            echo "rule:$rule" >>"$temp_firewall"
+        done
+    else
+        echo "# No supported firewall found" >>"$temp_firewall"
+    fi
+
+    mv "$temp_firewall" "$FIREWALL_CONFIG"
+    echo "Firewall backed up to $FIREWALL_CONFIG"
 }
 
 backup_repos() {
@@ -263,13 +464,238 @@ install_repos() {
     done <<<"$repos"
 }
 
+configure_services() {
+    local services
+    services=$(read_config "$SERVICES_CONFIG")
+
+    if [ -z "$services" ]; then
+        echo "No services to configure"
+        return
+    fi
+
+    echo "Configuring services..."
+    while IFS=: read -r service_name service_type service_state; do
+        [ -z "$service_name" ] && continue
+
+        case "$service_type" in
+        system)
+            echo "  $service_name ($service_type): $service_state"
+            if [ "$service_state" = "enabled" ]; then
+                sudo systemctl enable "$service_name" 2>/dev/null || echo "    Failed to enable $service_name"
+                sudo systemctl start "$service_name" 2>/dev/null || echo "    Failed to start $service_name"
+            elif [ "$service_state" = "disabled" ]; then
+                sudo systemctl disable "$service_name" 2>/dev/null || echo "    Failed to disable $service_name"
+                sudo systemctl stop "$service_name" 2>/dev/null || true
+            fi
+            ;;
+        user)
+            echo "  $service_name ($service_type): $service_state"
+            if [ "$service_state" = "enabled" ]; then
+                systemctl --user enable "$service_name" 2>/dev/null || echo "    Failed to enable $service_name"
+                systemctl --user start "$service_name" 2>/dev/null || echo "    Failed to start $service_name"
+            elif [ "$service_state" = "disabled" ]; then
+                systemctl --user disable "$service_name" 2>/dev/null || echo "    Failed to disable $service_name"
+                systemctl --user stop "$service_name" 2>/dev/null || true
+            fi
+            ;;
+        esac
+    done <<<"$services"
+}
+
+configure_firewall() {
+    local rules
+    rules=$(read_config "$FIREWALL_CONFIG")
+
+    if [ -z "$rules" ]; then
+        echo "No firewall rules to configure"
+        return
+    fi
+
+    echo "Configuring firewall..."
+
+    if command -v firewall-cmd &>/dev/null; then
+        # firewalld
+        while IFS=: read -r rule_type rule_value; do
+            [ -z "$rule_type" ] && continue
+
+            case "$rule_type" in
+            zone)
+                echo "  Setting default zone: $rule_value"
+                sudo firewall-cmd --set-default-zone="$rule_value" 2>/dev/null || echo "    Failed"
+                ;;
+            service)
+                echo "  Adding service: $rule_value"
+                sudo firewall-cmd --permanent --add-service="$rule_value" 2>/dev/null || echo "    Failed"
+                ;;
+            port)
+                echo "  Adding port: $rule_value"
+                sudo firewall-cmd --permanent --add-port="$rule_value" 2>/dev/null || echo "    Failed"
+                ;;
+            esac
+        done <<<"$rules"
+
+        sudo firewall-cmd --reload 2>/dev/null || echo "  Failed to reload firewall"
+    elif command -v ufw &>/dev/null; then
+        # ufw
+        sudo ufw --force enable 2>/dev/null
+
+        while IFS=: read -r rule_type rule_value; do
+            [ -z "$rule_type" ] && continue
+
+            case "$rule_type" in
+            allow)
+                echo "  Allowing: $rule_value"
+                sudo ufw allow "$rule_value" 2>/dev/null || echo "    Failed"
+                ;;
+            deny)
+                echo "  Denying: $rule_value"
+                sudo ufw deny "$rule_value" 2>/dev/null || echo "    Failed"
+                ;;
+            rule)
+                echo "  Adding rule: $rule_value"
+                sudo ufw "$rule_value" 2>/dev/null || echo "    Failed"
+                ;;
+            esac
+        done <<<"$rules"
+    else
+        echo "No supported firewall found"
+    fi
+}
+
+install_python_packages() {
+    local packages
+    packages=$(read_config "$PYTHON_CONFIG")
+
+    if [ -z "$packages" ]; then
+        echo "No Python packages to install"
+        return
+    fi
+
+    if ! command -v pip3 &>/dev/null && ! command -v pip &>/dev/null; then
+        echo "pip not found. Skipping Python packages"
+        return
+    fi
+
+    echo "Installing Python packages..."
+    local pip_cmd="pip3"
+    command -v pip3 &>/dev/null || pip_cmd="pip"
+
+    while IFS= read -r pkg; do
+        echo "  Installing: $pkg"
+        $pip_cmd install --user "$pkg" 2>/dev/null || echo "    Failed to install $pkg"
+    done <<<"$packages"
+}
+
+install_node_packages() {
+    local packages
+    packages=$(read_config "$NODE_CONFIG")
+
+    if [ -z "$packages" ]; then
+        echo "No Node packages to install"
+        return
+    fi
+
+    if ! command -v npm &>/dev/null; then
+        echo "npm not found. Skipping Node packages"
+        return
+    fi
+
+    echo "Installing Node packages..."
+    while IFS= read -r pkg; do
+        echo "  Installing: $pkg"
+        npm install -g "$pkg" 2>/dev/null || echo "    Failed to install $pkg"
+    done <<<"$packages"
+}
+
+install_cargo_packages() {
+    local packages
+    packages=$(read_config "$CARGO_CONFIG")
+
+    if [ -z "$packages" ]; then
+        echo "No Cargo packages to install"
+        return
+    fi
+
+    if ! command -v cargo &>/dev/null; then
+        echo "cargo not found. Skipping Cargo packages"
+        return
+    fi
+
+    echo "Installing Cargo packages..."
+    while IFS= read -r pkg; do
+        echo "  Installing: $pkg"
+        cargo install "$pkg" 2>/dev/null || echo "    Failed to install $pkg"
+    done <<<"$packages"
+}
+
+configure_groups() {
+    local groups
+    groups=$(read_config "$GROUPS_CONFIG")
+
+    if [ -z "$groups" ]; then
+        echo "No groups to configure"
+        return
+    fi
+
+    echo "Configuring user groups..."
+    while IFS= read -r group; do
+        [ -z "$group" ] && continue
+
+        if getent group "$group" &>/dev/null; then
+            if groups "$USER" | grep -qw "$group"; then
+                echo "  Already in group: $group"
+            else
+                echo "  Adding to group: $group"
+                sudo usermod -aG "$group" "$USER" 2>/dev/null || echo "    Failed to add to $group"
+            fi
+        else
+            echo "  Group does not exist: $group (skipping)"
+        fi
+    done <<<"$groups"
+}
+
+setup_containers() {
+    local containers
+    containers=$(read_config "$CONTAINERS_CONFIG")
+
+    if [ -z "$containers" ]; then
+        echo "No containers to setup"
+        return
+    fi
+
+    echo "Setting up containers..."
+    while IFS=: read -r container_type identifier rest; do
+        [ -z "$container_type" ] && continue
+
+        case "$container_type" in
+        docker-image)
+            if command -v docker &>/dev/null; then
+                local tag="${rest:-latest}"
+                echo "  Pulling Docker image: $identifier:$tag"
+                docker pull "$identifier:$tag" 2>/dev/null || echo "    Failed to pull $identifier:$tag"
+            fi
+            ;;
+        podman-image)
+            if command -v podman &>/dev/null; then
+                local tag="${rest:-latest}"
+                echo "  Pulling Podman image: $identifier:$tag"
+                podman pull "$identifier:$tag" 2>/dev/null || echo "    Failed to pull $identifier:$tag"
+            fi
+            ;;
+        docker-run | podman-run)
+            echo "  Container run config saved: $identifier"
+            echo "    (Manual setup required for running containers)"
+            ;;
+        esac
+    done <<<"$containers"
+}
+
 run_custom_commands() {
     if [ ! -f "$CUSTOM_COMMANDS_CONFIG" ]; then
         echo "No custom commands configuration found"
         return
     fi
 
-    # Check if file has any actual commands (not just comments/empty lines)
     if ! grep -qv '^[[:space:]]*\(#.*\)\?$' "$CUSTOM_COMMANDS_CONFIG"; then
         echo "No custom commands to execute"
         return
@@ -405,6 +831,18 @@ edit_custom_commands() {
     $editor "$CUSTOM_COMMANDS_CONFIG"
 }
 
+edit_config_file() {
+    local config_file="$1"
+    local editor="${EDITOR:-nano}"
+
+    if [ ! -f "$config_file" ]; then
+        init_config
+    fi
+
+    echo "Opening $(basename "$config_file") in $editor..."
+    $editor "$config_file"
+}
+
 install_packages() {
     local packages
     packages=$(read_config "$PACKAGES_CONFIG")
@@ -532,6 +970,83 @@ sync_config() {
         backup_repos
     fi
 
+    echo "Updating services configuration..."
+    local temp_services
+    temp_services=$(mktemp)
+    {
+        echo "# Generated on $(date)"
+        echo "# Systemd services"
+        echo ""
+    } >"$temp_services"
+    list_enabled_services >>"$temp_services"
+    if [ -s "$temp_services" ]; then
+        mv "$temp_services" "$SERVICES_CONFIG"
+    else
+        rm -f "$temp_services"
+    fi
+
+    backup_firewall
+
+    echo "Updating Python packages configuration..."
+    local temp_python
+    temp_python=$(mktemp)
+    {
+        echo "# Generated on $(date)"
+        echo "# Python packages"
+        echo ""
+    } >"$temp_python"
+    list_python_packages >>"$temp_python"
+    if [ -s "$temp_python" ]; then
+        mv "$temp_python" "$PYTHON_CONFIG"
+    else
+        rm -f "$temp_python"
+    fi
+
+    echo "Updating Node packages configuration..."
+    local temp_node
+    temp_node=$(mktemp)
+    {
+        echo "# Generated on $(date)"
+        echo "# Node packages"
+        echo ""
+    } >"$temp_node"
+    list_node_packages >>"$temp_node"
+    if [ -s "$temp_node" ]; then
+        mv "$temp_node" "$NODE_CONFIG"
+    else
+        rm -f "$temp_node"
+    fi
+
+    echo "Updating Cargo packages configuration..."
+    local temp_cargo
+    temp_cargo=$(mktemp)
+    {
+        echo "# Generated on $(date)"
+        echo "# Cargo packages"
+        echo ""
+    } >"$temp_cargo"
+    list_cargo_packages >>"$temp_cargo"
+    if [ -s "$temp_cargo" ]; then
+        mv "$temp_cargo" "$CARGO_CONFIG"
+    else
+        rm -f "$temp_cargo"
+    fi
+
+    echo "Updating groups configuration..."
+    local temp_groups
+    temp_groups=$(mktemp)
+    {
+        echo "# Generated on $(date)"
+        echo "# User groups"
+        echo ""
+    } >"$temp_groups"
+    list_user_groups >>"$temp_groups"
+    if [ -s "$temp_groups" ]; then
+        mv "$temp_groups" "$GROUPS_CONFIG"
+    else
+        rm -f "$temp_groups"
+    fi
+
     backup_dconf
 
     echo "Configuration synchronized"
@@ -544,55 +1059,97 @@ restore_system() {
     echo ""
 
     # Step 1: System Update
-    echo "[1/7] System Update & Upgrade"
+    echo "[1/12] System Update & Upgrade"
     echo "---------------------------------"
     system_update
     echo ""
 
     # Step 2: Custom Commands
-    echo "[2/7] Custom Commands"
+    echo "[2/12] Custom Commands"
     echo "---------------------------------"
     run_custom_commands
     echo ""
 
     # Step 3: Repositories (Fedora only)
     if [ "$DISTRO" = "fedora" ]; then
-        echo "[3/7] Adding Repositories"
+        echo "[3/12] Adding Repositories"
         echo "---------------------------------"
         install_repos
         echo ""
     else
-        echo "[3/7] Repositories (Skipped - Not Fedora)"
+        echo "[3/12] Repositories (Skipped - Not Fedora)"
         echo "---------------------------------"
         echo ""
     fi
 
     # Step 4: System Packages
-    echo "[4/7] Installing System Packages"
+    echo "[4/12] Installing System Packages"
     echo "---------------------------------"
     install_packages
     echo ""
 
     # Step 5: Flatpaks
-    echo "[5/7] Installing Flatpaks"
+    echo "[5/12] Installing Flatpaks"
     echo "---------------------------------"
     install_flatpaks
     echo ""
 
-    # Step 6: GNOME Extensions (if GNOME desktop)
+    # Step 6: Python Packages
+    echo "[6/12] Installing Python Packages"
+    echo "---------------------------------"
+    install_python_packages
+    echo ""
+
+    # Step 7: Node Packages
+    echo "[7/12] Installing Node Packages"
+    echo "---------------------------------"
+    install_node_packages
+    echo ""
+
+    # Step 8: Cargo Packages
+    echo "[8/12] Installing Cargo Packages"
+    echo "---------------------------------"
+    install_cargo_packages
+    echo ""
+
+    # Step 9: GNOME Extensions (if GNOME desktop)
     if [[ "$DESKTOP" == *"gnome"* ]]; then
-        echo "[6/7] Installing GNOME Extensions"
+        echo "[9/12] Installing GNOME Extensions"
         echo "---------------------------------"
         install_extensions
         echo ""
     else
-        echo "[6/7] GNOME Extensions (Skipped - Not GNOME Desktop)"
+        echo "[9/12] GNOME Extensions (Skipped - Not GNOME Desktop)"
         echo "---------------------------------"
         echo ""
     fi
 
-    # Step 7: dconf Settings
-    echo "[7/7] Restoring dconf Settings"
+    # Step 10: Services Configuration
+    echo "[10/12] Configuring Services"
+    echo "---------------------------------"
+    configure_services
+    echo ""
+
+    # Step 11: Firewall Configuration
+    echo "[11/12] Configuring Firewall"
+    echo "---------------------------------"
+    configure_firewall
+    echo ""
+
+    # Step 12: User Groups
+    echo "[12/12] Configuring User Groups"
+    echo "---------------------------------"
+    configure_groups
+    echo ""
+
+    # Step 13: Container Setup
+    echo "[13/12] Setting up Containers"
+    echo "---------------------------------"
+    setup_containers
+    echo ""
+
+    # Step 14: dconf Settings
+    echo "[14/12] Restoring dconf Settings"
     echo "---------------------------------"
     restore_dconf
     echo ""
@@ -601,10 +1158,12 @@ restore_system() {
     echo "System Restoration Complete!"
     echo "========================================="
     echo ""
-    echo "You may need to:"
-    echo "  - Log out and log back in for some changes to take effect"
+    echo "IMPORTANT: You may need to:"
+    echo "  - Log out and log back in for group changes to take effect"
     echo "  - Manually install GNOME extensions from extensions.gnome.org"
     echo "  - Reboot the system if kernel or driver updates were installed"
+    echo "  - Start Docker/Podman services: sudo systemctl start docker"
+    echo "  - Configure running containers manually (check containers.conf)"
 }
 
 show_status() {
@@ -616,14 +1175,24 @@ show_status() {
     echo "Desktop environment: $DESKTOP"
     echo ""
 
-    echo "Packages in config: $(read_config "$PACKAGES_CONFIG" | wc -l)"
-    echo "Flatpaks in config: $(read_config "$FLATPAKS_CONFIG" | wc -l)"
-    echo "Extensions in config: $(read_config "$EXTENSIONS_CONFIG" | wc -l)"
+    echo "Configuration Files:"
+    echo "  Packages: $(read_config "$PACKAGES_CONFIG" | wc -l)"
+    echo "  Flatpaks: $(read_config "$FLATPAKS_CONFIG" | wc -l)"
+    echo "  Extensions: $(read_config "$EXTENSIONS_CONFIG" | wc -l)"
     if [ "$DISTRO" = "fedora" ]; then
-        echo "Repositories in config: $(read_config "$REPOS_CONFIG" | wc -l)"
+        echo "  Repositories: $(read_config "$REPOS_CONFIG" | wc -l)"
     fi
-    echo "Custom commands exist: $([ -f "$CUSTOM_COMMANDS_CONFIG" ] && echo "Yes" || echo "No")"
-    echo "dconf backup exists: $([ -f "$DCONF_BACKUP" ] && echo "Yes" || echo "No")"
+    echo "  Services: $(read_config "$SERVICES_CONFIG" | wc -l)"
+    echo "  Firewall rules: $(read_config "$FIREWALL_CONFIG" | wc -l)"
+    echo "  Python packages: $(read_config "$PYTHON_CONFIG" | wc -l)"
+    echo "  Node packages: $(read_config "$NODE_CONFIG" | wc -l)"
+    echo "  Cargo packages: $(read_config "$CARGO_CONFIG" | wc -l)"
+    echo "  User groups: $(read_config "$GROUPS_CONFIG" | wc -l)"
+    echo "  Containers: $(read_config "$CONTAINERS_CONFIG" | wc -l)"
+    echo ""
+    echo "Backups:"
+    echo "  Custom commands: $([ -f "$CUSTOM_COMMANDS_CONFIG" ] && echo "Yes" || echo "No")"
+    echo "  dconf backup: $([ -f "$DCONF_BACKUP" ] && echo "Yes" || echo "No")"
 }
 
 interactive_menu() {
@@ -640,19 +1209,40 @@ Add packages to config
 Add flatpaks to config
 Add GNOME extensions to config
 Add repositories to config (Fedora)
+Add services to config
+Add Python packages to config
+Add Node packages to config
+Add Cargo packages to config
+Add user groups to config
 Edit custom commands
+Edit services config
+Edit firewall config
+Edit containers config
 Remove packages from config
 Remove flatpaks from config
 Remove extensions from config
 Remove repositories from config (Fedora)
+Remove services from config
+Remove Python packages from config
+Remove Node packages from config
+Remove Cargo packages from config
+Remove user groups from config
 Sync current system to config
 Backup dconf settings
+Backup firewall rules
 System update & upgrade
 Restore entire system (Full)
 Install packages
 Install flatpaks
 Install extensions
 Install repositories (Fedora)
+Install Python packages
+Install Node packages
+Install Cargo packages
+Configure services
+Configure firewall
+Configure user groups
+Setup containers
 Run custom commands
 Restore dconf settings
 Show status
@@ -684,6 +1274,33 @@ EOF
     "Add repositories to config (Fedora)")
         interactive_package_select "$REPOS_CONFIG" list_enabled_repos "Select repositories to add"
         ;;
+    "Add services to config")
+        interactive_package_select "$SERVICES_CONFIG" list_enabled_services "Select services to add"
+        ;;
+    "Add Python packages to config")
+        interactive_package_select "$PYTHON_CONFIG" list_python_packages "Select Python packages to add"
+        ;;
+    "Add Node packages to config")
+        interactive_package_select "$NODE_CONFIG" list_node_packages "Select Node packages to add"
+        ;;
+    "Add Cargo packages to config")
+        interactive_package_select "$CARGO_CONFIG" list_cargo_packages "Select Cargo packages to add"
+        ;;
+    "Add user groups to config")
+        interactive_package_select "$GROUPS_CONFIG" list_user_groups "Select groups to add"
+        ;;
+    "Edit custom commands")
+        edit_custom_commands
+        ;;
+    "Edit services config")
+        edit_config_file "$SERVICES_CONFIG"
+        ;;
+    "Edit firewall config")
+        edit_config_file "$FIREWALL_CONFIG"
+        ;;
+    "Edit containers config")
+        edit_config_file "$CONTAINERS_CONFIG"
+        ;;
     "Remove packages from config")
         interactive_remove_from_config "$PACKAGES_CONFIG" "Remove packages"
         ;;
@@ -696,8 +1313,35 @@ EOF
     "Remove repositories from config (Fedora)")
         interactive_remove_from_config "$REPOS_CONFIG" "Remove repositories"
         ;;
-    "Edit custom commands")
-        edit_custom_commands
+    "Remove services from config")
+        interactive_remove_from_config "$SERVICES_CONFIG" "Remove services"
+        ;;
+    "Remove Python packages from config")
+        interactive_remove_from_config "$PYTHON_CONFIG" "Remove Python packages"
+        ;;
+    "Remove Node packages from config")
+        interactive_remove_from_config "$NODE_CONFIG" "Remove Node packages"
+        ;;
+    "Remove Cargo packages from config")
+        interactive_remove_from_config "$CARGO_CONFIG" "Remove Cargo packages"
+        ;;
+    "Remove user groups from config")
+        interactive_remove_from_config "$GROUPS_CONFIG" "Remove groups"
+        ;;
+    "Sync current system to config")
+        sync_config
+        ;;
+    "Backup dconf settings")
+        backup_dconf
+        ;;
+    "Backup firewall rules")
+        backup_firewall
+        ;;
+    "System update & upgrade")
+        system_update
+        ;;
+    "Restore entire system (Full)")
+        restore_system
         ;;
     "Install packages")
         install_packages
@@ -711,23 +1355,32 @@ EOF
     "Install repositories (Fedora)")
         install_repos
         ;;
+    "Install Python packages")
+        install_python_packages
+        ;;
+    "Install Node packages")
+        install_node_packages
+        ;;
+    "Install Cargo packages")
+        install_cargo_packages
+        ;;
+    "Configure services")
+        configure_services
+        ;;
+    "Configure firewall")
+        configure_firewall
+        ;;
+    "Configure user groups")
+        configure_groups
+        ;;
+    "Setup containers")
+        setup_containers
+        ;;
     "Run custom commands")
         run_custom_commands
         ;;
-    "Backup dconf settings")
-        backup_dconf
-        ;;
     "Restore dconf settings")
         restore_dconf
-        ;;
-    "Sync current system to config")
-        sync_config
-        ;;
-    "System update & upgrade")
-        system_update
-        ;;
-    "Restore entire system (Full)")
-        restore_system
         ;;
     "Show status")
         show_status
@@ -747,69 +1400,99 @@ EOF
 show_help() {
     show_version
     cat <<EOF
-Manage system packages, flatpaks, GNOME extensions, repositories, and settings
+Manage system configuration declaratively
 
 USAGE:
     sysconfig-manager [COMMAND]
 
 COMMANDS:
-    init                Initialize configuration directory
-    add-packages        Interactively add packages to config
-    add-flatpaks        Interactively add flatpaks to config
-    add-extensions      Interactively add extensions to config
-    add-repos           Interactively add repositories to config (Fedora)
-    remove-packages     Interactively remove packages from config
-    remove-flatpaks     Interactively remove flatpaks from config
-    remove-extensions   Interactively remove extensions from config
-    remove-repos        Interactively remove repositories from config (Fedora)
-    edit-commands       Edit custom commands script
-    install-packages    Install packages from config
-    install-flatpaks    Install flatpaks from config
-    install-extensions  Install extensions from config
-    install-repos       Install repositories from config (Fedora)
-    run-commands        Run custom commands
-    backup-dconf        Backup dconf settings
-    restore-dconf       Restore dconf settings
-    backup-repos        Backup repository configuration (Fedora)
-    sync                Sync current system state to config
-    update              System update & upgrade
-    restore             Restore entire system from config (recommended)
-    status              Show configuration status
-    help                Show this help message
+    init        Initialize configuration directory
+    restore     Restore entire system from config (full restoration)
+    version     Show version information
+    help        Show this help message
+    (no args)   Show interactive fzf menu (recommended)
 
-    (no command)        Show interactive menu
+INTERACTIVE MENU:
+    The main way to use this tool is through the interactive fzf menu.
+    Simply run: sysconfig-manager
+
+    The menu provides all functionality organized into categories:
+      - Initialize and sync configuration
+      - Add items to config (packages, services, etc.)
+      - Remove items from config
+      - Backup and restore operations
+      - Edit configuration files
+      - Install and configure individual components
 
 RESTORE ORDER (Full System Restore):
-    1. System update & upgrade
-    2. Execute custom commands
-    3. Add Copr/third-party repositories (Fedora)
-    4. Install system packages
-    5. Install flatpaks
-    6. Install GNOME extensions (if GNOME desktop)
-    7. Restore dconf settings
+    1.  System update & upgrade
+    2.  Execute custom commands
+    3.  Add Copr/third-party repositories (Fedora)
+    4.  Install system packages
+    5.  Install flatpaks
+    6.  Install Python packages
+    7.  Install Node packages
+    8.  Install Cargo packages
+    9.  Install GNOME extensions (if GNOME desktop)
+    10. Configure systemd services
+    11. Configure firewall rules
+    12. Configure user groups
+    13. Setup containers
+    14. Restore dconf settings
 
-CONFIGURATION:
+CONFIGURATION FILES:
     Config directory: $CONFIG_DIR
-    Packages config:  $PACKAGES_CONFIG
-    Flatpaks config:  $FLATPAKS_CONFIG
-    Extensions:       $EXTENSIONS_CONFIG
-    Repositories:     $REPOS_CONFIG
-    Custom commands:  $CUSTOM_COMMANDS_CONFIG
-    dconf backup:     $DCONF_BACKUP
 
-EXAMPLES:
-    sysconfig-manager                    # Interactive menu
-    sysconfig-manager init               # Initialize config
-    sysconfig-manager add-packages       # Add packages interactively
-    sysconfig-manager edit-commands      # Edit custom commands
-    sysconfig-manager sync               # Backup current system state
-    sysconfig-manager restore            # Full system restore
+    Core:
+      packages.conf         System packages (dnf/apt)
+      flatpaks.conf         Flatpak applications
+      gnome-extensions.conf GNOME extensions
+      repos.conf            Repositories (Fedora)
+      custom-commands.sh    Custom setup script
+      dconf-settings.ini    Desktop settings backup
 
-REPOSITORY FORMAT (repos.conf):
-    copr:USER/PROJECT                    # Copr repository
-    rpmfusion:free                       # RPM Fusion Free
-    rpmfusion:nonfree                    # RPM Fusion Non-free
-    fedora-third-party:REPO_NAME         # Other third-party repo
+    Services & Security:
+      services.conf         Systemd services
+      firewall.conf         Firewall rules
+      groups.conf           User groups
+
+    Development:
+      python-packages.conf  Python packages (pip)
+      node-packages.conf    Node packages (npm)
+      cargo-packages.conf   Rust packages (cargo)
+      containers.conf       Docker/Podman setup
+
+TYPICAL WORKFLOW:
+    # First time setup on current system
+    sysconfig-manager init
+    sysconfig-manager              # Use interactive menu to sync
+
+    # On a fresh system (restore everything)
+    sysconfig-manager restore
+
+    # Daily usage (interactive menu)
+    sysconfig-manager
+
+CONFIGURATION FORMATS:
+
+    services.conf:
+      docker.service:system:enabled
+      sshd.service:system:enabled
+      bluetooth.service:system:disabled
+
+    firewall.conf (firewalld):
+      service:ssh
+      service:http
+      port:8080/tcp
+
+    firewall.conf (ufw):
+      allow:22/tcp
+      allow:80/tcp
+
+    containers.conf:
+      docker-image:postgres:latest
+      docker-image:redis
+      podman-image:nginx:alpine
 
 EOF
 }
@@ -824,88 +1507,8 @@ main() {
     init)
         init_config
         ;;
-    add-packages)
-        interactive_package_select "$PACKAGES_CONFIG" list_installed_packages "Select packages to add"
-        ;;
-    add-flatpaks)
-        interactive_package_select "$FLATPAKS_CONFIG" list_installed_flatpaks "Select flatpaks to add"
-        ;;
-    add-extensions)
-        interactive_package_select "$EXTENSIONS_CONFIG" list_installed_extensions "Select extensions to add"
-        ;;
-    add-repos)
-        if [ "$DISTRO" = "fedora" ]; then
-            interactive_package_select "$REPOS_CONFIG" list_enabled_repos "Select repositories to add"
-        else
-            echo "Repository management only supported on Fedora"
-            exit 1
-        fi
-        ;;
-    remove-packages)
-        interactive_remove_from_config "$PACKAGES_CONFIG" "Remove packages"
-        ;;
-    remove-flatpaks)
-        interactive_remove_from_config "$FLATPAKS_CONFIG" "Remove flatpaks"
-        ;;
-    remove-extensions)
-        interactive_remove_from_config "$EXTENSIONS_CONFIG" "Remove extensions"
-        ;;
-    remove-repos)
-        if [ "$DISTRO" = "fedora" ]; then
-            interactive_remove_from_config "$REPOS_CONFIG" "Remove repositories"
-        else
-            echo "Repository management only supported on Fedora"
-            exit 1
-        fi
-        ;;
-    edit-commands)
-        edit_custom_commands
-        ;;
-    install-packages)
-        install_packages
-        ;;
-    install-flatpaks)
-        install_flatpaks
-        ;;
-    install-extensions)
-        install_extensions
-        ;;
-    install-repos)
-        if [ "$DISTRO" = "fedora" ]; then
-            install_repos
-        else
-            echo "Repository installation only supported on Fedora"
-            exit 1
-        fi
-        ;;
-    run-commands)
-        run_custom_commands
-        ;;
-    backup-dconf)
-        backup_dconf
-        ;;
-    restore-dconf)
-        restore_dconf
-        ;;
-    backup-repos)
-        if [ "$DISTRO" = "fedora" ]; then
-            backup_repos
-        else
-            echo "Repository backup only supported on Fedora"
-            exit 1
-        fi
-        ;;
-    sync)
-        sync_config
-        ;;
-    update)
-        system_update
-        ;;
     restore)
         restore_system
-        ;;
-    status)
-        show_status
         ;;
     help | "-help" | "--help" | "-h")
         show_help
@@ -913,12 +1516,18 @@ main() {
     version | "--version")
         show_version
         ;;
-    menu)
+    menu | "")
         interactive_menu
         ;;
     *)
         echo "Unknown command: $1"
-        echo "Run 'sysconfig-manager help' for usage information"
+        echo ""
+        echo "Available commands:"
+        echo "  sysconfig-manager          - Interactive menu (default)"
+        echo "  sysconfig-manager init     - Initialize configuration"
+        echo "  sysconfig-manager restore  - Full system restore"
+        echo "  sysconfig-manager version  - Show version"
+        echo "  sysconfig-manager help     - Show help"
         exit 1
         ;;
     esac
