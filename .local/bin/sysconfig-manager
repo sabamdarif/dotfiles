@@ -2,11 +2,13 @@
 
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="1.0.5"
 CONFIG_DIR="${HOME}/.config/sysconfig"
 PACKAGES_CONFIG="${CONFIG_DIR}/packages.conf"
 FLATPAKS_CONFIG="${CONFIG_DIR}/flatpaks.conf"
 EXTENSIONS_CONFIG="${CONFIG_DIR}/gnome-extensions.conf"
+REPOS_CONFIG="${CONFIG_DIR}/repos.conf"
+CUSTOM_COMMANDS_CONFIG="${CONFIG_DIR}/custom-commands.sh"
 DCONF_BACKUP="${CONFIG_DIR}/dconf-settings.ini"
 
 detect_distro() {
@@ -23,24 +25,36 @@ DISTRO=$(detect_distro)
 
 get_package_manager() {
     case "$DISTRO" in
-        fedora)
-            echo "dnf"
-            ;;
-        ubuntu|debian)
-            echo "apt"
-            ;;
-        *)
-            echo "unknown"
-            ;;
+    fedora)
+        echo "dnf"
+        ;;
+    ubuntu | debian)
+        echo "apt"
+        ;;
+    *)
+        echo "unknown"
+        ;;
     esac
 }
 
 PKG_MANAGER=$(get_package_manager)
 
+detect_desktop() {
+    if [ -n "${XDG_CURRENT_DESKTOP:-}" ]; then
+        echo "$XDG_CURRENT_DESKTOP" | tr '[:upper:]' '[:lower:]'
+    elif command -v gnome-shell &>/dev/null; then
+        echo "gnome"
+    else
+        echo "unknown"
+    fi
+}
+
+DESKTOP=$(detect_desktop)
+
 init_config() {
     mkdir -p "$CONFIG_DIR"
 
-    [ ! -f "$PACKAGES_CONFIG" ] && cat > "$PACKAGES_CONFIG" << 'EOF'
+    [ ! -f "$PACKAGES_CONFIG" ] && cat >"$PACKAGES_CONFIG" <<'EOF'
 # System packages to install (one per line)
 # Lines starting with # are comments
 # Example:
@@ -50,7 +64,7 @@ init_config() {
 
 EOF
 
-    [ ! -f "$FLATPAKS_CONFIG" ] && cat > "$FLATPAKS_CONFIG" << 'EOF'
+    [ ! -f "$FLATPAKS_CONFIG" ] && cat >"$FLATPAKS_CONFIG" <<'EOF'
 # Flatpak applications to install (one per line)
 # Use full application ID
 # Example:
@@ -59,13 +73,50 @@ EOF
 
 EOF
 
-    [ ! -f "$EXTENSIONS_CONFIG" ] && cat > "$EXTENSIONS_CONFIG" << 'EOF'
+    [ ! -f "$EXTENSIONS_CONFIG" ] && cat >"$EXTENSIONS_CONFIG" <<'EOF'
 # GNOME extensions to install (UUID@domain format)
 # Example:
 # dash-to-dock@micxgx.gmail.com
 # appindicatorsupport@rgcjonas.gmail.com
 
 EOF
+
+    [ ! -f "$REPOS_CONFIG" ] && cat >"$REPOS_CONFIG" <<'EOF'
+# Repositories configuration
+# Format: TYPE:REPO_IDENTIFIER
+# 
+# For Fedora Copr repos use:
+#   copr:USER/PROJECT
+# 
+# For Fedora third-party repos use:
+#   fedora-third-party:REPO_NAME
+#
+# For RPM Fusion (Fedora):
+#   rpmfusion:free
+#   rpmfusion:nonfree
+#
+# Examples:
+# copr:phracek/PyCharm
+# rpmfusion:free
+# rpmfusion:nonfree
+
+EOF
+
+    [ ! -f "$CUSTOM_COMMANDS_CONFIG" ] && cat >"$CUSTOM_COMMANDS_CONFIG" <<'EOF'
+#!/usr/bin/env bash
+# Custom commands to run during system restore
+# These commands will be executed after system update but before package installation
+# 
+# Examples:
+# echo "Running custom setup..."
+# mkdir -p ~/.local/bin
+# curl -o ~/.local/bin/some-tool https://example.com/tool
+# chmod +x ~/.local/bin/some-tool
+
+# Add your custom commands below:
+
+EOF
+    chmod +x "$CUSTOM_COMMANDS_CONFIG"
 
     echo "Configuration initialized at $CONFIG_DIR"
 }
@@ -78,16 +129,16 @@ read_config() {
 
 list_installed_packages() {
     case "$PKG_MANAGER" in
-        dnf)
-            rpm -qa --queryformat '%{NAME}\n' 2>/dev/null | sort -u
-            ;;
-        apt)
-            dpkg-query -W -f='${Package}\n' 2>/dev/null
-            ;;
-        *)
-            echo "Unsupported package manager" >&2
-            return 1
-            ;;
+    dnf)
+        rpm -qa --queryformat '%{NAME}\n' 2>/dev/null | sort -u
+        ;;
+    apt)
+        dpkg-query -W -f='${Package}\n' 2>/dev/null
+        ;;
+    *)
+        echo "Unsupported package manager" >&2
+        return 1
+        ;;
     esac
 }
 
@@ -99,6 +150,155 @@ list_installed_extensions() {
     if command -v gnome-extensions &>/dev/null; then
         gnome-extensions list 2>/dev/null || true
     fi
+}
+
+list_enabled_repos() {
+    if [ "$DISTRO" != "fedora" ]; then
+        echo "Repository backup only supported on Fedora" >&2
+        return 1
+    fi
+
+    # List Copr repos
+    if [ -d /etc/yum.repos.d ]; then
+        for repo_file in /etc/yum.repos.d/_copr:*.repo; do
+            [ -f "$repo_file" ] || continue
+            local repo_name
+            repo_name=$(basename "$repo_file" .repo)
+            # Extract user/project from _copr:user:project.repo format
+            repo_name=${repo_name#_copr:}
+            repo_name=${repo_name//://}
+            echo "copr:$repo_name"
+        done
+    fi
+
+    # Check for RPM Fusion
+    if dnf repolist enabled 2>/dev/null | grep -q "rpmfusion-free"; then
+        echo "rpmfusion:free"
+    fi
+    if dnf repolist enabled 2>/dev/null | grep -q "rpmfusion-nonfree"; then
+        echo "rpmfusion:nonfree"
+    fi
+
+    # List other third-party repos (excluding copr and rpmfusion)
+    dnf repolist enabled 2>/dev/null | tail -n +2 | awk '{print $1}' | while read -r repo; do
+        case "$repo" in
+        *copr* | *rpmfusion* | fedora* | updates* | rawhide*)
+            # Skip Copr, RPM Fusion, and default Fedora repos
+            ;;
+        *)
+            echo "fedora-third-party:$repo"
+            ;;
+        esac
+    done
+}
+
+backup_repos() {
+    if [ "$DISTRO" != "fedora" ]; then
+        echo "Repository backup only supported on Fedora"
+        return
+    fi
+
+    echo "Backing up repository configuration..."
+    local temp_repos
+    temp_repos=$(mktemp)
+    {
+        echo "# Generated on $(date)"
+        echo "# Repository configuration"
+        echo ""
+    } >"$temp_repos"
+    list_enabled_repos >>"$temp_repos" 2>/dev/null || true
+    mv "$temp_repos" "$REPOS_CONFIG"
+    echo "Repositories backed up to $REPOS_CONFIG"
+}
+
+install_repo() {
+    local repo_line="$1"
+    local repo_type="${repo_line%%:*}"
+    local repo_id="${repo_line#*:}"
+
+    case "$repo_type" in
+    copr)
+        echo "  Enabling Copr repo: $repo_id"
+        sudo dnf copr enable -y "$repo_id" 2>/dev/null || echo "    Failed to enable $repo_id"
+        ;;
+    rpmfusion)
+        echo "  Enabling RPM Fusion: $repo_id"
+        if [ "$repo_id" = "free" ]; then
+            sudo dnf install -y \
+                "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
+                2>/dev/null || echo "    Failed to enable RPM Fusion Free"
+        elif [ "$repo_id" = "nonfree" ]; then
+            sudo dnf install -y \
+                "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm" \
+                2>/dev/null || echo "    Failed to enable RPM Fusion Non-free"
+        fi
+        ;;
+    fedora-third-party)
+        echo "  Enabling third-party repo: $repo_id"
+        sudo dnf config-manager --set-enabled "$repo_id" 2>/dev/null || echo "    Failed to enable $repo_id"
+        ;;
+    *)
+        echo "  Unknown repository type: $repo_type"
+        ;;
+    esac
+}
+
+install_repos() {
+    if [ "$DISTRO" != "fedora" ]; then
+        echo "Repository installation only supported on Fedora"
+        return
+    fi
+
+    local repos
+    repos=$(read_config "$REPOS_CONFIG")
+
+    if [ -z "$repos" ]; then
+        echo "No repositories to install"
+        return
+    fi
+
+    echo "Installing repositories..."
+    while IFS= read -r repo; do
+        install_repo "$repo"
+    done <<<"$repos"
+}
+
+run_custom_commands() {
+    if [ ! -f "$CUSTOM_COMMANDS_CONFIG" ]; then
+        echo "No custom commands configuration found"
+        return
+    fi
+
+    # Check if file has any actual commands (not just comments/empty lines)
+    if ! grep -qv '^[[:space:]]*\(#.*\)\?$' "$CUSTOM_COMMANDS_CONFIG"; then
+        echo "No custom commands to execute"
+        return
+    fi
+
+    echo "Executing custom commands..."
+    if bash "$CUSTOM_COMMANDS_CONFIG"; then
+        echo "Custom commands completed successfully"
+    else
+        echo "Warning: Some custom commands failed" >&2
+    fi
+}
+
+system_update() {
+    echo "Updating system packages..."
+    case "$PKG_MANAGER" in
+    dnf)
+        sudo dnf upgrade -y --refresh
+        ;;
+    apt)
+        sudo apt update
+        sudo apt upgrade -y
+        ;;
+    *)
+        echo "Unsupported package manager for updates"
+        return 1
+        ;;
+    esac
+    echo "System update complete"
 }
 
 interactive_package_select() {
@@ -117,7 +317,7 @@ interactive_package_select() {
     local filtered_list
     filtered_list=$(mktemp)
 
-    $list_command > "$temp_list" 2>&1
+    $list_command >"$temp_list" 2>&1
 
     local current_items
     current_items=$(read_config "$config_file")
@@ -125,15 +325,15 @@ interactive_package_select() {
     if [ -n "$current_items" ]; then
         local temp_current
         temp_current=$(mktemp)
-        echo "$current_items" > "$temp_current"
-        grep -vxFf "$temp_current" "$temp_list" > "$filtered_list" || true
+        echo "$current_items" >"$temp_current"
+        grep -vxFf "$temp_current" "$temp_list" >"$filtered_list" || true
         rm -f "$temp_current"
     else
         cp "$temp_list" "$filtered_list"
     fi
 
     local item_count
-    item_count=$(wc -l < "$filtered_list")
+    item_count=$(wc -l <"$filtered_list")
 
     if [ "$item_count" -eq 0 ]; then
         echo "No new items to add (all items already in config or none found)" >&2
@@ -145,15 +345,15 @@ interactive_package_select() {
 
     local selected
     selected=$(cat "$filtered_list" | fzf --multi --prompt="$title > " \
-            --preview="echo {}" \
-            --preview-window=up:1 \
-            --bind='tab:toggle+down' \
+        --preview="echo {}" \
+        --preview-window=up:1 \
+        --bind='tab:toggle+down' \
         --header='TAB to select, ENTER to confirm')
 
     rm -f "$temp_list" "$filtered_list"
 
     if [ -n "$selected" ]; then
-        echo "$selected" >> "$config_file"
+        echo "$selected" >>"$config_file"
         echo "Added $(echo "$selected" | wc -l) item(s) to configuration"
     fi
 }
@@ -177,7 +377,7 @@ interactive_remove_from_config() {
 
     local selected
     selected=$(echo "$current_items" | fzf --multi --prompt="$title (Remove) > " \
-            --bind='tab:toggle+down' \
+        --bind='tab:toggle+down' \
         --header='TAB to select, ENTER to confirm removal')
 
     if [ -n "$selected" ]; then
@@ -187,11 +387,22 @@ interactive_remove_from_config() {
 
         while IFS= read -r item; do
             sed -i "\|^${item}$|d" "$temp_file"
-        done <<< "$selected"
+        done <<<"$selected"
 
         mv "$temp_file" "$config_file"
         echo "Removed $(echo "$selected" | wc -l) item(s) from configuration"
     fi
+}
+
+edit_custom_commands() {
+    local editor="${EDITOR:-nano}"
+
+    if [ ! -f "$CUSTOM_COMMANDS_CONFIG" ]; then
+        init_config
+    fi
+
+    echo "Opening custom commands in $editor..."
+    $editor "$CUSTOM_COMMANDS_CONFIG"
 }
 
 install_packages() {
@@ -205,19 +416,18 @@ install_packages() {
 
     echo "Installing system packages..."
     case "$PKG_MANAGER" in
-        dnf)
-            # shellcheck disable=SC2086
-            sudo dnf install -y $packages
-            ;;
-        apt)
-            sudo apt update
-            # shellcheck disable=SC2086
-            sudo apt install -y $packages
-            ;;
-        *)
-            echo "Unsupported package manager"
-            return 1
-            ;;
+    dnf)
+        # shellcheck disable=SC2086
+        sudo dnf install -y $packages
+        ;;
+    apt)
+        # shellcheck disable=SC2086
+        sudo apt install -y $packages
+        ;;
+    *)
+        echo "Unsupported package manager"
+        return 1
+        ;;
     esac
 }
 
@@ -233,7 +443,7 @@ install_flatpaks() {
     echo "Installing flatpaks..."
     while IFS= read -r app; do
         flatpak install -y flathub "$app" 2>/dev/null || echo "Failed to install $app"
-    done <<< "$flatpaks"
+    done <<<"$flatpaks"
 }
 
 install_extensions() {
@@ -254,12 +464,12 @@ install_extensions() {
     echo "Note: Manual installation via extensions.gnome.org may be required"
     while IFS= read -r ext; do
         echo "  - $ext"
-    done <<< "$extensions"
+    done <<<"$extensions"
 }
 
 backup_dconf() {
     echo "Backing up dconf settings..."
-    dconf dump / > "$DCONF_BACKUP"
+    dconf dump / >"$DCONF_BACKUP"
     echo "dconf settings backed up to $DCONF_BACKUP"
 }
 
@@ -270,7 +480,7 @@ restore_dconf() {
     fi
 
     echo "Restoring dconf settings..."
-    dconf load / < "$DCONF_BACKUP"
+    dconf load / <"$DCONF_BACKUP"
     echo "dconf settings restored"
 }
 
@@ -284,8 +494,8 @@ sync_config() {
         echo "# Generated on $(date)"
         echo "# System packages"
         echo ""
-    } > "$temp_packages"
-    list_installed_packages >> "$temp_packages"
+    } >"$temp_packages"
+    list_installed_packages >>"$temp_packages"
     mv "$temp_packages" "$PACKAGES_CONFIG"
 
     echo "Updating flatpaks configuration..."
@@ -295,8 +505,8 @@ sync_config() {
         echo "# Generated on $(date)"
         echo "# Flatpak applications"
         echo ""
-    } > "$temp_flatpaks"
-    list_installed_flatpaks >> "$temp_flatpaks"
+    } >"$temp_flatpaks"
+    list_installed_flatpaks >>"$temp_flatpaks"
     if [ -s "$temp_flatpaks" ]; then
         mv "$temp_flatpaks" "$FLATPAKS_CONFIG"
     else
@@ -310,12 +520,16 @@ sync_config() {
         echo "# Generated on $(date)"
         echo "# GNOME extensions"
         echo ""
-    } > "$temp_extensions"
-    list_installed_extensions >> "$temp_extensions"
+    } >"$temp_extensions"
+    list_installed_extensions >>"$temp_extensions"
     if [ -s "$temp_extensions" ]; then
         mv "$temp_extensions" "$EXTENSIONS_CONFIG"
     else
         rm -f "$temp_extensions"
+    fi
+
+    if [ "$DISTRO" = "fedora" ]; then
+        backup_repos
     fi
 
     backup_dconf
@@ -324,12 +538,73 @@ sync_config() {
 }
 
 restore_system() {
-    echo "Restoring system configuration..."
+    echo "========================================="
+    echo "Starting Full System Restoration"
+    echo "========================================="
+    echo ""
+
+    # Step 1: System Update
+    echo "[1/7] System Update & Upgrade"
+    echo "---------------------------------"
+    system_update
+    echo ""
+
+    # Step 2: Custom Commands
+    echo "[2/7] Custom Commands"
+    echo "---------------------------------"
+    run_custom_commands
+    echo ""
+
+    # Step 3: Repositories (Fedora only)
+    if [ "$DISTRO" = "fedora" ]; then
+        echo "[3/7] Adding Repositories"
+        echo "---------------------------------"
+        install_repos
+        echo ""
+    else
+        echo "[3/7] Repositories (Skipped - Not Fedora)"
+        echo "---------------------------------"
+        echo ""
+    fi
+
+    # Step 4: System Packages
+    echo "[4/7] Installing System Packages"
+    echo "---------------------------------"
     install_packages
+    echo ""
+
+    # Step 5: Flatpaks
+    echo "[5/7] Installing Flatpaks"
+    echo "---------------------------------"
     install_flatpaks
-    install_extensions
+    echo ""
+
+    # Step 6: GNOME Extensions (if GNOME desktop)
+    if [[ "$DESKTOP" == *"gnome"* ]]; then
+        echo "[6/7] Installing GNOME Extensions"
+        echo "---------------------------------"
+        install_extensions
+        echo ""
+    else
+        echo "[6/7] GNOME Extensions (Skipped - Not GNOME Desktop)"
+        echo "---------------------------------"
+        echo ""
+    fi
+
+    # Step 7: dconf Settings
+    echo "[7/7] Restoring dconf Settings"
+    echo "---------------------------------"
     restore_dconf
-    echo "System restoration complete"
+    echo ""
+
+    echo "========================================="
+    echo "System Restoration Complete!"
+    echo "========================================="
+    echo ""
+    echo "You may need to:"
+    echo "  - Log out and log back in for some changes to take effect"
+    echo "  - Manually install GNOME extensions from extensions.gnome.org"
+    echo "  - Reboot the system if kernel or driver updates were installed"
 }
 
 show_status() {
@@ -338,11 +613,16 @@ show_status() {
     echo "Config directory: $CONFIG_DIR"
     echo "Distribution: $DISTRO"
     echo "Package manager: $PKG_MANAGER"
+    echo "Desktop environment: $DESKTOP"
     echo ""
 
     echo "Packages in config: $(read_config "$PACKAGES_CONFIG" | wc -l)"
     echo "Flatpaks in config: $(read_config "$FLATPAKS_CONFIG" | wc -l)"
     echo "Extensions in config: $(read_config "$EXTENSIONS_CONFIG" | wc -l)"
+    if [ "$DISTRO" = "fedora" ]; then
+        echo "Repositories in config: $(read_config "$REPOS_CONFIG" | wc -l)"
+    fi
+    echo "Custom commands exist: $([ -f "$CUSTOM_COMMANDS_CONFIG" ] && echo "Yes" || echo "No")"
     echo "dconf backup exists: $([ -f "$DCONF_BACKUP" ] && echo "Yes" || echo "No")"
 }
 
@@ -352,89 +632,122 @@ interactive_menu() {
         return 1
     fi
 
-    local choice
-    choice=$(cat << 'EOF' | fzf --prompt="Select action > " --height=40% --reverse
+    local menu_items
+    menu_items=$(
+        cat <<'EOF'
 Initialize configuration
 Add packages to config
 Add flatpaks to config
 Add GNOME extensions to config
+Add repositories to config (Fedora)
+Edit custom commands
 Remove packages from config
 Remove flatpaks from config
 Remove extensions from config
+Remove repositories from config (Fedora)
+Sync current system to config
+Backup dconf settings
+System update & upgrade
+Restore entire system (Full)
 Install packages
 Install flatpaks
 Install extensions
-Backup dconf settings
+Install repositories (Fedora)
+Run custom commands
 Restore dconf settings
-Sync current system to config
-Restore entire system
 Show status
 Exit
 EOF
     )
 
+    # Filter menu based on distro
+    if [ "$DISTRO" != "fedora" ]; then
+        menu_items=$(echo "$menu_items" | grep -v "(Fedora)")
+    fi
+
+    local choice
+    choice=$(echo "$menu_items" | fzf --prompt="Select action > " --height=40% --reverse)
+
     case "$choice" in
-        "Initialize configuration")
-            init_config
-            ;;
-        "Add packages to config")
-            interactive_package_select "$PACKAGES_CONFIG" list_installed_packages "Select packages to add"
-            ;;
-        "Add flatpaks to config")
-            interactive_package_select "$FLATPAKS_CONFIG" list_installed_flatpaks "Select flatpaks to add"
-            ;;
-        "Add GNOME extensions to config")
-            interactive_package_select "$EXTENSIONS_CONFIG" list_installed_extensions "Select extensions to add"
-            ;;
-        "Remove packages from config")
-            interactive_remove_from_config "$PACKAGES_CONFIG" "Remove packages"
-            ;;
-        "Remove flatpaks from config")
-            interactive_remove_from_config "$FLATPAKS_CONFIG" "Remove flatpaks"
-            ;;
-        "Remove extensions from config")
-            interactive_remove_from_config "$EXTENSIONS_CONFIG" "Remove extensions"
-            ;;
-        "Install packages")
-            install_packages
-            ;;
-        "Install flatpaks")
-            install_flatpaks
-            ;;
-        "Install extensions")
-            install_extensions
-            ;;
-        "Backup dconf settings")
-            backup_dconf
-            ;;
-        "Restore dconf settings")
-            restore_dconf
-            ;;
-        "Sync current system to config")
-            sync_config
-            ;;
-        "Restore entire system")
-            restore_system
-            ;;
-        "Show status")
-            show_status
-            ;;
-        "Exit"|"")
-            exit 0
-            ;;
+    "Initialize configuration")
+        init_config
+        ;;
+    "Add packages to config")
+        interactive_package_select "$PACKAGES_CONFIG" list_installed_packages "Select packages to add"
+        ;;
+    "Add flatpaks to config")
+        interactive_package_select "$FLATPAKS_CONFIG" list_installed_flatpaks "Select flatpaks to add"
+        ;;
+    "Add GNOME extensions to config")
+        interactive_package_select "$EXTENSIONS_CONFIG" list_installed_extensions "Select extensions to add"
+        ;;
+    "Add repositories to config (Fedora)")
+        interactive_package_select "$REPOS_CONFIG" list_enabled_repos "Select repositories to add"
+        ;;
+    "Remove packages from config")
+        interactive_remove_from_config "$PACKAGES_CONFIG" "Remove packages"
+        ;;
+    "Remove flatpaks from config")
+        interactive_remove_from_config "$FLATPAKS_CONFIG" "Remove flatpaks"
+        ;;
+    "Remove extensions from config")
+        interactive_remove_from_config "$EXTENSIONS_CONFIG" "Remove extensions"
+        ;;
+    "Remove repositories from config (Fedora)")
+        interactive_remove_from_config "$REPOS_CONFIG" "Remove repositories"
+        ;;
+    "Edit custom commands")
+        edit_custom_commands
+        ;;
+    "Install packages")
+        install_packages
+        ;;
+    "Install flatpaks")
+        install_flatpaks
+        ;;
+    "Install extensions")
+        install_extensions
+        ;;
+    "Install repositories (Fedora)")
+        install_repos
+        ;;
+    "Run custom commands")
+        run_custom_commands
+        ;;
+    "Backup dconf settings")
+        backup_dconf
+        ;;
+    "Restore dconf settings")
+        restore_dconf
+        ;;
+    "Sync current system to config")
+        sync_config
+        ;;
+    "System update & upgrade")
+        system_update
+        ;;
+    "Restore entire system (Full)")
+        restore_system
+        ;;
+    "Show status")
+        show_status
+        ;;
+    "Exit" | "")
+        exit 0
+        ;;
     esac
 }
 
 show_version() {
-    cat << EOF
+    cat <<EOF
 sysconfig-manager v${VERSION}
 EOF
 }
 
 show_help() {
     show_version
-    cat << EOF
-Manage system packages, flatpaks, GNOME extensions, and dconf settings
+    cat <<EOF
+Manage system packages, flatpaks, GNOME extensions, repositories, and settings
 
 USAGE:
     sysconfig-manager [COMMAND]
@@ -444,34 +757,59 @@ COMMANDS:
     add-packages        Interactively add packages to config
     add-flatpaks        Interactively add flatpaks to config
     add-extensions      Interactively add extensions to config
+    add-repos           Interactively add repositories to config (Fedora)
     remove-packages     Interactively remove packages from config
     remove-flatpaks     Interactively remove flatpaks from config
     remove-extensions   Interactively remove extensions from config
+    remove-repos        Interactively remove repositories from config (Fedora)
+    edit-commands       Edit custom commands script
     install-packages    Install packages from config
     install-flatpaks    Install flatpaks from config
     install-extensions  Install extensions from config
+    install-repos       Install repositories from config (Fedora)
+    run-commands        Run custom commands
     backup-dconf        Backup dconf settings
     restore-dconf       Restore dconf settings
+    backup-repos        Backup repository configuration (Fedora)
     sync                Sync current system state to config
-    restore             Restore entire system from config
+    update              System update & upgrade
+    restore             Restore entire system from config (recommended)
     status              Show configuration status
     help                Show this help message
 
     (no command)        Show interactive menu
+
+RESTORE ORDER (Full System Restore):
+    1. System update & upgrade
+    2. Execute custom commands
+    3. Add Copr/third-party repositories (Fedora)
+    4. Install system packages
+    5. Install flatpaks
+    6. Install GNOME extensions (if GNOME desktop)
+    7. Restore dconf settings
 
 CONFIGURATION:
     Config directory: $CONFIG_DIR
     Packages config:  $PACKAGES_CONFIG
     Flatpaks config:  $FLATPAKS_CONFIG
     Extensions:       $EXTENSIONS_CONFIG
+    Repositories:     $REPOS_CONFIG
+    Custom commands:  $CUSTOM_COMMANDS_CONFIG
     dconf backup:     $DCONF_BACKUP
 
 EXAMPLES:
     sysconfig-manager                    # Interactive menu
     sysconfig-manager init               # Initialize config
     sysconfig-manager add-packages       # Add packages interactively
+    sysconfig-manager edit-commands      # Edit custom commands
     sysconfig-manager sync               # Backup current system state
-    sysconfig-manager restore            # Restore system from config
+    sysconfig-manager restore            # Full system restore
+
+REPOSITORY FORMAT (repos.conf):
+    copr:USER/PROJECT                    # Copr repository
+    rpmfusion:free                       # RPM Fusion Free
+    rpmfusion:nonfree                    # RPM Fusion Non-free
+    fedora-third-party:REPO_NAME         # Other third-party repo
 
 EOF
 }
@@ -483,65 +821,106 @@ main() {
     fi
 
     case "${1:-menu}" in
-        init)
-            init_config
-            ;;
-        add-packages)
-            interactive_package_select "$PACKAGES_CONFIG" list_installed_packages "Select packages to add"
-            ;;
-        add-flatpaks)
-            interactive_package_select "$FLATPAKS_CONFIG" list_installed_flatpaks "Select flatpaks to add"
-            ;;
-        add-extensions)
-            interactive_package_select "$EXTENSIONS_CONFIG" list_installed_extensions "Select extensions to add"
-            ;;
-        remove-packages)
-            interactive_remove_from_config "$PACKAGES_CONFIG" "Remove packages"
-            ;;
-        remove-flatpaks)
-            interactive_remove_from_config "$FLATPAKS_CONFIG" "Remove flatpaks"
-            ;;
-        remove-extensions)
-            interactive_remove_from_config "$EXTENSIONS_CONFIG" "Remove extensions"
-            ;;
-        install-packages)
-            install_packages
-            ;;
-        install-flatpaks)
-            install_flatpaks
-            ;;
-        install-extensions)
-            install_extensions
-            ;;
-        backup-dconf)
-            backup_dconf
-            ;;
-        restore-dconf)
-            restore_dconf
-            ;;
-        sync)
-            sync_config
-            ;;
-        restore)
-            restore_system
-            ;;
-        status)
-            show_status
-            ;;
-        help|"-help"|"--help"|"-h")
-            show_help
-            ;;
-        version|"--version")
-            show_version
-            ;;
-        menu)
-            interactive_menu
-            ;;
-        *)
-            echo "Unknown command: $1"
-            echo "Run 'sysconfig-manager help' for usage information"
+    init)
+        init_config
+        ;;
+    add-packages)
+        interactive_package_select "$PACKAGES_CONFIG" list_installed_packages "Select packages to add"
+        ;;
+    add-flatpaks)
+        interactive_package_select "$FLATPAKS_CONFIG" list_installed_flatpaks "Select flatpaks to add"
+        ;;
+    add-extensions)
+        interactive_package_select "$EXTENSIONS_CONFIG" list_installed_extensions "Select extensions to add"
+        ;;
+    add-repos)
+        if [ "$DISTRO" = "fedora" ]; then
+            interactive_package_select "$REPOS_CONFIG" list_enabled_repos "Select repositories to add"
+        else
+            echo "Repository management only supported on Fedora"
             exit 1
-            ;;
+        fi
+        ;;
+    remove-packages)
+        interactive_remove_from_config "$PACKAGES_CONFIG" "Remove packages"
+        ;;
+    remove-flatpaks)
+        interactive_remove_from_config "$FLATPAKS_CONFIG" "Remove flatpaks"
+        ;;
+    remove-extensions)
+        interactive_remove_from_config "$EXTENSIONS_CONFIG" "Remove extensions"
+        ;;
+    remove-repos)
+        if [ "$DISTRO" = "fedora" ]; then
+            interactive_remove_from_config "$REPOS_CONFIG" "Remove repositories"
+        else
+            echo "Repository management only supported on Fedora"
+            exit 1
+        fi
+        ;;
+    edit-commands)
+        edit_custom_commands
+        ;;
+    install-packages)
+        install_packages
+        ;;
+    install-flatpaks)
+        install_flatpaks
+        ;;
+    install-extensions)
+        install_extensions
+        ;;
+    install-repos)
+        if [ "$DISTRO" = "fedora" ]; then
+            install_repos
+        else
+            echo "Repository installation only supported on Fedora"
+            exit 1
+        fi
+        ;;
+    run-commands)
+        run_custom_commands
+        ;;
+    backup-dconf)
+        backup_dconf
+        ;;
+    restore-dconf)
+        restore_dconf
+        ;;
+    backup-repos)
+        if [ "$DISTRO" = "fedora" ]; then
+            backup_repos
+        else
+            echo "Repository backup only supported on Fedora"
+            exit 1
+        fi
+        ;;
+    sync)
+        sync_config
+        ;;
+    update)
+        system_update
+        ;;
+    restore)
+        restore_system
+        ;;
+    status)
+        show_status
+        ;;
+    help | "-help" | "--help" | "-h")
+        show_help
+        ;;
+    version | "--version")
+        show_version
+        ;;
+    menu)
+        interactive_menu
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Run 'sysconfig-manager help' for usage information"
+        exit 1
+        ;;
     esac
 }
 
