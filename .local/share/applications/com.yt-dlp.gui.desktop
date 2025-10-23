@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Yt_dlp GUI Wrapper
+Comment=use yt-dlp in gui made using yad
+GenericName=yt-dlp
+Categories=Utility;Network;
+Exec=yt-dlp-gui
+Icon=/home/sabamdarif/dotfiles/.local/share/yt-dlp.png
+Terminal=false
+Type=Application
