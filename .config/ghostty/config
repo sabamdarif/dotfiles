@@ -38,7 +38,7 @@ keybind = f11=toggle_window_decorations
 keybind = ctrl+shift+f=toggle_fullscreen
 
 # Tab configuration
-gtk-titlebar = true
+gtk-titlebar = false
 
 # Shell integration
 shell-integration = detect
