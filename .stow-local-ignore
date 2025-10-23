@@ -1,6 +1,6 @@
 \.git
+\.gitignore
 \.zshrc\.old
-fastfetch\.bak
 
 # any Backup files
 .*\.old$
