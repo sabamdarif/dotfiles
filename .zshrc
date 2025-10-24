@@ -23,6 +23,10 @@ fi
 [[ -f "$HOME/.shell_aliases" ]] && source "$HOME/.shell_aliases"
 [[ -f "$HOME/.shell_functions" ]] && source "$HOME/.shell_functions"
 
+# emacs keybindings
+bindkey -e
+set -o emacs
+
 # Enable auto-cd
 setopt AUTO_CD
 # Turn off "no match" errors
