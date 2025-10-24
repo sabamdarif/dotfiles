@@ -117,9 +117,8 @@ zi light-mode for \
     "$ZI_REPO"/zinit-annex-{binary-symlink,patch-dl,submods}
 
 # -----------------------------------------------------------------------------
-# BINARY INSTALLATIONS FROM GITHUB RELEASES
+# CLI TOOLS
 # -----------------------------------------------------------------------------
-# Install modern CLI tools as binaries - REMOVED PROBLEMATIC TOOLS
 zinit ice from"gh-r" lbin"!" nocompile
 zinit load @junegunn/fzf
 
@@ -157,6 +156,9 @@ zi light BurntSushi/ripgrep
 zi ice from'gh-r' lbin'!' nocompile atload'eval "$(zoxide init zsh --cmd cd)"'
 zi light ajeetdsouza/zoxide
 
+# Install grex with alias
+zi ice from'gh-r' lbin'!grex' nocompile atload'alias grex="grex --digits -r"'
+zi light pemistahl/grex
 
 # -----------------------------------------------------------------------------
 # PYTHON CONFIGURATION
