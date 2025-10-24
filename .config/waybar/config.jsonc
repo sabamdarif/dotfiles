@@ -1,0 +1,23 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 35,
+  "margin": "0 0 0 0",
+  "spacing": 2,
+  "modules-left": [
+    "custom/launcher",
+    "sway/workspaces",
+    "memory",
+    "cpu",
+    "network#speed",
+  ],
+  "modules-center": ["clock"],
+  "modules-right": [
+    "tray",
+    "pulseaudio",
+    "network#info",
+    "battery",
+    "custom/notification",
+  ],
+  "include": ["~/.config/waybar/modules.json"],
+}

@@ -1,0 +1,147 @@
+{
+  "$schema": "/etc/xdg/swaync/configSchema.json",
+  "positionX": "right",
+  "positionY": "top",
+  "layer": "overlay",
+  "control-center-layer": "top",
+  "layer-shell": true,
+  "cssPriority": "application",
+
+  "control-center-width": 380,
+  "control-center-height": 950,
+  "control-center-margin-top": 2,
+  "control-center-margin-bottom": 1,
+  "control-center-margin-right": 2,
+  "control-center-margin-left": 0,
+
+  "notification-2fa-action": true,
+  "notification-inline-replies": true,
+  "notification-window-width": 380,
+  "notification-icon-size": 50,
+  "notification-body-image-height": 140,
+  "notification-body-image-width": 180,
+
+  "timeout": 6,
+  "timeout-low": 3,
+  "timeout-critical": 0,
+  "fit-to-screen": false,
+  "keyboard-shortcuts": true,
+  "image-visibility": "when-available",
+  "transition-time": 200,
+  "hide-on-clear": false,
+  "hide-on-action": true,
+  "script-fail-notify": false,
+
+  "scripts": {
+    "play-sound": {
+      "exec": "~/.config/swaync/scripts/notify_sound.sh",
+      "app-name": ".*",
+      "run-on": "receive"
+    }
+  },
+  "notification-visibility": {
+    "grouped": true
+  },
+
+  "widgets": [
+    "buttons-grid",
+    "dnd",
+    "volume",
+    "backlight",
+    "menubar#power",
+    "notifications",
+    "title"
+  ],
+
+  "widget-config": {
+    "title": {
+      "text": "Notifications",
+      "clear-all-button": true,
+      "button-text": " Clear All"
+    },
+    "dnd": {
+      "text": "Do Not Disturb"
+    },
+    "label": {
+      "max-lines": 2,
+      "text": "Notification"
+    },
+    "mpris": {
+      "image-size": 60,
+      "image-radius": 12
+    },
+    "volume": {
+      "label": "󰕾",
+      "show-per-app": false
+    },
+    "backlight": {
+      "label": "󰃠",
+      "device": "intel_backlight",
+      "subsystem": "backlight",
+      "min": 5
+    },
+    "buttons-grid": {
+      "actions": [
+        {
+          "label": "  Wi-Fi",
+          "type": "toggle",
+          "active": true,
+          "command": "sh -c '~/.config/swaync/scripts/toggle_wifi.sh'",
+          "update-command": "sh -c 'set +e;[[ $(nmcli radio wifi) == \"enabled\" ]] && echo true || echo false'"
+        },
+        {
+          "label": "󰂯 Bluetooth",
+          "type": "toggle",
+          "active": true,
+          "command": "sh -c '~/.config/swaync/scripts/toggle_airplanemode.sh'",
+          "update-command": "sh -c 'set +e;[[ $(nmcli radio wifi) == \"enabled\" ]] || bluetoothctl show | grep -qF Powered:\\ yes && echo false || echo true'"
+        },
+        {
+          "label": "󰀝 Airplanemode",
+          "type": "toggle",
+          "active": true,
+          "command": "sh -c '~/.config/swaync/scripts/toggle_airplanemode.sh'",
+          "update-command": "sh -c 'set +e;[[ $(nmcli radio wifi) == \"enabled\" ]] || bluetoothctl show | grep -qF Powered:\\ yes && echo false || echo true'"
+        },
+        {
+          "label": "󰕾 Mute",
+          "type": "toggle",
+          "active": true,
+          "command": "swayosd-client --output-volume mute-toggle",
+          "update-command": "sh -c 'set +e;pactl get-source-mute @DEFAULT_SOURCE@ | grep -q \"no\" && echo true || echo false'"
+        },
+        {
+          "label": "  Coffee",
+          "type": "toggle",
+          "active": true,
+          "command": "sh -c '~/.config/swaync/scripts/toggle_hypridle.sh'",
+          "update-command": "sh -c '~/.config/swaync/scripts/update_hypridle.sh'"
+        }
+      ]
+    },
+    "menubar#power": {
+      "menu#power-menu": {
+        "label": "⏻",
+        "position": "right",
+        "actions": [
+          {
+            "label": " Shutdown",
+            "command": "systemctl poweroff"
+          },
+          {
+            "label": " Reboot",
+            "command": "systemctl reboot"
+          },
+          {
+            "label": " Suspend",
+            "command": "systemctl suspend"
+          },
+          {
+            "label": " Logout",
+            "command": "hyprctl dispatch exit"
+          }
+        ]
+      }
+    }
+  }
+}

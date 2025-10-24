@@ -1,0 +1,229 @@
+/* =============================================================================
+ * Waybar Configuration - Material You + GTK4/Adwaita Design
+ * Proper height, spacing, and rounded aesthetic
+ * =========================================================================== */
+
+@import "colors.css";
+
+/* -----------------------------------------------------------------------------
+ * Base styles
+ * -------------------------------------------------------------------------- */
+
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "Adwaita Sans", "FantasqueSansM Nerd Font Propo";
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 20px;
+}
+
+window#waybar {
+  background-color: alpha(@background, 0.95);
+  /* transition-property: background-color; */
+  /* transition-duration: 0.5s; */
+  border: 0px solid @foreground;
+  border-radius: 24px;
+  margin-top: 15px;
+  /* min-height: 40px; */
+}
+
+tooltip {
+  background: @surface_container_high;
+  border-radius: 12px;
+  border: 1px solid @outline_variant;
+  color: @on_surface;
+  padding: 10px 14px;
+}
+
+tooltip label {
+  color: @on_surface;
+}
+
+/* -----------------------------------------------------------------------------
+ * Custom Launcher - Standalone
+ * -------------------------------------------------------------------------- */
+
+#custom-launcher {
+  background-color: @primary_container;
+  color: @on_primary_container;
+  border-radius: 24px;
+  padding: 3px 12px;
+  margin: 4px;
+  font-size: 16px;
+  /* min-height: 24px; */
+}
+
+#custom-launcher:hover {
+  background-color: @primary;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* -----------------------------------------------------------------------------
+ * Workspaces - Standalone
+ * -------------------------------------------------------------------------- */
+#workspaces {
+  background-color: @surface_container;
+  margin: 4px 4px;
+  border-radius: 24px;
+  padding: 2px 5px; /* Reduced from 3px to 2px */
+}
+
+#workspaces button {
+  margin: 5px 3px; /* Reduced margins */
+  padding: 40px;
+  border-radius: 50%;
+  border: 0px;
+  color: @on_surface_variant;
+  background-color: @inverse_primary;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  min-width: 20px; /* Reduced from 16px */
+  min-height: 10px; /* Reduced from 16px */
+  padding: 0px;
+}
+
+#workspaces button.focused,
+#workspaces button.active {
+  color: @secondary_fixed;
+  background: @secondary_fixed;
+}
+
+#workspaces button.focused {
+  border-radius: 10px;
+  min-width: 36px; /* Reduced from 44px */
+}
+
+#workspaces button:hover {
+  color: @primary;
+  background: @surface_container_highest;
+}
+
+#workspaces button.urgent {
+  background: @error_container;
+  color: @on_error_container;
+}
+
+/* -----------------------------------------------------------------------------
+ * Left Group: Network Speed, CPU, Memory
+ * -------------------------------------------------------------------------- */
+
+#network.speed,
+#cpu,
+#memory {
+  background-color: @inverse_primary;
+  padding: 4px 14px;
+  margin: 5px 2px;
+  color: @on_background;
+  border-radius: 24px;
+  /* min-height: 28px; */
+}
+
+/* -----------------------------------------------------------------------------
+ * Clock - Center, Standalone
+ * -------------------------------------------------------------------------- */
+
+#clock {
+  background-color: @inverse_primary;
+  color: @on_surface;
+  border-radius: 24px;
+  margin: 6px 10px;
+  padding: 4px 18px;
+  /* font-family: "CaskaydiaCove Nerd Font Mono"; */
+  /* min-height: 28px; */
+}
+
+#clock:hover {
+  background-color: @surface_container_high;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* -----------------------------------------------------------------------------
+ * Right Group: Tray, PulseAudio, Network Info, Battery
+ * -------------------------------------------------------------------------- */
+
+#tray,
+#pulseaudio,
+#wireplumber,
+#network.info,
+#network,
+#battery,
+#custom-notification {
+  background-color: @inverse_primary;
+  padding: 4px 14px;
+  margin: 6px 0px;
+  color: @on_background;
+  border-radius: 24px;
+  /* min-height: 28px; */
+  margin: 5px 2px;
+}
+
+#tray {
+  /* border-radius: 24px 0px 0px 24px; */
+  /* margin-left: 6px; */
+  padding: 4px 10px;
+  padding-left: 14px;
+}
+
+#tray > .passive {
+  -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+  -gtk-icon-effect: highlight;
+  color: @error;
+}
+
+#tray:hover {
+  background-color: @surface_container_high;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#pulseaudio:hover,
+#wireplumber:hover {
+  background-color: @surface_container_high;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#pulseaudio.muted,
+#wireplumber.muted {
+  color: @outline;
+}
+
+#network.disconnected {
+  color: @error;
+}
+
+#battery {
+  /* border-radius: 0px 24px 24px 0px; */
+  border-left: 1px solid @outline_variant;
+  /* margin-right: 6px; */
+  /* padding-right: 16px; */
+}
+
+#battery.charging,
+#battery.plugged {
+  color: @primary;
+}
+
+#battery.warning:not(.charging) {
+  color: @tertiary;
+}
+
+#battery.critical:not(.charging) {
+  background: @error_container;
+  color: @on_error_container;
+  animation: blink 0.5s ease-in-out infinite;
+}
+
+#custom-notification {
+  margin: 4px;
+  padding: 3px 12px;
+  border-radius: 24px;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.6;
+  }
+}

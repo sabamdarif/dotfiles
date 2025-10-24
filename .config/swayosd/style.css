@@ -1,0 +1,52 @@
+@import "colors.css";
+
+/* Warm Material You OSD — slightly yellowish tone, no shadows */
+
+window#osd {
+  border: none;
+  border-radius: 28px;
+  background: alpha(@primary_container, 0.8);
+  transition: all 160ms ease-in-out;
+
+  #container {
+    margin: 16px;
+    padding: 14px 22px;
+    border-radius: 20px;
+    background: alpha(@primary_fixed_dim, 0.25);
+  }
+
+  image,
+  label {
+    color: @on_primary_container;
+    font-weight: 600;
+  }
+
+  progressbar:disabled,
+  image:disabled {
+    opacity: 0.4;
+  }
+
+  progressbar {
+    min-height: 8px;
+    border-radius: 999px;
+    background: transparent;
+    border: none;
+  }
+
+  trough {
+    min-height: inherit;
+    border-radius: inherit;
+    background: alpha(@on_secondary_container, 0.25);
+  }
+
+  progress {
+    min-height: inherit;
+    border-radius: inherit;
+    background: @primary;
+    transition: background 200ms ease;
+  }
+}
+
+window#osd:hover {
+  background: alpha(@primary_container, 0.9);
+}

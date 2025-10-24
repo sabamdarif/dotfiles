@@ -1,0 +1,146 @@
+# Sway Configuration
+# Read `man 5 sway` for reference
+
+### Variables
+set $mod Mod4
+set $left h
+set $down j
+set $up k
+set $right l
+set $term ghostty
+set $menu rofi -show drun -show-icons
+set $browser flatpak run app.zen_browser.zen
+set $filemanager nautilus
+
+### Output Configuration (Monitor)
+# Get display names with: swaymsg -t get_outputs
+output * {
+    bg ~/.config/background fill
+    adaptive_sync on
+    scale 1
+}
+
+# Example for HiDPI laptops (uncomment and adjust as needed)
+# output eDP-1 scale 1.5
+
+### Idle Configuration
+exec swayidle -w \
+    timeout 300 'swaylock -f -c 000000' \
+    timeout 600 'swaymsg "output * power off"' \
+         resume 'swaymsg "output * power on"' \
+    before-sleep 'swaylock -f -c 000000'
+
+### Input Configuration
+
+input type:touchpad {
+    tap enabled
+    natural_scroll enabled
+    dwt enabled
+    accel_profile adaptive
+    pointer_accel 0.1
+    scroll_method two_finger
+    middle_emulation enabled
+}
+
+# Keyboard
+input type:keyboard {
+    xkb_layout us
+    xkb_options caps:escape
+    repeat_delay 300
+    repeat_rate 50
+}
+
+### Key Bindings
+
+# include custom sway config
+include "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf"
+
+### Laptop Specific - Clamshell Mode
+set $laptop eDP-1
+bindswitch --reload --locked lid:on output $laptop disable
+bindswitch --reload --locked lid:off output $laptop enable
+
+### Appearance - Eye Candy
+# Gaps
+# Smart gaps - no gaps when only one window
+smart_gaps on
+
+# Gaps for multiple windows
+gaps inner 2
+gaps outer 0
+
+# Thinner window borders
+default_border pixel 1
+default_floating_border pixel 1
+
+# Window borders
+default_border pixel 2
+default_floating_border pixel 2
+hide_edge_borders smart
+
+# Colors (Catppuccin Mocha inspired)
+# class                 border  backgr. text    indicator child_border
+client.focused          #89b4fa #89b4fa #1e1e2e #89b4fa   #89b4fa
+client.focused_inactive #45475a #45475a #cdd6f4 #45475a   #45475a
+client.unfocused        #313244 #313244 #bac2de #313244   #313244
+client.urgent           #f38ba8 #f38ba8 #1e1e2e #f38ba8   #f38ba8
+client.placeholder      #1e1e2e #1e1e2e #cdd6f4 #1e1e2e   #1e1e2e
+
+# Blur and shadows (requires swayfx or use alpha values)
+# corner_radius 8
+# shadows enable
+# shadow_blur_radius 15
+# shadow_color #00000088
+
+### Waybar
+bar {
+    swaybar_command waybar
+}
+
+### Autostart Applications
+
+# exec libinput-gestures
+
+# Auto-tiling script (optional - install autotiling)
+# exec autotiling
+
+### Window Rules
+# Floating windows
+for_window [app_id="pavucontrol"] floating enable
+for_window [app_id="gnome-calculator"] floating enable
+for_window [app_id="nm-connection-editor"] floating enable
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="task_dialog"] floating enable
+for_window [window_type="dialog"] floating enable
+for_window [window_type="menu"] floating enable
+
+# Picture-in-picture
+for_window [title="Picture-in-Picture"] floating enable, sticky enable
+
+# Inhibit idle for fullscreen apps
+for_window [class=".*"] inhibit_idle fullscreen
+for_window [app_id=".*"] inhibit_idle fullscreen
+
+### XWayland compatibility
+xwayland enable
+
+# Java applications fix
+exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
+exec hash dbus-update-activation-environment 2>/dev/null && \
+     dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
+
+### GTK Theme (optional - adjust to your preference)
+# set $gnome-schema org.gnome.desktop.interface
+# exec_always {
+#     gsettings set $gnome-schema gtk-theme 'Adwaita-dark'
+#     gsettings set $gnome-schema icon-theme 'Papirus-Dark'
+#     gsettings set $gnome-schema cursor-theme 'Adwaita'
+#     gsettings set $gnome-schema font-name 'Cantarell 11'
+# }
+
+bindgesture swipe:left exec ~/.config/sway/scripts/workspace-next.sh
+bindgesture swipe:right exec ~/.config/sway/scripts/workspace-prev.sh
+
+# Include additional configs
+include /etc/sway/config.d/*
+include ~/.config/sway/config.d/*
