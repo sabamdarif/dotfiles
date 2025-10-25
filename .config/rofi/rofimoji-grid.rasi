@@ -1,28 +1,164 @@
-@import "config"
+@import "~/.config/rofi/0-shared-fonts.rasi"
+@import "~/.config/rofi/themes/colors.rasi"
+
+* {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+window {
+    transparency: "real";
+    location: center;
+    anchor: center;
+    fullscreen: false;
+    width: 900px;
+    height: 800px;
+    background-color: @surface-container;
+    border: 2px solid;
+    border-color: @outline-variant;
+    border-radius: 28px;
+    padding: 24px;
+}
+
+mainbox {
+    background-color: transparent;
+    spacing: 16px;
+    children: [ inputbar, message, listview ];
+}
+
+inputbar {
+    background-color: @surface-container-highest;
+    border-radius: 28px;
+    padding: 16px 24px;
+    spacing: 12px;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @primary;
+    font: "Material Symbols Rounded 16";
+}
+
+entry {
+    background-color: transparent;
+    text-color: @on-surface;
+    placeholder: "Search emoji...";
+    placeholder-color: @on-surface-variant;
+}
+
+message {
+    background-color: @surface-container-high;
+    border-radius: 16px;
+    padding: 12px 16px;
+    text-color: @on-surface-variant;
+}
 
 textbox {
-  vertical-align:   0.5;
-  horizontal-align: 0.5;
+    background-color: transparent;
+    text-color: @on-surface-variant;
 }
 
 listview {
-  columns:       9;
-  lines:         7;
-  cycle:         true;
-  dynamic:       true;
-  layout:        vertical;
-  flow:          horizontal;
-  reverse:       false;
-  fixed-height:  true;
-  fixed-columns: true;
+    background-color: transparent;
+    columns: 8;
+    lines: 5;
+    spacing: 12px;
+    cycle: true;
+    dynamic: true;
+    scrollbar: true;
+    layout: vertical;
+    fixed-height: false;
+    fixed-columns: true;
+}
+
+scrollbar {
+    width: 4px;
+    border: 0;
+    handle-width: 4px;
+    padding: 0;
+    margin: 0 0 0 8px;
+    handle-color: @primary;
+    background-color: @surface-container-high;
+    border-radius: 2px;
 }
 
 element {
-  orientation: vertical;
+    background-color: @surface-container-high;
+    text-color: @on-surface;
+    orientation: vertical;
+    border-radius: 16px;
+    padding: 28px 16px 36px 16px;
+    spacing: 0px;
+    children: [ element-text ];
+}
+
+element normal.normal {
+    background-color: @surface-container-high;
+    text-color: @on-surface;
+}
+
+element normal.urgent {
+    background-color: @error-container;
+    text-color: @on-error-container;
+}
+
+element normal.active {
+    background-color: @primary-container;
+    text-color: @on-primary-container;
+}
+
+element selected.normal {
+    background-color: @primary-container;
+    text-color: @on-primary-container;
+}
+
+element selected.urgent {
+    background-color: @error;
+    text-color: @on-error;
+}
+
+element selected.active {
+    background-color: @primary;
+    text-color: @on-primary;
+}
+
+element alternate.normal {
+    background-color: @surface-container-high;
+    text-color: @on-surface;
+}
+
+element alternate.urgent {
+    background-color: @error-container;
+    text-color: @on-error-container;
+}
+
+element alternate.active {
+    background-color: @secondary-container;
+    text-color: @on-secondary-container;
 }
 
 element-text {
-  vertical-align:   0.5;
-  horizontal-align: 0.5;
-  font:            "FiraCode Nerd Font 24";
+    background-color: transparent;
+    text-color: inherit;
+    font: "Noto Color Emoji 36";
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+    expand: true;
+    margin: 8px 0px;
+}
+
+element-icon {
+    background-color: transparent;
+    size: 56px;
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+}
+
+error-message {
+    background-color: @surface-container;
+    border: 2px solid;
+    border-color: @error;
+    border-radius: 16px;
+    padding: 24px;
 }
