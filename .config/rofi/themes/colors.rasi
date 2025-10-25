@@ -1,50 +1,50 @@
 * {
-    primary: #e8c26cee;
-    primary-fixed: #ffdf9b;
-    primary-fixed-dim: #e8c26c;
-    on-primary: #3f2e00ee;
-    on-primary-fixed: #251a00;
-    on-primary-fixed-variant: #5b4300;
-    primary-container: #5b4300;
-    on-primary-container: #ffdf9b;
-    secondary: #d7c4a0bb;
-    secondary-fixed: #f4e0bb;
-    secondary-fixed-dim: #d7c4a0;
-    on-secondary: #3a2f15bb;
-    on-secondary-fixed: #241a04;
-    on-secondary-fixed-variant: #52452a;
-    secondary-container: #52452abb;
-    on-secondary-container: #f4e0bbbb;
-    tertiary: #b0cfaa;
-    tertiary-fixed: #cbebc5;
-    tertiary-fixed-dim: #b0cfaa;
-    on-tertiary: #1c361c;
-    on-tertiary-fixed: #072109;
-    on-tertiary-fixed-variant: #324d31;
-    tertiary-container: #324d3199;
-    on-tertiary-container: #cbebc5bb;
+    primary: #adc6ffee;
+    primary-fixed: #d8e2ff;
+    primary-fixed-dim: #adc6ff;
+    on-primary: #102f60ee;
+    on-primary-fixed: #001a41;
+    on-primary-fixed-variant: #2b4678;
+    primary-container: #2b4678;
+    on-primary-container: #d8e2ff;
+    secondary: #bfc6dcbb;
+    secondary-fixed: #dbe2f9;
+    secondary-fixed-dim: #bfc6dc;
+    on-secondary: #293041bb;
+    on-secondary-fixed: #141b2c;
+    on-secondary-fixed-variant: #3f4759;
+    secondary-container: #3f4759bb;
+    on-secondary-container: #dbe2f9bb;
+    tertiary: #debcdf;
+    tertiary-fixed: #fbd7fc;
+    tertiary-fixed-dim: #debcdf;
+    on-tertiary: #402843;
+    on-tertiary-fixed: #29132d;
+    on-tertiary-fixed-variant: #583e5b;
+    tertiary-container: #583e5b99;
+    on-tertiary-container: #fbd7fcbb;
     error: #ffb4abbb;
     on-error: #690005bb;
     error-container: #93000acc;
     on-error-container: #ffdad6cc;
-    surface-tint: #e8c26c;
-    surface: #17130b99;  /* 60% opacity */
-    on-surface: #ebe1d4;
-    on-surface-variant: #d0c5b4;
-    outline: #999080;
-    outline-variant: #4d4639;
+    surface-tint: #adc6ff;
+    surface: #11131899;  /* 60% opacity */
+    on-surface: #e2e2e9;
+    on-surface-variant: #c4c6d0;
+    outline: #8e9099;
+    outline-variant: #44474f;
     shadow: #000000;
     scrim: #000000;
-    inverse-surface: #ebe1d4;
-    inverse-on-surface: #353027bb;
-    inverse-primary: #775a0b;
-    surface-dim: #17130b99;  /* 60% opacity */
-    surface-bright: #3e392f99;  /* 60% opacity */
-    surface-container-lowest: #110e07bb;  /* 70% opacity */
-    surface-container-low: #1f1b13bb;  /* 70% opacity */
-    surface-container: #231f17bb;  /* 70% opacity */
-    surface-container-high: #2e2921bb;  /* 70% opacity */
-    surface-container-highest: #39342bbb;  /* 70% opacity */
+    inverse-surface: #e2e2e9;
+    inverse-on-surface: #2f3036bb;
+    inverse-primary: #445e91;
+    surface-dim: #11131899;  /* 60% opacity */
+    surface-bright: #37393e99;  /* 60% opacity */
+    surface-container-lowest: #0c0e13bb;  /* 70% opacity */
+    surface-container-low: #1a1b20bb;  /* 70% opacity */
+    surface-container: #1e1f25bb;  /* 70% opacity */
+    surface-container-high: #282a2fbb;  /* 70% opacity */
+    surface-container-highest: #33353abb;  /* 70% opacity */
     wallpaper-image-width: url("/home/sabamdarif/.config/background", width);
     wallpaper-image-height: url("/home/sabamdarif/.config/background", height);
 }

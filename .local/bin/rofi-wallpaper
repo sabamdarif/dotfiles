@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+# Configuration
+WALLPAPER_PATH="$HOME/.config/background"
+
+# Function to set wallpaper and generate colors
+setwall() {
+    local wallpaper="$1"
+
+    # Check if the provided file exists
+    if [[ ! -f "$wallpaper" ]]; then
+        echo "Error: File '$wallpaper' does not exist"
+        return 1
+    fi
+
+    # Check if matugen is installed
+    if ! command -v matugen >/dev/null 2>&1; then
+        echo "Error: 'matugen' is not installed"
+        return 1
+    fi
+
+    # Delete old wallpaper if it exists
+    [[ -f "$WALLPAPER_PATH" ]] && rm -f "$WALLPAPER_PATH"
+
+    # Copy new wallpaper
+    cp "$wallpaper" "$WALLPAPER_PATH"
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to copy wallpaper"
+        return 1
+    fi
+
+    # Set wallpaper with swaybg or swww (choose one)
+    if command -v swww >/dev/null 2>&1; then
+        swww img "$WALLPAPER_PATH" --transition-type fade --transition-duration 2
+    elif command -v swaybg >/dev/null 2>&1; then
+        pkill swaybg
+        swaybg -i "$WALLPAPER_PATH" -m fill &
+    fi
+
+    # Generate color palettes with matugen
+    matugen image "$WALLPAPER_PATH" 2>/dev/null
+
+    # Restart services
+    if command -v swaymsg >/dev/null 2>&1; then
+        swaymsg reload
+    fi
+
+    if command -v swaync-client >/dev/null 2>&1; then
+        pkill swaync && swaync &
+    fi
+
+    if command -v waybar >/dev/null 2>&1; then
+        pkill waybar && waybar &
+    fi
+
+    # Add more services here as needed
+    # pkill <service> && <service> &
+}
+
+# If script is called directly with an argument
+if [[ -n "$1" ]]; then
+    setwall "$1"
+    exit $?
+fi
+
+# Rofi Wallpaper Selector with Direct Image Preview
+WALLPAPER_DIR="$HOME/MEGA/sync/wallpapers/"
+THEME_FILE="$HOME/.config/rofi/wallpaper-selector.rasi"
+
+# Function to display wallpapers in rofi
+show_wallpapers() {
+    # Create temp file for the options
+    local options_file
+    options_file=$(mktemp)
+
+    # Get all image files and add them to options with their path as icon
+    find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" -o -name "*.gif" -o -name "*.bmp" -o -name "*.tiff" \) | sort | while read -r file; do
+        local name
+        name=$(basename "$file" | sed 's/\.[^.]*$//')
+        echo -e "$name\0icon\x1f$file" >>"$options_file"
+    done
+
+    # Show rofi with custom theme
+    local selected
+    selected=$(rofi -dmenu -i -p "󰸉 Select Wallpaper" \
+        -theme "$THEME_FILE" <"$options_file")
+    local rofi_exit=$?
+
+    # Remove temp file
+    rm "$options_file"
+
+    # Handle selection
+    if [ $rofi_exit -eq 0 ] && [ -n "$selected" ]; then
+        # Find the full path of the selected wallpaper
+        local selected_wallpaper=""
+        while IFS= read -r file; do
+            if [[ "$(basename "$file" | sed 's/\.[^.]*$//')" = "$selected" ]]; then
+                selected_wallpaper="$file"
+                break
+            fi
+        done < <(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" -o -name "*.gif" -o -name "*.bmp" -o -name "*.tiff" \))
+
+        if [ -n "$selected_wallpaper" ]; then
+            setwall "$selected_wallpaper"
+            notify-send "Wallpaper Changed" "Set to: $selected" -i "$selected_wallpaper"
+        fi
+    fi
+}
+
+# Main
+show_wallpapers
