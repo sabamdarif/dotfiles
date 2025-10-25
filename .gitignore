@@ -16,3 +16,7 @@
 .config/GIMP/3.0/tool-options
 .config/GIMP/3.0/internal-data
 /.config/mpv/chapters
+.config/waybar/colors.css
+.config/swayosd/colors.css
+.config/swaync/colors.css
+.config/background
