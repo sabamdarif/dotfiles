@@ -4,7 +4,7 @@
 
 set +e # disable immediate exit on error
 
-SOUND="${HOME}/.config/swaync/sounds/Chord.wav"
+SOUND="${HOME}/.config/swaync/sounds/dotfiles_swaync_.config_swaync_sounds_Chord.wav"
 
 if [[ "$(swaync-client --get-dnd)" == "false" ]]; then
     if command -v paplay >/dev/null 2>&1 && [ -f "$SOUND" ]; then

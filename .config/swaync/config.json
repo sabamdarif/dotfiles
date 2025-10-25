@@ -92,28 +92,21 @@
         {
           "label": "󰂯 Bluetooth",
           "type": "toggle",
-          "active": true,
-          "command": "sh -c '~/.config/swaync/scripts/toggle_airplanemode.sh'",
-          "update-command": "sh -c 'set +e;[[ $(nmcli radio wifi) == \"enabled\" ]] || bluetoothctl show | grep -qF Powered:\\ yes && echo false || echo true'"
-        },
-        {
-          "label": "󰀝 Airplanemode",
-          "type": "toggle",
-          "active": true,
-          "command": "sh -c '~/.config/swaync/scripts/toggle_airplanemode.sh'",
-          "update-command": "sh -c 'set +e;[[ $(nmcli radio wifi) == \"enabled\" ]] || bluetoothctl show | grep -qF Powered:\\ yes && echo false || echo true'"
+          "active": false,
+          "command": "sh -c '~/.config/swaync/scripts/toggle_bluetooth.sh'",
+          "update-command": "sh -c '~/.config/swaync/scripts/update_bluetooth.sh'"
         },
         {
           "label": "󰕾 Mute",
           "type": "toggle",
-          "active": true,
+          "active": false,
           "command": "swayosd-client --output-volume mute-toggle",
           "update-command": "sh -c 'set +e;pactl get-source-mute @DEFAULT_SOURCE@ | grep -q \"no\" && echo true || echo false'"
         },
         {
           "label": "  Coffee",
           "type": "toggle",
-          "active": true,
+          "active": false,
           "command": "sh -c '~/.config/swaync/scripts/toggle_hypridle.sh'",
           "update-command": "sh -c '~/.config/swaync/scripts/update_hypridle.sh'"
         }
