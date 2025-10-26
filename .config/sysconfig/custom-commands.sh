@@ -10,4 +10,14 @@
 
 # Add your custom commands below:
 
+chsh -s "$(which zsh)"
+
 dnf remove swaylock -y
+
+flatpak override --user \
+    --filesystem=xdg-config/gtk-2.0:ro \
+    --filesystem=xdg-config/gtk-3.0:ro \
+    --filesystem=xdg-config/gtk-4.0:ro \
+    --filesystem=~/.gtkrc-2.0:ro
+
+gsettings set org.gnome.desktop.default-applications.terminal exec 'ghostty'
