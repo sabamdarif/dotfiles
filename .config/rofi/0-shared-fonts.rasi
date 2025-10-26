@@ -6,11 +6,11 @@
 
 /*****-- Fonts Size and Font Size -----*****/
 configuration {
-font: "Adwaita Sans", "JetBrainsMono Nerd Font SemiBold 13";
+font: "Adwaita Sans", "FantasqueSansM Nerd Font Propo 13";
 }
 
 
 /*****-- Elements Font Size -----*****/
 element-text {
-font: "Adwaita Sans", "JetBrainsMono Nerd Font SemiBold 11";
+font: "Adwaita Sans", "FantasqueSansM Nerd Font Propo 11";
 }
