@@ -1,6 +1,9 @@
 # Sway Configuration
 # Read `man 5 sway` for reference
 
+#  matugen color
+include colors.conf
+
 ### Variables
 set $mod Mod4
 set $left h
@@ -77,14 +80,6 @@ default_floating_border pixel 1
 default_border pixel 2
 default_floating_border pixel 2
 hide_edge_borders smart
-
-# Colors (Catppuccin Mocha inspired)
-# class                 border  backgr. text    indicator child_border
-client.focused          #89b4fa #89b4fa #1e1e2e #89b4fa   #89b4fa
-client.focused_inactive #45475a #45475a #cdd6f4 #45475a   #45475a
-client.unfocused        #313244 #313244 #bac2de #313244   #313244
-client.urgent           #f38ba8 #f38ba8 #1e1e2e #f38ba8   #f38ba8
-client.placeholder      #1e1e2e #1e1e2e #cdd6f4 #1e1e2e   #1e1e2e
 
 # Blur and shadows (requires swayfx or use alpha values)
 # corner_radius 8
