@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cliphist list | rofi -dmenu \
+    -theme ~/.config/rofi/clipboard-monitor.rasi \
+    -p "Clipboard" \
+    -mesg "Select an item to copy" \
+    -matching fuzzy \
+    -no-custom \
+    -format 's' | cliphist decode | wl-copy

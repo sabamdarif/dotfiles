@@ -1,128 +1,174 @@
-/*
- * Clipboard Monitor Theme
- * Based on Wallpaper Selector design
- */
+@import "~/.config/rofi/0-shared-fonts.rasi"
+@import "~/.config/rofi/themes/colors.rasi"
 
-configuration {
-    font:                           "CaskaydiaMono NF 10";
-    show-icons:                     false;
-    display-drun:                   "Clipboard";
-    disable-history:                false;
-    fullscreen:                     false;
-    hide-scrollbar:                 true;
-    sidebar-mode:                   false;
-    markup:                         false;  /* Disable markup parsing to prevent errors */
+* {
+    background-color: transparent;
+    text-color: @on-surface;
 }
-
-@import "/home/sabamdarif/.config/rofi/colors-clipboard.rasi"
 
 window {
-    transparency:                   "real";
-    background-color:               @bg;
-    text-color:                     @fg;
-    border:                         0px;
-    border-color:                   @ac;
-    border-radius:                  12px;
-    width:                          400px;
-    /* Use dynamic height based on content */
-    location:                       center;
-    anchor:                         center;
-    x-offset:                       0;
-    y-offset:                       0;
-}
-
-prompt {
-    enabled:                        true;
-    padding:                        8px;
-    background-color:               @bg1;
-    text-color:                     @fg;
-    font:                           "CaskaydiaMono NF 10";
-    border-radius:                  12px 0px 0px 12px;
-}
-
-entry {
-    background-color:               @bg2;
-    text-color:                     @fg;
-    placeholder-color:              @fg1;
-    expand:                         true;
-    horizontal-align:               0;
-    placeholder:                    "Search clipboard...";
-    padding:                        8px;
-    border-radius:                  0px 12px 12px 0px;
-    blink:                          true;
-}
-
-inputbar {
-    children:                       [ prompt, entry ];
-    background-color:               @bg2;
-    text-color:                     @fg;
-    expand:                         false;
-    border:                         0px;
-    border-radius:                  12px;
-    border-color:                   @ac;
-    margin:                         10px 10px 5px 10px;
-    padding:                        0px;
-    spacing:                        0px;
-}
-
-listview {
-    background-color:               @al;
-    padding:                        5px 5px 0px 5px;
-    columns:                        1;
-    lines:                          20;
-    spacing:                        5px;
-    cycle:                          true;
-    dynamic:                        true;
-    layout:                         vertical;
-    margin:                         0px;
-    scrollbar:                      false;
+    transparency: "real";
+    location: center;
+    anchor: center;
+    fullscreen: false;
+    width: 800px;
+    height: 70%;
+    border-radius: 12px;
+    background-color: @surface-container;
+    border: 2px;
+    border-color: @outline-variant;
 }
 
 mainbox {
-    background-color:               @al;
-    border:                         0px;
-    border-radius:                  0px;
-    border-color:                   @bg4;
-    children:                       [ inputbar, listview ];
-    spacing:                        0px;
-    padding:                        0px 0px 5px 0px;
-    expand:                         false;
+    enabled: true;
+    spacing: 0px;
+    background-color: transparent;
+    children: [ "inputbar", "message", "listview" ];
 }
 
-element {
-    background-color:               @bg1;
-    text-color:                     @fg;
-    orientation:                    horizontal;
-    border-radius:                  10px;
-    padding:                        8px 12px;
+inputbar {
+    enabled: true;
+    spacing: 12px;
+    padding: 20px;
+    background-color: @surface-container-high;
+    text-color: @on-surface;
+    children: [ "prompt", "entry" ];
+    border-radius: 12px 12px 0px 0px;
 }
 
-element-text {
-    background-color:               transparent;
-    text-color:                     inherit;
-    expand:                         true;
-    horizontal-align:               0;
-    vertical-align:                 0.5;
-    margin:                         0px;
-    font:                           "CaskaydiaMono NF 10";
+prompt {
+    enabled: true;
+    background-color: transparent;
+    text-color: @primary;
+    str: "Clipboard";
 }
 
-element selected {
-    background-color:               @ac;
-    text-color:                     @bg;
-    border:                         0px;
-    border-radius:                  10px;
-    border-color:                   @bg1;
+entry {
+    enabled: true;
+    background-color: transparent;
+    text-color: @on-surface;
+    cursor: text;
+    placeholder: "Search clipboard...";
+    placeholder-color: @on-surface-variant;
 }
 
 message {
-    padding:                        5px;
-    border-radius:                  10px;
-    background-color:               @bg1;
-    border:                         0px;
+    enabled: true;
+    padding: 12px;
+    background-color: @surface-container-low;
+    text-color: @on-surface-variant;
+    border: 0px 0px 1px 0px;
+    border-color: @outline-variant;
 }
 
 textbox {
-    text-color:                     @fg;
-    background-color:               inherit;
+    background-color: transparent;
+    text-color: @on-surface-variant;
+    vertical-align: 0.5;
+    horizontal-align: 0.0;
+}
+
+listview {
+    enabled: true;
+    columns: 1;
+    lines: 12;
+    cycle: true;
+    dynamic: true;
+    scrollbar: true;
+    layout: vertical;
+    reverse: false;
+    fixed-height: true;
+    fixed-columns: true;
+    spacing: 4px;
+    padding: 12px;
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+scrollbar {
+    width: 4px;
+    border: 0;
+    handle-color: @outline;
+    handle-width: 4px;
+    padding: 0;
+    background-color: @surface-container-low;
+    border-radius: 4px;
+}
+
+element {
+    enabled: true;
+    spacing: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: transparent;
+    text-color: @on-surface;
+    cursor: pointer;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+element normal.urgent {
+    background-color: @error-container;
+    text-color: @on-error-container;
+}
+
+element normal.active {
+    background-color: @tertiary-container;
+    text-color: @on-tertiary-container;
+}
+
+element selected.normal {
+    background-color: @primary-container;
+    text-color: @on-primary-container;
+}
+
+element selected.urgent {
+    background-color: @error;
+    text-color: @on-error;
+}
+
+element selected.active {
+    background-color: @tertiary;
+    text-color: @on-tertiary;
+}
+
+element-text alternate.normal {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+element-text alternate.urgent {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+element-text alternate.active {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+element-icon {
+    background-color: transparent;
+    text-color: inherit;
+    size: 24px;
+    cursor: inherit;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    highlight: @primary;
+    cursor: inherit;
+    vertical-align: 0.5;
+    horizontal-align: 0.0;
+}
+
+error-message {
+    padding: 20px;
+    background-color: @surface-container;
+    text-color: @error;
+    border-radius: 12px;
 }
