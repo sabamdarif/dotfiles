@@ -63,21 +63,25 @@
     //"on-click": "ghostty -e htop"
   },
   "battery": {
+    "interval": 2, // Poll every 2 seconds
     "states": {
       "good": 95,
       "warning": 30,
       "critical": 15
     },
-    "format": "{icon} {capacity: >3}%",
-    "format-charging": "  {capacity}%",
+    "format": "{icon} {capacity}%",
+    "format-charging": "{icon} {capacity}%",
     "format-plugged": "  {capacity}%",
     "format-alt": "{icon}  {time}",
     // "format-good": "", // An empty format will hide the module
     // "format-full": "",
-    "format-icons": ["", "", "", "", ""]
+    "format-icons": {
+      "charging": ["󰢜", "󰂇", "󰢝", "󰂉", "󰂅"],
+      "default": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"]
+    }
   },
   "network#info": {
-    // "interface": "wlp2s0", // (Optional) To force the use of this interface
+    "interface": "wlp2s0", // (Optional) To force the use of this interface
     "format": "⚠  Disabled",
     "format-wifi": "  {essid}",
     // "format-ethernet": " {ifname}: {ipaddr}/{cidr}",
@@ -91,16 +95,17 @@
     "on-click": "nm-connection-editor"
   },
   "network#speed": {
+    "interface": "wlp2s0",
     "interval": 1,
     "format": " {bandwidthDownBits}  {bandwidthUpBits}",
-    "format-disconnected": "睊",
+    "format-disconnected": "⚠",
     "tooltip": false
   },
   "pulseaudio": {
     // "scroll-step": 5,
     "format": "{icon} {volume: >3}%",
     "format-bluetooth": "{icon} {volume: >3}%",
-    "format-muted": " muted",
+    "format-muted": "󰝟 muted",
     "format-icons": {
       "headphones": "",
       "handsfree": "",
