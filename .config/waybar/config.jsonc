@@ -6,7 +6,7 @@
   "spacing": 2,
   "modules-left": [
     "custom/launcher",
-    "sway/workspaces",
+    "hyprland/workspaces",
     "memory",
     "cpu",
     "network#speed",

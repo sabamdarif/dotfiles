@@ -138,7 +138,7 @@
           },
           {
             "label": "Logout",
-            "command": "swaymsg exit"
+            "command": "hyprctl dispatch exit"
           }
         ]
       }

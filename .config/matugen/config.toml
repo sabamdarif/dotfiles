@@ -36,7 +36,12 @@ input_path = '~/.config/matugen/templates/gtk-colors.css'
 output_path = '~/.config/gtk-4.0/colors.css'
 
 # swaywm
-[templates.sway]
-input_path = '~/.config/matugen/templates/sway-colors.conf'
-output_path = '~/.config/sway/colors.conf'
-post_hook = 'swaymsg reload'
+# [templates.sway]
+# input_path = '~/.config/matugen/templates/sway-colors.conf'
+# output_path = '~/.config/sway/colors.conf'
+# post_hook = 'swaymsg reload'
+
+[templates.hyprland]
+input_path = '~/.config/matugen/templates/hyprland-colors.conf'
+output_path = '~/.config/hypr/colors.conf'
+post_hook = 'hyprctl reload'

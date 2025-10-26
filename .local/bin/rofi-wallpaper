@@ -45,6 +45,10 @@ setwall() {
         swaymsg reload
     fi
 
+    if command -v hyprctl >/dev/null 2>&1; then
+        hyprctl reload
+    fi
+
     if command -v swaync-client >/dev/null 2>&1; then
         pkill swaync && swaync &
     fi
@@ -52,9 +56,6 @@ setwall() {
     if command -v waybar >/dev/null 2>&1; then
         pkill waybar && waybar &
     fi
-
-    # Add more services here as needed
-    # pkill <service> && <service> &
 }
 
 # If script is called directly with an argument
@@ -64,7 +65,7 @@ if [[ -n "$1" ]]; then
 fi
 
 # Rofi Wallpaper Selector with Direct Image Preview
-WALLPAPER_DIR="$HOME/MEGA/sync/wallpapers/"
+WALLPAPER_DIR="$HOME/Pictures/wallpapers/"
 THEME_FILE="$HOME/.config/rofi/wallpaper-selector.rasi"
 
 # Function to display wallpapers in rofi
