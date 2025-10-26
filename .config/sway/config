@@ -1,6 +1,3 @@
-# Sway Configuration
-# Read `man 5 sway` for reference
-
 #  matugen color
 include colors.conf
 
@@ -40,7 +37,6 @@ exec swayidle -w \
          resume 'swaymsg "output * power on"'
 
 ### Input Configuration
-
 input type:touchpad {
     tap enabled
     natural_scroll enabled
@@ -59,9 +55,7 @@ input type:keyboard {
     repeat_rate 50
 }
 
-### Key Bindings
-
-# include custom sway config
+# custom sway config
 include "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf"
 
 ### Laptop Specific - Clamshell Mode
@@ -97,13 +91,6 @@ hide_edge_borders smart
 bar {
     swaybar_command waybar
 }
-
-### Autostart Applications
-
-# exec libinput-gestures
-
-# Auto-tiling script (optional - install autotiling)
-# exec autotiling
 
 ### Window Rules
 # Floating windows
