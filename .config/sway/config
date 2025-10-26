@@ -23,18 +23,24 @@ output * {
 # Example for HiDPI laptops (uncomment and adjust as needed)
 # output eDP-1 scale 1.5
 
-### Idle Configuration - SWAYLOCK DISABLED
-# Uncommment the lines below to re-enable swaylock
-# exec swayidle -w \
-#     timeout 300 'swaylock -f -c 000000' \
-#     timeout 600 'swaymsg "output * power off"' \
-#          resume 'swaymsg "output * power on"' \
-#     before-sleep 'swaylock -f -c 000000'
+# Auto-lock with swayidle
+exec swayidle -w \
+    timeout 300 'swaylock' \
+    timeout 600 'swaymsg "output * power off"' \
+         resume 'swaymsg "output * power on"' \
+    before-sleep 'swaylock'
 
 # Screen timeout only (no lock)
-exec swayidle -w \
-    timeout 600 'swaymsg "output * power off"' \
-         resume 'swaymsg "output * power on"'
+# exec swayidle -w \
+#     timeout 600 'swaymsg "output * power off"' \
+#          resume 'swaymsg "output * power on"'
+
+# hyprlock
+# exec swayidle -w \
+#     timeout 300 'hyprlock' \
+#     timeout 600 'swaymsg "output * power off"' \
+#          resume 'swaymsg "output * power on"' \
+#     before-sleep 'hyprlock'
 
 ### Input Configuration
 input type:touchpad {
