@@ -118,20 +118,20 @@
         "position": "right",
         "actions": [
           {
-            "label": " Shutdown",
+            "label": "Shutdown",
             "command": "systemctl poweroff"
           },
           {
-            "label": " Reboot",
+            "label": "Reboot",
             "command": "systemctl reboot"
           },
           {
-            "label": " Suspend",
+            "label": "Suspend",
             "command": "systemctl suspend"
           },
           {
-            "label": " Logout",
-            "command": "hyprctl dispatch exit"
+            "label": "Logout",
+            "command": "swaymsg exit"
           }
         ]
       }
