@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Custom commands to run during system restore
 # These commands will be executed after system update but before package installation
-# 
+#
 # Examples:
 # echo "Running custom setup..."
 # mkdir -p ~/.local/bin
@@ -10,3 +10,4 @@
 
 # Add your custom commands below:
 
+dnf remove swaylock -y

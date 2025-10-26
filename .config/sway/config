@@ -26,12 +26,18 @@ output * {
 # Example for HiDPI laptops (uncomment and adjust as needed)
 # output eDP-1 scale 1.5
 
-### Idle Configuration
+### Idle Configuration - SWAYLOCK DISABLED
+# Uncommment the lines below to re-enable swaylock
+# exec swayidle -w \
+#     timeout 300 'swaylock -f -c 000000' \
+#     timeout 600 'swaymsg "output * power off"' \
+#          resume 'swaymsg "output * power on"' \
+#     before-sleep 'swaylock -f -c 000000'
+
+# Screen timeout only (no lock)
 exec swayidle -w \
-    timeout 300 'swaylock -f -c 000000' \
     timeout 600 'swaymsg "output * power off"' \
-         resume 'swaymsg "output * power on"' \
-    before-sleep 'swaylock -f -c 000000'
+         resume 'swaymsg "output * power on"'
 
 ### Input Configuration
 
@@ -123,15 +129,6 @@ xwayland enable
 exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
 exec hash dbus-update-activation-environment 2>/dev/null && \
      dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
-
-### GTK Theme (optional - adjust to your preference)
-# set $gnome-schema org.gnome.desktop.interface
-# exec_always {
-#     gsettings set $gnome-schema gtk-theme 'Adwaita-dark'
-#     gsettings set $gnome-schema icon-theme 'Papirus-Dark'
-#     gsettings set $gnome-schema cursor-theme 'Adwaita'
-#     gsettings set $gnome-schema font-name 'Cantarell 11'
-# }
 
 bindgesture swipe:left exec ~/.config/sway/scripts/workspace-next.sh
 bindgesture swipe:right exec ~/.config/sway/scripts/workspace-prev.sh
