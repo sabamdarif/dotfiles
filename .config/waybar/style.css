@@ -94,11 +94,6 @@ tooltip label {
   min-width: 36px; /* Reduced from 44px */
 }
 
-#workspaces button:hover {
-  color: @primary;
-  background: @surface_container_highest;
-}
-
 #workspaces button.urgent {
   background: @error_container;
   color: @on_error_container;
