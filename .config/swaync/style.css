@@ -629,22 +629,14 @@ trough slider:hover {
   background: @noti-bg-hover-opaque;
 }
 
-/* Scrollbar styling */
 scrollbar {
+  opacity: 0;
+  min-width: 0;
+}
+
+scrollbar * {
+  opacity: 0;
   background: transparent;
-}
-
-scrollbar trough {
-  background: @surface_bright;
-  border-radius: 10px;
-}
-
-scrollbar slider {
-  background: @outline;
-  border-radius: 10px;
-  min-width: 6px;
-}
-
-scrollbar slider:hover {
-  background: @primary;
+  min-width: 0;
+  min-height: 0;
 }
