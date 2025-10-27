@@ -25,7 +25,7 @@ alias n='nvim'
 alias f="find . | grep "
 alias c="clear"
 alias g="git"
-alias gcl="git clone"
+alias gc="git clone"
 alias gd='git diff --output-indicator-new=" " --output-indicator-old=" "'
 alias gca='git commit --amend'
 alias gcan='git commit --amend --no-edit'

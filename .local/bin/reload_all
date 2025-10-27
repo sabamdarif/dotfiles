@@ -14,3 +14,6 @@ swaync &
 # Restart SwayOSD
 pkill swayosd-server
 swayosd-server &
+
+# Restart hyprpolkitagent
+systemctl --user restart hyprpolkitagent
