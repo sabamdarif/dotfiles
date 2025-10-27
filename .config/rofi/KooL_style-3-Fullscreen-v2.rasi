@@ -10,7 +10,7 @@ configuration {
     display-run:                "  term";
     display-filebrowser:        "  files";
     display-window:             "  window";
-	display-ssh:                " SSH";
+	display-ssh:                "  SSH";
     drun-display-format:        "{name}";
     window-format:              "{w} · {c} · {t}";
     hover-select:               true;
@@ -19,41 +19,8 @@ configuration {
 }
 
 
-/* ---- Load dynamic colors ---- */
+/* ---- Load colors ---- */
 @import "~/.config/rofi/themes/colors.rasi"
-
-/*****----- Global Properties -----*****/
-* {
-    background:                  @primary-fixed-dim;
-    background-alt:              @secondary-fixed-dim;
-    selected:                    @primary;
-    active:                      @tertiary;
-    urgent:                      @error;
-    
-    border-color:                @primary;
-    handle-color:                @primary;
-    background-color:            @surface;
-    foreground-color:            @on-surface;
-    alternate-background:        @surface-container-low;
-    normal-background:           @surface;
-    normal-foreground:           @on-surface;
-    urgent-background:           @error-container;
-    urgent-foreground:           @on-error-container;
-    active-background:           @tertiary-container;
-    active-foreground:           @on-tertiary-container;
-    selected-normal-background:  @primary;
-    selected-normal-foreground:  @on-primary;
-    selected-urgent-background:  @error;
-    selected-urgent-foreground:  @on-error;
-    selected-active-background:  @tertiary;
-    selected-active-foreground:  @on-tertiary;
-    alternate-normal-background: @surface-container;
-    alternate-normal-foreground: @on-surface-variant;
-    alternate-urgent-background: @error-container;
-    alternate-urgent-foreground: @on-error-container;
-    alternate-active-background: @tertiary-container;
-    alternate-active-foreground: @on-tertiary-container;
-}
 
 /*****----- Main Window -----*****/
 window {
@@ -63,7 +30,6 @@ window {
     fullscreen:                  true;
     x-offset:                    0px;
     y-offset:                    40px;
-
     enabled:                     true;
     margin:                      40px 0px 0px 0px;
     padding:                     0px;
@@ -136,7 +102,6 @@ listview {
     reverse:                     false;
     fixed-height:                true;
     fixed-columns:               true;
-    
     spacing:                     10px;
     margin:                      0px;
     padding:                     0px;
