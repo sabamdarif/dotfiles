@@ -31,7 +31,7 @@ setwall() {
 
     # Set wallpaper with swaybg or swww (choose one)
     if command -v swww >/dev/null 2>&1; then
-        swww img "$WALLPAPER_PATH" --transition-type fade --transition-duration 2
+        swww img "$WALLPAPER_PATH" --transition-type center --transition-duration 2
     elif command -v swaybg >/dev/null 2>&1; then
         pkill swaybg
         swaybg -i "$WALLPAPER_PATH" -m fill &
