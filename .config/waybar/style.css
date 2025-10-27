@@ -83,6 +83,10 @@ tooltip label {
   padding: 0px;
 }
 
+#workspaces button label {
+  font-size: 0;
+}
+
 #workspaces button.focused,
 #workspaces button.active {
   color: @secondary_fixed;
@@ -118,12 +122,14 @@ tooltip label {
  * Clock - Center, Standalone
  * -------------------------------------------------------------------------- */
 
-#clock {
+#custom-camera-usage,
+#clock,
+#power-profiles-daemon {
   background-color: @inverse_primary;
   color: @on_surface;
   border-radius: 24px;
-  margin: 6px 10px;
-  padding: 4px 18px;
+  padding: 4px 14px;
+  margin: 6px 3px;
   /* font-family: "CaskaydiaCove Nerd Font Mono"; */
   /* min-height: 28px; */
 }
@@ -170,12 +176,6 @@ tooltip label {
 }
 
 #tray:hover {
-  background-color: @surface_container_high;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-#pulseaudio:hover,
-#wireplumber:hover {
   background-color: @surface_container_high;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Reload Hyprland
+hyprctl reload
+
+# Restart Waybar
+pkill waybar
+waybar &
+
+# Restart SwayNC
+pkill swaync
+swaync &
+
+# Restart SwayOSD
+pkill swayosd-server
+swayosd-server &

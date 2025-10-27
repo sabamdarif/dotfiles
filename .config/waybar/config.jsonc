@@ -11,8 +11,9 @@
     "cpu",
     "network#speed",
   ],
-  "modules-center": ["clock"],
+  "modules-center": ["custom/camera-usage", "clock", "power-profiles-daemon"],
   "modules-right": [
+    "privacy",
     "tray",
     "pulseaudio",
     "network#info",
