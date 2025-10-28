@@ -38,7 +38,7 @@ setwall() {
     fi
 
     # Generate color palettes with matugen
-    matugen image "$WALLPAPER_PATH" 2>/dev/null
+    matugen image --mode dark "$WALLPAPER_PATH"
 
     # reload all services
     exec ~/.local/bin/reload_all
