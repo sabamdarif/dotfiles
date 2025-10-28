@@ -21,3 +21,4 @@ flatpak override --user \
     --filesystem=~/.gtkrc-2.0:ro
 
 gsettings set org.gnome.desktop.default-applications.terminal exec 'ghostty'
+systemctl --user enable --now swaync
