@@ -43,15 +43,7 @@
     "grouped": true
   },
 
-  "widgets": [
-    "buttons-grid",
-    "dnd",
-    "volume",
-    "backlight",
-    "menubar#power",
-    "notifications",
-    "title"
-  ],
+  "widgets": ["buttons-grid", "dnd", "menubar#power", "notifications", "title"],
 
   "widget-config": {
     "title": {
@@ -135,6 +127,10 @@
           {
             "label": "Suspend",
             "command": "systemctl suspend"
+          },
+          {
+            "label": "Lock",
+            "command": "hyprlock"
           },
           {
             "label": "Logout",
