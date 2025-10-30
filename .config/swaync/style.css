@@ -42,6 +42,31 @@
   background: transparent;
 }
 
+/* Hide scrollbar completely */
+scrollbar {
+  all: unset;
+  opacity: 0;
+  background: transparent;
+  min-width: 0;
+  min-height: 0;
+}
+
+scrollbar trough {
+  all: unset;
+  opacity: 0;
+  background: transparent;
+  min-width: 0;
+  min-height: 0;
+}
+
+scrollbar slider {
+  all: unset;
+  opacity: 0;
+  background: transparent;
+  min-width: 0;
+  min-height: 0;
+}
+
 /*** Widgets ***/
 
 /* Title widget - at bottom for clear all */
@@ -119,7 +144,7 @@
 
 .widget-buttons-grid > flowbox > flowboxchild > button {
   padding: 14px 10px;
-  background: @surface_container_highest; /*@inverse_primary;*/
+  background: @surface_container_highest;
   color: @on_background;
   border-radius: 24px;
   margin: 4px;
@@ -128,15 +153,13 @@
 }
 
 .widget-buttons-grid > flowbox > flowboxchild > button:hover {
-  background: @surface_container_highest; /*@noti-bg-hover;*/
+  background: @surface_container_highest;
   border-color: @surface_tint;
   transition: all 0.2s ease-in-out;
 }
 
 .widget-buttons-grid flowboxchild > button.toggle:checked {
-  /* style given to the active toggle button */
   background: @inverse_primary;
-  /* color: @on_primary; */
 }
 
 /* Menubar widget for power button */
@@ -146,7 +169,7 @@
   color: @error;
   border-radius: 16px;
   padding: 12px 20px;
-  margin: 8px 10px;
+  margin: 8px;
   font-size: 1.3rem;
 }
 
@@ -219,7 +242,7 @@ trough slider:hover {
   font-size: 1.5rem;
 }
 
-/* Mpris widget - if you want to add it later */
+/* Mpris widget */
 .widget-mpris {
   border: none;
   margin: 8px 10px;
@@ -265,7 +288,7 @@ trough slider:hover {
 
 .notification-row {
   outline: none;
-  margin: 4px 6px;
+  background: transparent;
 }
 
 .notification-row:focus,
@@ -308,14 +331,21 @@ trough slider:hover {
 
 .notification-row .notification-background .notification.low {
   border-left: 3px solid @secondary;
+  box-shadow: 0px 0px 4px alpha(@on_surface, 0.3);
 }
 
 .notification-row .notification-background .notification.normal {
   border-left: 3px solid @primary;
+  box-shadow: 0px 0px 4px alpha(@on_surface, 0.3);
 }
 
 .notification-row .notification-background .notification.critical {
   border-left: 3px solid @error;
+  box-shadow: 0px 0px 4px alpha(@on_surface, 0.3);
+}
+
+.notification-row .notification-background .notification:hover {
+  background: @noti-bg-hover;
 }
 
 .notification-row .notification-background .notification .notification-action,
@@ -550,32 +580,49 @@ trough slider:hover {
 
 /* Notification Groups */
 .notification-group {
-  margin: 4px 6px;
+  transition: opacity 200ms ease-in-out;
+}
+
+.notification-group:focus {
+  background: transparent;
 }
 
 .notification-group.low {
-  /* Low Priority Group */
+  background: alpha(@surface_container_low, 0.8);
+  border-radius: 16px;
+  border: 1px solid @noti-border-color;
+  /* padding: 5px 2px; */
+  box-shadow: 0px 0px 4px alpha(@on_surface, 0.3);
 }
 
 .notification-group.normal {
-  /* Normal Priority Group */
+  background: alpha(@surface_container, 0.8);
+  border-radius: 16px;
+  border: 1px solid @noti-border-color;
+  /* padding: 5px 2px; */
+  box-shadow: 0px 0px 4px alpha(@on_surface, 0.3);
 }
 
 .notification-group.critical {
-  /* Critical Priority Group */
+  background: alpha(@surface_container_high, 0.8);
+  border-radius: 16px;
+  border: 1px solid @noti-border-color;
+  /* padding: 5px 2px; */
+  box-shadow: 0px 0px 4px alpha(@on_surface, 0.3);
 }
 
 .notification-group .notification-group-buttons,
 .notification-group .notification-group-headers {
-  margin: 8px 12px;
+  margin: 8px;
   color: @on_surface;
 }
 
+/*Group Notification Title*/
 .notification-group .notification-group-headers {
   padding: 8px;
   background: @noti-bg;
   border: 1px solid @noti-border-color;
-  border-radius: 12px 12px 0px 0px;
+  border-radius: 12px;
 }
 
 .notification-group .notification-group-headers .notification-group-icon {
@@ -587,26 +634,53 @@ trough slider:hover {
   font-weight: bold;
 }
 
+/*Group Notification two buttons*/
 .notification-group .notification-group-buttons {
-  padding: 6px;
+  padding: 4px;
   background: @noti-bg;
   border: 1px solid @noti-border-color;
   border-top: none;
-  border-radius: 0px 0px 12px 12px;
+  border-radius: 12px;
 }
 
 .notification-group .notification-group-buttons > button {
   background: @surface_bright;
   border: 1px solid @noti-border-color;
-  border-radius: 8px;
+  border-radius: 12px;
   color: @on_surface;
-  padding: 6px 12px;
-  margin: 2px;
+  /* padding: 6px 12px; */
+  /* margin: 2px; */
+  transition: all 0.2s ease-in-out;
 }
 
 .notification-group .notification-group-buttons > button:hover {
   background: @noti-bg-hover;
   border-color: @primary;
+}
+
+/* Group close button */
+.notification-group .notification-group-close-button .close-button {
+  /* margin: 12px 20px; */
+  background: @noti-close-bg;
+  color: @on_surface;
+  border-radius: 50%;
+  border: 1px solid @noti-border-color;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.notification-group .notification-group-close-button .close-button:hover {
+  background: @noti-close-bg-hover;
+  transition: background 0.2s ease-in-out;
+}
+
+.notification-group.collapsed {
+  background-color: transparent;
+  border: none;
+}
+
+.notification-group.collapsed.not-expanded {
+  opacity: 0.6;
 }
 
 .notification-group.collapsed .notification-row .notification {
@@ -620,22 +694,11 @@ trough slider:hover {
   .notification-row:not(:last-child)
   .notification-default-action {
   opacity: 0;
+  transition: opacity 400ms ease-in-out;
 }
 
 .notification-group.collapsed:hover
   .notification-row:not(:only-child)
   .notification {
   background: @noti-bg-hover-opaque;
-}
-
-scrollbar {
-  opacity: 0;
-  min-width: 0;
-}
-
-scrollbar * {
-  opacity: 0;
-  background: transparent;
-  min-width: 0;
-  min-height: 0;
 }

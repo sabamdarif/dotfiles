@@ -103,7 +103,7 @@
           "update-command": "sh -c '~/.config/swaync/scripts/update_hypridle.sh'"
         },
         {
-          "label": "󰽥 Coffee",
+          "label": "󰽥 Night Light",
           "type": "toggle",
           "active": false,
           "command": "sh -c '~/.config/swaync/scripts/toggle_night_light.sh'",
