@@ -4,6 +4,7 @@ export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
 export PATH="$HOME/.npm-global/bin:$PATH"
 export PATH="$HOME/.local/share/zinit/polaris/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
 
 # XDG Base directory specification
 export XDG_CONFIG_HOME="$HOME/.config"         # Config files
