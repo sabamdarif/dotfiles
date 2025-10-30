@@ -91,11 +91,11 @@
   },
   "cpu": {
     "format": " {usage: >3}%",
-    "on-click": "ghostty -e htop"
+    "on-click": "gnome-system-monitor"
   },
   "memory": {
     "format": " {: >3}%",
-    "on-click": "ghostty -e htop"
+    "on-click": "gnome-system-monitor"
   },
   "temperature": {
     "thermal-zone": 4,
