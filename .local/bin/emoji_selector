@@ -1,0 +1,3 @@
+#!/bin/bash
+
+rofimoji --action copy --hidden-descriptions --selector-args "-theme ~/.config/rofi/rofimoji-grid.rasi"

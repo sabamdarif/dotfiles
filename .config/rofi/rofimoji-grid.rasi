@@ -88,7 +88,8 @@ element {
     text-color: @on-surface;
     orientation: vertical;
     border-radius: 16px;
-    padding: 0px 16px 40px 16px;
+    // padding for each emoji boxes
+    padding: 0px 16px 0px 16px;
     spacing: 0px;
     children: [ element-text ];
 }
