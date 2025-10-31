@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# Function to check if a process is running
+is_running() {
+    local cmd="$1"
+
+    # Extract the base command (first word/executable)
+    local base_cmd exec_name
+    base_cmd=$(echo "$cmd" | awk '{print $1}')
+    exec_name=$(basename "$base_cmd")
+
+    # Check if process is running by executable name
+    if pgrep -x "$exec_name" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # Also check with full command pattern for processes with arguments
+    if pgrep -f "$cmd" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    return 1
+}
+
 # Process all .desktop files in autostart directories
 for file in ~/.config/autostart/*.desktop; do
     [ -f "$file" ] || continue
@@ -12,22 +34,13 @@ for file in ~/.config/autostart/*.desktop; do
     # Extract Exec line
     exec_line=$(grep '^Exec=' "$file" | head -1 | sed 's/^Exec=//' | sed 's/ %[fFuU]//' | sed 's/ %[kcdnNvm]//g')
 
-    # Check OnlyShowIn and NotShowIn
-    only_show_in=$(grep '^OnlyShowIn=' "$file" | sed 's/^OnlyShowIn=//')
-    not_show_in=$(grep '^NotShowIn=' "$file" | sed 's/^NotShowIn=//')
-
-    # Skip if NotShowIn contains Sway
-    if echo "$not_show_in" | grep -qi "sway"; then
-        continue
-    fi
-
-    # If OnlyShowIn is set, check if Sway is in it
-    if [ -n "$only_show_in" ] && ! echo "$only_show_in" | grep -qi "sway"; then
-        continue
-    fi
-
-    # Run the command in background
+    # Run the command in background only if not already running
     if [ -n "$exec_line" ]; then
-        sh -c "$exec_line" &
+        if is_running "$exec_line"; then
+            echo "Already running: $exec_line"
+        else
+            echo "Starting: $exec_line"
+            sh -c "$exec_line" &
+        fi
     fi
 done
