@@ -32,5 +32,10 @@ flatpak override --user \
     --filesystem=xdg-config/gtk-4.0:ro \
     --filesystem=~/.gtkrc-2.0:ro
 
+flatpak override --user \
+    --filesystem=xdg-config/qt5ct:ro \
+    --filesystem=xdg-config/qt6ct:ro \
+    --env=QT_QPA_PLATFORMTHEME=qt6ct
+
 gsettings set org.gnome.desktop.default-applications.terminal exec 'ghostty'
 systemctl --user enable --now swaync

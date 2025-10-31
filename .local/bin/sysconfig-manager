@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-VERSION="2.0"
+VERSION="2.1"
 CONFIG_DIR="${HOME}/.config/sysconfig"
 PACKAGES_CONFIG="${CONFIG_DIR}/packages.conf"
 FLATPAKS_CONFIG="${CONFIG_DIR}/flatpaks.conf"
@@ -878,10 +878,18 @@ install_flatpaks() {
         return
     fi
 
+    if ! command -v flatpak &>/dev/null; then
+        echo "flatpak not found. Skipping Flatpak installation"
+        return
+    fi
+
     echo "Installing flatpaks..."
-    while IFS= read -r app; do
-        flatpak install -y flathub "$app" 2>/dev/null || echo "Failed to install $app"
-    done <<<"$flatpaks"
+    # Convert flatpaks to space-separated list and install all at once
+    local flatpak_list
+    flatpak_list=$(echo "$flatpaks" | tr '\n' ' ')
+
+    # shellcheck disable=SC2086
+    flatpak install -y flathub $flatpak_list 2>&1 | grep -v "^$" || echo "Some flatpaks may have failed to install"
 }
 
 install_extensions() {
@@ -1059,97 +1067,97 @@ restore_system() {
     echo ""
 
     # Step 1: System Update
-    echo "[1/12] System Update & Upgrade"
+    echo "[1/14] System Update & Upgrade"
     echo "---------------------------------"
     system_update
     echo ""
 
     # Step 2: Custom Commands
-    echo "[2/12] Custom Commands"
+    echo "[2/14] Custom Commands"
     echo "---------------------------------"
     run_custom_commands
     echo ""
 
-    # Step 3: Repositories (Fedora only)
-    if [ "$DISTRO" = "fedora" ]; then
-        echo "[3/12] Adding Repositories"
-        echo "---------------------------------"
-        install_repos
-        echo ""
-    else
-        echo "[3/12] Repositories (Skipped - Not Fedora)"
-        echo "---------------------------------"
-        echo ""
-    fi
-
-    # Step 4: System Packages
-    echo "[4/12] Installing System Packages"
+    # Step 3: System Packages
+    echo "[3/14] Installing System Packages"
     echo "---------------------------------"
     install_packages
     echo ""
 
-    # Step 5: Flatpaks
-    echo "[5/12] Installing Flatpaks"
+    # Step 4: Flatpaks
+    echo "[4/14] Installing Flatpaks"
     echo "---------------------------------"
     install_flatpaks
     echo ""
 
-    # Step 6: Python Packages
-    echo "[6/12] Installing Python Packages"
-    echo "---------------------------------"
-    install_python_packages
-    echo ""
-
-    # Step 7: Node Packages
-    echo "[7/12] Installing Node Packages"
-    echo "---------------------------------"
-    install_node_packages
-    echo ""
-
-    # Step 8: Cargo Packages
-    echo "[8/12] Installing Cargo Packages"
+    # Step 5: Cargo Packages
+    echo "[5/14] Installing Cargo Packages"
     echo "---------------------------------"
     install_cargo_packages
     echo ""
 
+    # Step 6: Node Packages
+    echo "[6/14] Installing Node Packages"
+    echo "---------------------------------"
+    install_node_packages
+    echo ""
+
+    # Step 7: Python Packages
+    echo "[7/14] Installing Python Packages"
+    echo "---------------------------------"
+    install_python_packages
+    echo ""
+
+    # Step 8: Repositories (Fedora only)
+    if [ "$DISTRO" = "fedora" ]; then
+        echo "[8/14] Adding Repositories"
+        echo "---------------------------------"
+        install_repos
+        echo ""
+    else
+        echo "[8/14] Repositories (Skipped - Not Fedora)"
+        echo "---------------------------------"
+        echo ""
+    fi
+
     # Step 9: GNOME Extensions (if GNOME desktop)
     if [[ "$DESKTOP" == *"gnome"* ]]; then
-        echo "[9/12] Installing GNOME Extensions"
+        echo "[9/14] Installing GNOME Extensions"
         echo "---------------------------------"
         install_extensions
         echo ""
     else
-        echo "[9/12] GNOME Extensions (Skipped - Not GNOME Desktop)"
+        echo "[9/14] GNOME Extensions (Skipped - Not GNOME Desktop)"
         echo "---------------------------------"
         echo ""
     fi
 
     # Step 10: Services Configuration
-    echo "[10/12] Configuring Services"
+    echo "[10/14] Configuring Services"
     echo "---------------------------------"
     configure_services
     echo ""
 
     # Step 11: Firewall Configuration
-    echo "[11/12] Configuring Firewall"
+    echo "[11/14] Configuring Firewall"
     echo "---------------------------------"
     configure_firewall
     echo ""
 
     # Step 12: User Groups
-    echo "[12/12] Configuring User Groups"
+    echo "[12/14] Configuring User Groups"
     echo "---------------------------------"
     configure_groups
     echo ""
 
     # Step 13: Container Setup
-    echo "[13/12] Setting up Containers"
+    echo "[13/14] Setting up Containers"
     echo "---------------------------------"
     setup_containers
     echo ""
 
     # Step 14: dconf Settings
-    echo "[14/12] Restoring dconf Settings"
+    echo "[14/14] Restoring dconf Settings"
     echo "---------------------------------"
     restore_dconf
     echo ""
@@ -1220,7 +1228,7 @@ Edit firewall config
 Edit containers config
 Remove packages from config
 Remove flatpaks from config
-Remove extensions from config
+Remove GNOME extensions from config
 Remove repositories from config (Fedora)
 Remove services from config
 Remove Python packages from config
@@ -1234,7 +1242,7 @@ System update & upgrade
 Restore entire system (Full)
 Install packages
 Install flatpaks
-Install extensions
+Install GNOME extensions
 Install repositories (Fedora)
 Install Python packages
 Install Node packages
@@ -1307,7 +1315,7 @@ EOF
     "Remove flatpaks from config")
         interactive_remove_from_config "$FLATPAKS_CONFIG" "Remove flatpaks"
         ;;
-    "Remove extensions from config")
+    "Remove GNOME extensions from config")
         interactive_remove_from_config "$EXTENSIONS_CONFIG" "Remove extensions"
         ;;
     "Remove repositories from config (Fedora)")
@@ -1349,7 +1357,7 @@ EOF
     "Install flatpaks")
         install_flatpaks
         ;;
-    "Install extensions")
+    "Install GNOME extensions")
         install_extensions
         ;;
     "Install repositories (Fedora)")
@@ -1427,12 +1435,12 @@ INTERACTIVE MENU:
 RESTORE ORDER (Full System Restore):
     1.  System update & upgrade
     2.  Execute custom commands
-    3.  Add Copr/third-party repositories (Fedora)
-    4.  Install system packages
-    5.  Install flatpaks
-    6.  Install Python packages
-    7.  Install Node packages
-    8.  Install Cargo packages
+    3.  Install system packages
+    4.  Install flatpaks
+    5.  Install Cargo packages
+    6.  Install Node packages
+    7.  Install Python packages
+    8.  Add Copr/third-party repositories (Fedora)
     9.  Install GNOME extensions (if GNOME desktop)
     10. Configure systemd services
     11. Configure firewall rules
