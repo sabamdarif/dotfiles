@@ -1,7 +1,5 @@
 @import "colors.css";
 
-/* Warm Material You OSD — slightly yellowish tone, no shadows */
-
 window#osd {
   border: none;
   border-radius: 28px;
