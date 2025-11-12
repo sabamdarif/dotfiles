@@ -24,8 +24,9 @@
   background: alpha(@background, 0.95);
   border-radius: 20px;
   border: 1px solid @border;
-  margin: 2px;
-  padding: 8px;
+  /* margin: 2px; */
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 .control-center-list {
@@ -71,8 +72,8 @@ scrollbar slider {
 
 /* Title widget - at bottom for clear all */
 .widget-title {
-  margin: 10px;
-  margin-top: 15px;
+  /* margin: 10px; */
+  /* margin-top: 15px; */
   font-size: 1.3rem;
   background: transparent;
   color: @on_surface;
@@ -86,7 +87,7 @@ scrollbar slider {
   border: none;
   box-shadow: none;
   border-radius: 20px;
-  padding: 10px 24px;
+  /* padding: 10px 24px; */
   margin-left: 12px;
   font-weight: 500;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -137,8 +138,8 @@ scrollbar slider {
 .widget-buttons-grid {
   font-size: 15px;
   background: @on_secondary_fixed_variant;
-  padding: 5px;
-  margin: 8px 10px;
+  /* padding: 5px; */
+  /* margin: 8px 10px; */
   border-radius: 16px;
 }
 
@@ -168,8 +169,8 @@ scrollbar slider {
   background: @noti-bg;
   color: @error;
   border-radius: 16px;
-  padding: 12px 20px;
-  margin: 8px;
+  /* padding: 12px 20px; */
+  /* margin: 8px; */
   font-size: 1.3rem;
 }
 
@@ -312,7 +313,7 @@ trough slider:hover {
   box-shadow: none;
   border: 1px solid @noti-border-color;
   min-width: 28px;
-  min-height: 28px;
+  /* min-height: 28px; */
 }
 
 .notification-row .notification-background .close-button:hover {
@@ -666,7 +667,7 @@ trough slider:hover {
   border-radius: 50%;
   border: 1px solid @noti-border-color;
   min-width: 28px;
-  min-height: 28px;
+  /* min-height: 28px; */
 }
 
 .notification-group .notification-group-close-button .close-button:hover {
