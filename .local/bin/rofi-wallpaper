@@ -2,50 +2,80 @@
 
 # Configuration
 WALLPAPER_PATH="$HOME/.config/background"
+LOG_FILE="/tmp/rofi-wallpaper.log"
+
+# Create log directory if it doesn't exist
+mkdir -p "$(dirname "$LOG_FILE")"
+
+# Function to log messages
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >>"$LOG_FILE"
+}
+
+log "=== Script started ==="
 
 # Function to set wallpaper and generate colors
 setwall() {
     local wallpaper="$1"
+    log "setwall() called with: $wallpaper"
 
     # Check if the provided file exists
     if [[ ! -f "$wallpaper" ]]; then
+        log "ERROR: File '$wallpaper' does not exist"
         echo "Error: File '$wallpaper' does not exist"
         return 1
     fi
+    log "File exists, proceeding..."
 
     # Check if matugen is installed
-    if ! command -v matugen >/dev/null 2>&1; then
+    if [ ! -f "$HOME/.cargo/bin/matugen" ]; then
+        log "ERROR: 'matugen' is not installed"
         echo "Error: 'matugen' is not installed"
         return 1
     fi
+    log "matugen found"
 
     # Delete old wallpaper if it exists
     [[ -f "$WALLPAPER_PATH" ]] && rm -f "$WALLPAPER_PATH"
+    log "Old wallpaper removed (if existed)"
 
     # Copy new wallpaper
     cp "$wallpaper" "$WALLPAPER_PATH"
     if [[ $? -ne 0 ]]; then
+        log "ERROR: Failed to copy wallpaper"
         echo "Error: Failed to copy wallpaper"
         return 1
     fi
+    log "New wallpaper copied successfully"
 
     # Set wallpaper with swaybg or swww (choose one)
     if command -v swww >/dev/null 2>&1; then
-        swww img "$WALLPAPER_PATH" --transition-type center --transition-duration 2
+        log "Using swww to set wallpaper"
+        swww img "$WALLPAPER_PATH" --transition-type center --transition-duration 2 2>&1 | tee -a "$LOG_FILE"
     elif command -v swaybg >/dev/null 2>&1; then
+        log "Using swaybg to set wallpaper"
         pkill swaybg
         swaybg -i "$WALLPAPER_PATH" -m fill &
+    else
+        log "ERROR: Neither swww nor swaybg found"
     fi
 
     # Generate color palettes with matugen
-    matugen image --mode dark "$WALLPAPER_PATH"
+    log "Running matugen..."
+    ~/.cargo/bin/matugen image --mode dark "$WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"
+    log "matugen completed"
 
-    # reload all services
-    exec ~/.local/bin/reload_all
+    # reload all services (removed exec to allow script to continue)
+    log "Reloading all services..."
+    ~/.local/bin/reload_all 2>&1 | tee -a "$LOG_FILE"
+    log "reload_all completed"
+
+    log "setwall() finished successfully"
 }
 
 # If script is called directly with an argument
 if [[ -n "$1" ]]; then
+    log "Direct call with argument: $1"
     setwall "$1"
     exit $?
 fi
@@ -54,45 +84,70 @@ fi
 WALLPAPER_DIR="$HOME/Pictures/wallpapers/"
 THEME_FILE="$HOME/.config/rofi/wallpaper-selector.rasi"
 
+log "Starting rofi wallpaper selector"
+log "WALLPAPER_DIR: $WALLPAPER_DIR"
+log "THEME_FILE: $THEME_FILE"
+
 # Function to display wallpapers in rofi
 show_wallpapers() {
+    log "show_wallpapers() called"
+
     # Create temp file for the options
     local options_file
     options_file=$(mktemp)
+    log "Created temp file: $options_file"
 
     # Get all image files and add them to options with their path as icon
+    local count=0
     find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" -o -name "*.gif" -o -name "*.bmp" -o -name "*.tiff" \) | sort | while read -r file; do
         local name
         name=$(basename "$file" | sed 's/\.[^.]*$//')
         echo -e "$name\0icon\x1f$file" >>"$options_file"
+        ((count++))
     done
+    log "Found $count wallpaper files"
 
     # Show rofi with custom theme
+    log "Launching rofi..."
     local selected
-    selected=$(rofi -dmenu -i -p "󰸉 Select Wallpaper" \
+    selected=$(rofi -dmenu -i -p "󰸉  Select Wallpaper" \
         -theme "$THEME_FILE" <"$options_file")
     local rofi_exit=$?
+    log "rofi exited with code: $rofi_exit"
+    log "Selected: '$selected'"
 
     # Remove temp file
     rm "$options_file"
+    log "Removed temp file"
 
     # Handle selection
     if [ $rofi_exit -eq 0 ] && [ -n "$selected" ]; then
+        log "Processing selection: $selected"
         # Find the full path of the selected wallpaper
         local selected_wallpaper=""
         while IFS= read -r file; do
             if [[ "$(basename "$file" | sed 's/\.[^.]*$//')" = "$selected" ]]; then
                 selected_wallpaper="$file"
+                log "Found matching file: $selected_wallpaper"
                 break
             fi
         done < <(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" -o -name "*.gif" -o -name "*.bmp" -o -name "*.tiff" \))
 
         if [ -n "$selected_wallpaper" ]; then
+            log "Calling setwall with: $selected_wallpaper"
             setwall "$selected_wallpaper"
+            log "Sending notification..."
             notify-send "Wallpaper Changed" "Set to: $selected" -i "$selected_wallpaper"
+            log "Notification sent"
+        else
+            log "ERROR: Could not find full path for selected wallpaper"
         fi
+    else
+        log "No selection made or rofi cancelled"
     fi
 }
 
 # Main
+log "Calling show_wallpapers()"
 show_wallpapers
+log "=== Script ended ==="
