@@ -48,3 +48,5 @@
 .local/bin/numpy-config
 .local/bin/sherlock
 .local/bin/tor-prompt
+.config/mpv/fonts
+.config/mpv/scripts

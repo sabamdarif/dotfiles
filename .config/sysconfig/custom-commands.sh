@@ -39,3 +39,17 @@ flatpak override --user \
 
 gsettings set org.gnome.desktop.default-applications.terminal exec 'ghostty'
 systemctl --user enable --now swaync
+
+# git clone https://github.com/sabamdarif/my-mpv-config.git "$HOME"/.config/mpv
+# install mpv config
+mkdir -p "$HOME"/.config/mpv "$HOME"/.config/mpv/fonts "$HOME"/.config/mpv/scripts
+# scripts
+wget -O "$HOME"/.config/mpv/scripts/modernz.lua https://github.com/Samillion/ModernZ/releases/download/v0.2.8/modernz.lua
+wget -O "$HOME"/.config/mpv/scripts/pause_indicator_lite.lua https://raw.githubusercontent.com/Samillion/ModernZ/refs/heads/main/extras/pause-indicator-lite/pause_indicator_lite.lua
+wget -O "$HOME"/.config/mpv/scripts/SmartCopyPaste.lua https://raw.githubusercontent.com/Eisa01/mpv-scripts/refs/heads/master/scripts/SmartCopyPaste.lua
+wget -O "$HOME"/.config/mpv/scripts/SmartSkip.lua https://raw.githubusercontent.com/Eisa01/mpv-scripts/refs/heads/master/scripts/SmartSkip.lua
+wget -O "$HOME"/.config/mpv/scripts/UndoRedo.lua https://raw.githubusercontent.com/Eisa01/mpv-scripts/refs/heads/master/scripts/UndoRedo.lua
+wget -O "$HOME"/.config/mpv/scripts/thumbfast.lua https://raw.githubusercontent.com/po5/thumbfast/refs/heads/master/thumbfast.lua
+# fonts
+wget -O "$HOME"/.config/mpv/fonts/fluent-system-icons.ttf https://github.com/Samillion/ModernZ/releases/download/v0.2.8/fluent-system-icons.ttf
+wget -O "$HOME"/.config/mpv/fonts/material-design-icons.ttf https://github.com/Samillion/ModernZ/releases/download/v0.2.8/material-design-icons.ttf
