@@ -1,0 +1,201 @@
+input {
+    keyboard {
+        xkb {
+            layout "us"
+        }
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+    }
+
+    focus-follows-mouse
+}
+
+layout {
+    gaps 3
+    center-focused-column "on-overflow"
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    default-column-width { proportion 0.5; }
+
+    border {
+        width 2
+        active-gradient from="#f7bb70" to="#bbcd9e" angle=45
+        inactive-gradient from="#57432b" to="#57432b" angle=0
+    }
+
+    focus-ring {
+        width 2
+        active-color "#f7bb70"
+        inactive-color "#57432b"
+    }
+}
+
+window-rule {
+    match app-id="com.mitchellh.ghostty"
+    opacity 1.0
+}
+
+window-rule {
+    match app-id="kitty"
+    opacity 1.0
+}
+
+animations {
+    horizontal-view-movement {
+        duration-ms 194
+        curve "ease-out-cubic"
+    }
+
+    window-open {
+        duration-ms 410
+        curve "ease-out-expo"
+    }
+
+    window-close {
+        duration-ms 149
+        curve "ease-out-quad"
+    }
+
+    window-movement {
+        duration-ms 479
+        curve "ease-out-cubic"
+    }
+
+    workspace-switch {
+        duration-ms 194
+        curve "ease-out-cubic"
+    }
+
+    config-notification-open-close {
+        duration-ms 303
+        curve "ease-out-quad"
+    }
+}
+
+prefer-no-csd
+
+screenshot-path "~/Pictures/screenshot-%Y%m%d-%H%M%S.png"
+
+environment {
+    XCURSOR_SIZE "24"
+    HYPRCURSOR_SIZE "24"
+    QT_QPA_PLATFORMTHEME "qt6ct"
+    TERMINAL "ghostty"
+    XDG_CONFIG_HOME "$HOME/.config"
+    GDK_SCALE "1.0"
+    GDK_BACKEND "wayland,x11"
+    QT_QPA_PLATFORM "wayland;xcb"
+    SDL_VIDEODRIVER "wayland"
+    CLUTTER_BACKEND "wayland"
+}
+
+spawn-at-startup "swww-daemon"
+spawn-at-startup "nm-applet" "--indicator"
+spawn-at-startup "systemctl" "--user" "import-environment" "DISPLAY" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
+spawn-at-startup "dbus-update-activation-environment" "--systemd" "DISPLAY" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
+spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
+spawn-at-startup "systemctl" "--user" "start" "hyprpolkitagent.service"
+spawn-at-startup "systemctl" "--user" "start" "hypridle-runner.service"
+spawn-at-startup "waybar"
+spawn-at-startup "swayosd-server"
+spawn-at-startup "swaync"
+spawn-at-startup "nwg-dock-hyprland" "-d"
+spawn-at-startup "hyprshell" "run"
+// spawn-at-startup "~/.config/hypr/scripts/post-init.sh"
+
+binds {
+    Mod+Return { spawn "ghostty"; }
+    Mod+E { spawn "nautilus"; }
+    Mod+B { spawn "flatpak" "run" "app.zen_browser.zen"; }
+    Mod+Space { spawn "~/.local/bin/mainmenu"; }
+    Mod+Shift+R { spawn "~/.local/bin/reload_all"; }
+    Mod+V { spawn "~/.local/bin/clipboard_monitor"; }
+    Mod+Period { spawn "~/.local/bin/emoji_selector"; }
+    Mod+W { spawn "~/.local/bin/rofi-wallpaper"; }
+    Mod+Alt+M { spawn "env" "DESKTOPINTEGRATION=1" "~/AppImages/youtube_music.appimage" "--no-sandbox"; }
+    Mod+Alt+D { spawn "flatpak" "run" "dev.vencord.Vesktop"; }
+    Mod+Alt+T { spawn "flatpak" "run" "org.telegram.desktop"; }
+
+    Mod+Shift+Q { close-window; }
+    Mod+Ctrl+L { spawn "hyprlock"; }
+    Mod+Shift+E { quit; }
+    Mod+F { fullscreen-window; }
+
+    Mod+Tab { focus-column-right; }
+    Mod+Shift+Tab { focus-column-left; }
+    Mod+J { focus-window-down; }
+    Mod+K { focus-window-up; }
+    Mod+L { focus-column-right; }
+    Mod+Left { focus-column-left; }
+    Mod+Down { focus-window-down; }
+    Mod+Up { focus-window-up; }
+    Mod+Right { focus-column-right; }
+
+    Mod+Shift+H { move-column-left; }
+    Mod+Shift+J { move-window-down; }
+    Mod+Shift+K { move-window-up; }
+    Mod+Shift+L { move-column-right; }
+    Mod+Shift+Left { move-column-left; }
+    Mod+Shift+Down { move-window-down; }
+    Mod+Shift+Up { move-window-up; }
+    Mod+Shift+Right { move-column-right; }
+
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+    Mod+0 { focus-workspace 10; }
+
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
+    Mod+Shift+0 { move-column-to-workspace 10; }
+
+    Mod+Comma { consume-window-into-column; }
+    Mod+T { consume-or-expel-window-left; }
+    Mod+A { consume-or-expel-window-right; }
+
+    Mod+R { switch-preset-column-width; }
+    Mod+Shift+F { maximize-column; }
+
+    Mod+Shift+Minus { move-workspace-down; }
+    Mod+Minus { focus-workspace-down; }
+
+    Mod+Shift+S { screenshot; }
+    Mod+Alt+Shift+S { screenshot-window; }
+
+    XF86AudioPlay { spawn "playerctl" "play-pause"; }
+    XF86AudioNext { spawn "playerctl" "next"; }
+    XF86AudioPrev { spawn "playerctl" "previous"; }
+
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "swayosd-client" "--output-volume" "5"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "swayosd-client" "--output-volume" "-5"; }
+    XF86AudioMute allow-when-locked=true { spawn "swayosd-client" "--output-volume" "mute-toggle"; }
+    XF86AudioMicMute allow-when-locked=true { spawn "swayosd-client" "--input-volume" "mute-toggle"; }
+
+    XF86MonBrightnessUp allow-when-locked=true { spawn "swayosd-client" "--brightness" "+2"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "swayosd-client" "--brightness" "-2"; }
+
+    Caps_Lock allow-when-locked=true { spawn "swayosd-client" "--caps-lock"; }
+}
+
+debug {
+}

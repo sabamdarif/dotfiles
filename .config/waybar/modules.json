@@ -172,7 +172,7 @@
   },
   "custom/launcher": {
     "format": "",
-    "on-click": "rofi -show drun -replace",
+    "on-click": "~/.local/bin/mainmenu",
     "tooltip": false
   },
   "custom/notification": {
