@@ -1,0 +1,126 @@
+@import "~/.config/rofi/0-shared-fonts.rasi"
+@import "~/.config/rofi/themes/colors.rasi"
+
+* {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+window {
+    transparency: "real";
+    location: center;
+    anchor: center;
+    fullscreen: false;
+    width: 380px;
+    height: 600px;
+    border-radius: 12px;
+    background-color: @surface-container;
+    border: 2px;
+    border-color: @outline-variant;
+}
+
+mainbox {
+    enabled: true;
+    spacing: 0px;
+    background-color: transparent;
+    children: [ "inputbar", "listview" ];
+}
+
+inputbar {
+    enabled: true;
+    spacing: 12px;
+    padding: 16px;
+    background-color: @surface-container-high;
+    text-color: @on-surface;
+    children: [ "prompt", "entry" ];
+    border-radius: 12px 12px 0px 0px;
+}
+
+prompt {
+    enabled: true;
+    background-color: transparent;
+    text-color: @primary;
+    str: "Wi-Fi";
+}
+
+entry {
+    enabled: true;
+    background-color: transparent;
+    text-color: @on-surface;
+    cursor: text;
+    placeholder: "Search networks...";
+    placeholder-color: @on-surface-variant;
+}
+
+listview {
+    enabled: true;
+    columns: 1;
+    lines: 10;
+    cycle: true;
+    dynamic: true;
+    scrollbar: false;
+    layout: vertical;
+    reverse: false;
+    fixed-height: true;
+    fixed-columns: true;
+    spacing: 3px;
+    padding: 10px;
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+element {
+    enabled: true;
+    spacing: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background-color: transparent;
+    text-color: @on-surface;
+    cursor: pointer;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+element normal.urgent {
+    background-color: @error-container;
+    text-color: @on-error-container;
+}
+
+element normal.active {
+    background-color: @tertiary-container;
+    text-color: @on-tertiary-container;
+}
+
+element selected.normal {
+    background-color: @primary-container;
+    text-color: @on-primary-container;
+}
+
+element selected.urgent {
+    background-color: @error;
+    text-color: @on-error;
+}
+
+element selected.active {
+    background-color: @tertiary;
+    text-color: @on-tertiary;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    highlight: @primary;
+    cursor: inherit;
+    vertical-align: 0.5;
+    horizontal-align: 0.0;
+}
+
+error-message {
+    padding: 16px;
+    background-color: @surface-container;
+    text-color: @error;
+    border-radius: 12px;
+}
