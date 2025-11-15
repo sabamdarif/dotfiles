@@ -3,7 +3,6 @@
  * Material You Design - Matches swaync color scheme
  */
 
-@import "~/.config/rofi/0-shared-fonts.rasi"
 @import "~/.config/rofi/themes/colors.rasi"
 
 configuration {

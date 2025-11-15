@@ -1,4 +1,3 @@
-@import "~/.config/rofi/0-shared-fonts.rasi"
 @import "~/.config/rofi/themes/colors.rasi"
 
 * {
