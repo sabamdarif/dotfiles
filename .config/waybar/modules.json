@@ -172,7 +172,7 @@
   },
   "custom/launcher": {
     "format": "",
-    "on-click": "~/.local/bin/mainmenu",
+    "on-click": "~/.config/rofi/bin/mainmenu",
     "tooltip": false
   },
   "custom/notification": {

@@ -386,12 +386,12 @@ binds {
     Mod+Return { spawn "ghostty"; }
     Mod+E { spawn "nautilus"; }
     Mod+B { spawn "flatpak" "run" "app.zen_browser.zen"; }
-    Mod+Space { spawn "~/.local/bin/mainmenu"; }
+    Mod+Space { spawn "~/.config/rofi/bin/mainmenu"; }
     Mod+Shift+R { spawn "~/.local/bin/reload_all"; }
-    Mod+V { spawn "~/.local/bin/clipboard_monitor"; }
-    Mod+Period { spawn "~/.local/bin/emoji_selector"; }
-    Mod+W { spawn "~/.local/bin/rofi-wallpaper"; }
-    Mod+Shift+F {spawn "~/.local/bin/rofi-fd-search";}
+    Mod+V { spawn "~/.config/rofi/bin/clipboard_monitor"; }
+    Mod+Period { spawn "~/.config/rofi/bin/emoji_selector"; }
+    Mod+W { spawn "~/.config/rofi/bin/rofi-wallpaper"; }
+    Mod+Shift+F {spawn "~/.config/rofi/bin/rofi-fd-search";}
     Mod+Alt+M { spawn "env" "DESKTOPINTEGRATION=1" "~/AppImages/youtube_music.appimage" "--no-sandbox"; }
     Mod+Alt+D { spawn "flatpak" "run" "dev.vencord.Vesktop"; }
     Mod+Alt+T { spawn "flatpak" "run" "org.telegram.desktop"; }
