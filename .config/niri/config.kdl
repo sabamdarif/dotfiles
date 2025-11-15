@@ -389,6 +389,7 @@ binds {
     Mod+V { spawn "~/.local/bin/clipboard_monitor"; }
     Mod+Period { spawn "~/.local/bin/emoji_selector"; }
     Mod+W { spawn "~/.local/bin/rofi-wallpaper"; }
+    Mod+Shift+F {spawn "~/.local/bin/rofi-fd-search";}
     Mod+Alt+M { spawn "env" "DESKTOPINTEGRATION=1" "~/AppImages/youtube_music.appimage" "--no-sandbox"; }
     Mod+Alt+D { spawn "flatpak" "run" "dev.vencord.Vesktop"; }
     Mod+Alt+T { spawn "flatpak" "run" "org.telegram.desktop"; }
@@ -444,7 +445,6 @@ binds {
     Mod+A { consume-or-expel-window-right; }
 
     Mod+R { switch-preset-column-width; }
-    Mod+Shift+F { maximize-column; }
 
     Mod+Shift+Minus { move-workspace-down; }
     Mod+Minus { focus-workspace-down; }

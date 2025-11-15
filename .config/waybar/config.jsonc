@@ -6,7 +6,7 @@
   "spacing": 2,
   "modules-left": [
     "custom/launcher",
-    "hyprland/workspaces",
+    "niri/workspaces",
     "memory",
     "cpu",
     "network#speed",

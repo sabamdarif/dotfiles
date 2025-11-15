@@ -126,8 +126,8 @@ zi light-mode for \
 zinit ice from"gh-r" lbin"!" nocompile
 zinit load @junegunn/fzf
 
-zinit ice from"gh-r" lbin"!" nocompile
-zinit load @sharkdp/fd
+# zinit ice from"gh-r" lbin"!" nocompile
+# zinit load @sharkdp/fd
 
 zinit ice from"gh-r" lbin"!" nocompile
 zinit load @sharkdp/bat

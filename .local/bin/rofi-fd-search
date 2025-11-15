@@ -1,0 +1,3 @@
+#!/bin/bash
+
+fd . ~ --type f --no-hidden | awk -F/ '{printf "%-40s  →  %s\n", $NF, $0}' | rofi -dmenu -i -p "  Find: " | sed 's/.*→  //' | xargs -r xdg-open
