@@ -1,0 +1,7 @@
+* {
+  font: "Noto Serif, FantasqueSansM Nerd Font Propo 13";
+}
+
+element-text {
+  font: "Noto Serif, FantasqueSansM Nerd Font Propo 11";
+}

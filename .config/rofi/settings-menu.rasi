@@ -1,0 +1,164 @@
+@import "~/.config/rofi/themes/colors.rasi"
+
+* {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+window {
+    transparency: "real";
+    location: center;
+    anchor: center;
+    fullscreen: false;
+    width: 500px;
+    border-radius: 16px;
+    background-color: @surface-container;
+    border: 2px;
+    border-color: @outline-variant;
+}
+
+mainbox {
+    enabled: true;
+    spacing: 0px;
+    background-color: transparent;
+    children: [ "inputbar", "listview" ];
+}
+
+inputbar {
+    enabled: true;
+    spacing: 16px;
+    padding: 24px 24px 20px 24px;
+    background-color: transparent;
+    text-color: @on-surface;
+    children: [ "prompt", "entry" ];
+}
+
+prompt {
+    enabled: true;
+    background-color: transparent;
+    text-color: @primary;
+}
+
+entry {
+    enabled: true;
+    background-color: transparent;
+    text-color: @on-surface;
+    cursor: text;
+    placeholder: "Search...";
+    placeholder-color: @on-surface-variant;
+}
+
+message {
+    enabled: true;
+    padding: 16px 24px;
+    margin: 0px 12px 12px 12px;
+    background-color: @surface-container-high;
+    text-color: @on-surface;
+    border-radius: 12px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: @on-surface;
+    vertical-align: 0.5;
+    horizontal-align: 0.5;
+    padding: 8px;
+}
+
+listview {
+    enabled: true;
+    columns: 1;
+    lines: 8;
+    cycle: true;
+    dynamic: true;
+    scrollbar: true;
+    layout: vertical;
+    reverse: false;
+    fixed-height: true;
+    fixed-columns: true;
+    spacing: 8px;
+    padding: 0px 24px 24px 24px;
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+scrollbar {
+    width: 4px;
+    border: 0;
+    handle-color: @outline;
+    handle-width: 4px;
+    padding: 0;
+    background-color: @surface-container-low;
+    border-radius: 4px;
+}
+
+element {
+    enabled: true;
+    spacing: 16px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background-color: @surface-container-low;
+    text-color: @on-surface;
+    cursor: pointer;
+    border: 2px;
+    border-color: transparent;
+}
+
+element normal.normal {
+    background-color: @surface-container-low;
+    text-color: @on-surface;
+}
+
+element normal.urgent {
+    background-color: @error-container;
+    text-color: @on-error-container;
+}
+
+element normal.active {
+    background-color: @tertiary-container;
+    text-color: @on-tertiary-container;
+}
+
+element selected.normal {
+    background-color: @primary-container;
+    text-color: @on-primary-container;
+    border-color: @primary;
+}
+
+element selected.urgent {
+    background-color: @error;
+    text-color: @on-error;
+    border-color: @error;
+}
+
+element selected.active {
+    background-color: @tertiary;
+    text-color: @on-tertiary;
+    border-color: @tertiary;
+}
+
+element-icon {
+    background-color: transparent;
+    text-color: inherit;
+    size: 28px;
+    cursor: inherit;
+    vertical-align: 0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    cursor: inherit;
+    vertical-align: 0.5;
+    horizontal-align: 0.0;
+}
+
+error-message {
+    padding: 24px;
+    margin: 24px;
+    background-color: @error-container;
+    text-color: @on-error-container;
+    border-radius: 12px;
+    border: 2px;
+    border-color: @error;
+}

@@ -1,0 +1,275 @@
+#!/bin/bash
+
+# Set to true when going directly to a submenu, so we can exit directly
+BACK_TO_EXIT=false
+
+# Configuration paths
+ROFI_FONT_CONFIG="$HOME/.config/rofi/themes/fonts.rasi"
+WAYBAR_FONT_CONFIG="$HOME/.config/waybar/fonts.css"
+GTK_CONFIG="$HOME/.config/gtk-3.0/settings.ini"
+QT_CONFIG="$HOME/.config/qt5ct/qt5ct.conf"
+
+back_to() {
+    local parent_menu="$1"
+
+    if [[ "$BACK_TO_EXIT" == "true" ]]; then
+        exit 0
+    elif [[ -n "$parent_menu" ]]; then
+        "$parent_menu"
+    else
+        show_main_menu
+    fi
+}
+
+menu() {
+    local prompt="$1"
+    local options="$2"
+    local extra="$3"
+    local preselect="$4"
+
+    read -r -a args <<<"$extra"
+
+    if [[ -n "$preselect" ]]; then
+        local index
+        index=$(echo -e "$options" | grep -nxF "$preselect" | cut -d: -f1)
+        if [[ -n "$index" ]]; then
+            args+=("-c" "$index")
+        fi
+    fi
+
+    echo -e "$options" | rofi -dmenu -p "$prompt" -theme ~/.config/rofi/settings-menu.rasi "${args[@]}" 2>/dev/null
+}
+
+notify() {
+    notify-send "$1" "$2"
+}
+
+# ============================================================================
+# Font Management Functions
+# ============================================================================
+
+list_fonts() {
+    # List all available fonts from the system
+    fc-list : family | sort -u
+}
+
+get_current_font() {
+    # Try to get current font from rofi config
+    if [[ -f "$ROFI_FONT_CONFIG" ]]; then
+        grep -oP 'font:\s*"\K[^"]+' "$ROFI_FONT_CONFIG" | head -1
+    else
+        echo "FantasqueSansM Nerd Font Propo 13"
+    fi
+}
+
+set_rofi_font() {
+    local font_name="$1"
+    local font_size="${2:-13}"
+    local small_size="${3:-11}"
+
+    # Create rofi config directory if it doesn't exist
+    mkdir -p "$(dirname "$ROFI_FONT_CONFIG")"
+
+    # Create or update rofi font configuration
+    cat >"$ROFI_FONT_CONFIG" <<EOF
+* {
+  font: "$font_name, FantasqueSansM Nerd Font Propo $font_size";
+}
+
+element-text {
+  font: "$font_name, FantasqueSansM Nerd Font Propo $small_size";
+}
+EOF
+}
+
+set_waybar_font() {
+    local font_name="$1"
+
+    # Create waybar config directory if it doesn't exist
+    mkdir -p "$(dirname "$WAYBAR_FONT_CONFIG")"
+
+    # Create or update waybar font configuration
+    cat >"$WAYBAR_FONT_CONFIG" <<EOF
+* {
+  font-family: "$font_name, FantasqueSansM Nerd Font Propo";
+}
+EOF
+}
+
+set_gtk_font() {
+    local font_name="$1"
+    local font_size="${2:-11}"
+
+    # Create GTK config directory if it doesn't exist
+    mkdir -p "$(dirname "$GTK_CONFIG")"
+
+    # Update or create GTK settings
+    if [[ -f "$GTK_CONFIG" ]]; then
+        # Update existing config
+        sed -i "s/^gtk-font-name=.*/gtk-font-name=$font_name $font_size/" "$GTK_CONFIG"
+    else
+        # Create new config
+        cat >"$GTK_CONFIG" <<EOF
+[Settings]
+gtk-font-name=$font_name $font_size
+EOF
+    fi
+}
+
+set_qt_font() {
+    local font_name="$1"
+    local font_size="${2:-11}"
+
+    # Create Qt5 config directory if it doesn't exist
+    mkdir -p "$(dirname "$QT_CONFIG")"
+
+    # Update or create Qt5 settings
+    if [[ -f "$QT_CONFIG" ]]; then
+        # Update existing config
+        sed -i "s/^fixed=.*/fixed=\"$font_name,$font_size,-1,5,50,0,0,0,0,0\"/" "$QT_CONFIG"
+        sed -i "s/^general=.*/general=\"$font_name,$font_size,-1,5,50,0,0,0,0,0\"/" "$QT_CONFIG"
+    else
+        # Create new config
+        cat >"$QT_CONFIG" <<EOF
+[Fonts]
+fixed="$font_name,$font_size,-1,5,50,0,0,0,0,0"
+general="$font_name,$font_size,-1,5,50,0,0,0,0,0"
+EOF
+    fi
+}
+
+apply_font() {
+    local font_selection="$1"
+
+    # Extract just the font family name (remove any size info)
+    local font_name=$(echo "$font_selection" | sed 's/[0-9]*$//' | xargs)
+
+    if [[ -z "$font_name" ]]; then
+        notify "Error" "No font selected"
+        return 1
+    fi
+
+    notify "Applying Font" "Setting $font_name system-wide..."
+
+    # Apply font to all configurations
+    set_rofi_font "$font_name" "13" "11"
+    set_waybar_font "$font_name"
+    set_gtk_font "$font_name" "11"
+    set_qt_font "$font_name" "11"
+
+    # Reload configurations if possible
+    pkill -SIGUSR1 waybar 2>/dev/null
+    gsettings set org.gnome.desktop.interface font-name "$font_name 11" 2>/dev/null
+
+    # Run reload script if it exists
+    if [[ -x "$HOME/.local/bin/reload_all" ]]; then
+        "$HOME/.local/bin/reload_all" &
+    fi
+
+    notify "Font Applied" "$font_name has been set system-wide!"
+}
+
+show_font_menu() {
+    local current_font=$(get_current_font)
+    local font_list=$(list_fonts)
+
+    local selected_font=$(menu "Select Font" "$font_list" "" "$current_font")
+
+    if [[ "$selected_font" == "CNCLD" || -z "$selected_font" ]]; then
+        back_to show_main_menu
+    else
+        apply_font "$selected_font"
+        back_to show_main_menu
+    fi
+}
+
+# ============================================================================
+# Theme Management Functions (Placeholder)
+# ============================================================================
+
+show_theme_menu() {
+    # Placeholder for theme selection
+    local themes="  Dark Theme\n  Light Theme\n  Catppuccin\n  Nord\n  Dracula"
+
+    local selected=$(menu "Select Theme" "$themes")
+
+    if [[ "$selected" != "CNCLD" && -n "$selected" ]]; then
+        notify "Theme" "Theme switching coming soon!"
+    fi
+
+    back_to show_main_menu
+}
+
+# ============================================================================
+# Icon Management Functions (Placeholder)
+# ============================================================================
+
+show_icon_menu() {
+    # Placeholder for icon theme selection
+    local icon_themes="  Papirus\n  Numix\n  Breeze\n  Adwaita\n  Tela"
+
+    local selected=$(menu "Select Icon Theme" "$icon_themes")
+
+    if [[ "$selected" != "CNCLD" && -n "$selected" ]]; then
+        notify "Icons" "Icon theme switching coming soon!"
+    fi
+
+    back_to show_main_menu
+}
+
+# ============================================================================
+# Keybinding Menu (Placeholder)
+# ============================================================================
+
+show_keybindings_menu() {
+    notify "Keybindings" "Keybinding configuration coming soon!"
+    back_to show_main_menu
+}
+
+# ============================================================================
+# About Menu (Placeholder)
+# ============================================================================
+
+show_about_menu() {
+    rofi -e "Settings Manager v1.0\n\nA modular settings management system\n\nFeatures:\n• Font Management\n• Theme Selection (Coming Soon)\n• Icon Themes (Coming Soon)\n• Keybindings (Coming Soon)" -theme-str 'window {width: 500px;}'
+    back_to show_main_menu
+}
+
+# ============================================================================
+# Main Menu
+# ============================================================================
+
+show_main_menu() {
+    local selection=$(menu "Settings" "  Font\n󰸌  Theme\n  Icons\n  Keybindings\n  About")
+
+    case "$selection" in
+    *Font*) show_font_menu ;;
+    *Theme*) show_theme_menu ;;
+    *Icons*) show_icon_menu ;;
+    *Keybindings*) show_keybindings_menu ;;
+    *About*) show_about_menu ;;
+    *) exit 0 ;;
+    esac
+}
+
+# ============================================================================
+# Entry Point
+# ============================================================================
+
+go_to_menu() {
+    case "${1,,}" in
+    *font*) show_font_menu ;;
+    *theme*) show_theme_menu ;;
+    *icon*) show_icon_menu ;;
+    *keybind*) show_keybindings_menu ;;
+    *about*) show_about_menu ;;
+    *) show_main_menu ;;
+    esac
+}
+
+if [[ -n "$1" ]]; then
+    BACK_TO_EXIT=true
+    go_to_menu "$1"
+else
+    show_main_menu
+fi
