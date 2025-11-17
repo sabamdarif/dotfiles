@@ -347,6 +347,7 @@ window-rule {
     match app-id="nm-connection-editor"
     match app-id="org.gnome.Nautilus"
     match app-id="blueman-manager"
+    match app-id="org.kde.kdeconnect.app"
     open-floating true
 }
 
