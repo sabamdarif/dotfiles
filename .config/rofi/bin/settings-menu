@@ -444,6 +444,17 @@ show_capture_menu() {
 }
 
 # ============================================================================
+# System Reload Functions
+# ============================================================================
+
+show_update_menu() {
+    if [[ -x "$HOME/.local/bin/reload_all" ]]; then
+        "$HOME/.local/bin/reload_all" &
+    fi
+    back_to show_main_menu
+}
+
+# ============================================================================
 # Keybinding Menu (Placeholder)
 # ============================================================================
 
@@ -455,9 +466,20 @@ show_keybindings_menu() {
 # ============================================================================
 # About Menu (Placeholder)
 # ============================================================================
+get_default_terminal() {
+    # Get terminal from environment variable or use ghostty as default
+    echo "${TERMINAL:-ghostty}"
+}
+
+run_info_check() {
+    local terminal=$(get_default_terminal)
+
+    # Run fastfetch and wait for user to press enter
+    "$terminal" -e bash -c "fastfetch; echo ''; read -p 'Press Enter to close...'"
+}
 
 show_about_menu() {
-    rofi -e "Settings Manager v1.0\n\nA modular settings management system\n\nFeatures:\n• Font Management\n• Theme Selection (Coming Soon)\n• Icon Themes (Coming Soon)\n• Keybindings (Coming Soon)" -theme-str 'window {width: 500px;}'
+    run_info_check
     back_to show_main_menu
 }
 
@@ -466,13 +488,14 @@ show_about_menu() {
 # ============================================================================
 
 show_main_menu() {
-    local selection=$(menu "Settings" "  Font\n󰸌  Theme\n  Icons\n  Capture\n  Keybindings\n  About")
+    local selection=$(menu "Settings" "  Font\n󰸌  Theme\n  Icons\n  Capture\n  Refresh\n  Keybindings\n  About")
 
     case "$selection" in
     *Font*) show_font_menu ;;
     *Theme*) show_theme_menu ;;
     *Icons*) show_icon_menu ;;
     *Capture*) show_capture_menu ;;
+    *Refresh*) show_update_menu ;;
     *Keybindings*) show_keybindings_menu ;;
     *About*) show_about_menu ;;
     *) exit 0 ;;
@@ -489,6 +512,7 @@ go_to_menu() {
     *theme*) show_theme_menu ;;
     *icon*) show_icon_menu ;;
     *capture*) show_capture_menu ;;
+    *refresh*) show_update_menu ;;
     *keybind*) show_keybindings_menu ;;
     *about*) show_about_menu ;;
     *) show_main_menu ;;
