@@ -277,6 +277,7 @@ spawn-sh-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-sh-at-startup "waybar"
 // spawn-sh-at-startup "swaync"
 spawn-sh-at-startup "swayosd-server"
+spawn-at-startup "kdeconnectd"
 
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
@@ -300,18 +301,16 @@ hotkey-overlay {
 screenshot-path "~/Pictures/screenshot-%Y%m%d-%H%M%S.png"
 
 // https://yalter.github.io/niri/Configuration%3A-Miscellaneous.html#environment
-// environment {
-//     XCURSOR_SIZE "24"
-//     HYPRCURSOR_SIZE "24"
-//     QT_QPA_PLATFORMTHEME "qt6ct"
-//     TERMINAL "ghostty"
-//     XDG_CONFIG_HOME "$HOME/.config"
-//     GDK_SCALE "1.0"
-//     GDK_BACKEND "wayland,x11"
-//     QT_QPA_PLATFORM "wayland;xcb"
-//     SDL_VIDEODRIVER "wayland"
-//     CLUTTER_BACKEND "wayland"
-// }
+environment {
+  XCURSOR_SIZE "24"
+  GDK_SCALE "1.0"
+  XDG_CURRENT_DESKTOP "niri"
+  TERMINAL "ghostty"
+  QT_QPA_PLATFORM "wayland"
+  ELECTRON_OZONE_PLATFORM_HINT "auto"
+  QT_QPA_PLATFORMTHEME "qt6ct"
+  QT_QPA_PLATFORMTHEME_QT "qt6ct"
+}
 
 // You can also set this to null to disable saving screenshots to disk.
 // screenshot-path null
@@ -345,22 +344,17 @@ window-rule {
 // Open the Firefox picture-in-picture player as floating by default.
 window-rule {
     match app-id="app.zen_browser.zen" title="^Picture-in-Picture$"
-    open-floating true
-}
-
-window-rule {
-    match app-id="app.zen_browser.zen"
-    open-maximized true
-}
-
-window-rule {
+    match app-id="nm-connection-editor"
+    match app-id="org.gnome.Nautilus"
     match app-id="blueman-manager"
     open-floating true
 }
 
+// maximizes the window by default
 window-rule {
-    match app-id="nm-connection-editor"
-    open-floating true
+    match app-id="^libreoffice.*"
+    match app-id="app.zen_browser.zen"
+    open-maximized true
 }
 
 // Example: block out two password managers from screen capture.
@@ -397,29 +391,37 @@ binds {
     Mod+Alt+T { spawn "flatpak" "run" "org.telegram.desktop"; }
 
     Mod+Q { close-window; }
-    Mod+Ctrl+L { spawn "hyprlock"; }
+    Mod+Shift+L { spawn "hyprlock"; }
     Mod+Shift+E { quit; }
     Mod+F { fullscreen-window; }
     Mod+M { maximize-column; }
 
-    Mod+Tab { focus-column-right; }
-    Mod+Shift+Tab { focus-column-left; }
-    Mod+J { focus-window-down; }
-    Mod+K { focus-window-up; }
-    Mod+L { focus-column-right; }
-    Mod+Left { focus-column-left; }
-    Mod+Down { focus-window-down; }
-    Mod+Up { focus-window-up; }
+    // focus binds
     Mod+Right { focus-column-right; }
+    Mod+Left  { focus-column-left; }
+    Mod+Up    { focus-window-up; }
+    Mod+Down  { focus-window-down; }
 
-    Mod+Shift+H { move-column-left; }
-    Mod+Shift+J { move-window-down; }
-    Mod+Shift+K { move-window-up; }
-    Mod+Shift+L { move-column-right; }
-    Mod+Shift+Left { move-column-left; }
-    Mod+Shift+Down { move-window-down; }
-    Mod+Shift+Up { move-window-up; }
-    Mod+Shift+Right { move-column-right; }
+    Mod+L     { focus-column-right; }
+    Mod+H     { focus-column-left; }
+    Mod+K     { focus-window-or-workspace-up; }
+    Mod+J     { focus-window-or-workspace-down; }
+
+    // column move binds
+    Mod+Ctrl+Right { move-column-right; }
+    Mod+Ctrl+Left  { move-column-left; }
+    Mod+Ctrl+Up    { move-window-up; }
+    Mod+Ctrl+Down  { move-window-down; }
+
+    Mod+Ctrl+L     { move-column-right; }
+    Mod+Ctrl+H     { move-column-left; }
+    Mod+Ctrl+K     { move-window-up-or-to-workspace-up; }
+    Mod+Ctrl+J     { move-window-down-or-to-workspace-down; }
+
+    Mod+Home { focus-column-first; }
+    Mod+End  { focus-column-last; }
+    Mod+Ctrl+Home { move-column-to-first; }
+    Mod+Ctrl+End  { move-column-to-last; }
 
     Mod+1 { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
