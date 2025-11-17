@@ -2,7 +2,7 @@
 
 cliphist list | rofi -dmenu \
     -theme ~/.config/rofi/clipboard-monitor.rasi \
-    -p "Clipboard" \
+    -p " Clipboard" \
     -mesg "Select an item to copy" \
     -matching fuzzy \
     -no-custom \

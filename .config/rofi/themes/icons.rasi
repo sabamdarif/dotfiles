@@ -1,3 +1,3 @@
-configuration {
-    icon-theme: "Yaru";
+* {
+  icon-theme: "Adwaita";
 }

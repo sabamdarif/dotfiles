@@ -5,6 +5,7 @@ BACK_TO_EXIT=false
 
 # Configuration paths
 ROFI_FONT_CONFIG="$HOME/.config/rofi/themes/fonts.rasi"
+ROFI_ICON_CONFIG="$HOME/.config/rofi/themes/icons.rasi"
 WAYBAR_FONT_CONFIG="$HOME/.config/waybar/fonts.css"
 GTK_CONFIG="$HOME/.config/gtk-3.0/settings.ini"
 QT_CONFIG="$HOME/.config/qt5ct/qt5ct.conf"
@@ -201,17 +202,106 @@ show_theme_menu() {
 }
 
 # ============================================================================
-# Icon Management Functions (Placeholder)
+# Icon Management Functions
 # ============================================================================
 
+list_icon_themes() {
+    # List all available icon themes from system and user directories
+    find /usr/share/icons ~/.local/share/icons ~/.icons -maxdepth 1 -type d 2>/dev/null |
+        xargs -I{} basename {} |
+        grep -v "^icons$" |
+        sort -u |
+        grep -v "^hicolor$" |
+        grep -v "^default$"
+}
+
+get_current_icon_theme() {
+    # Try to get current icon theme from gsettings
+    gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d "'"
+}
+
+set_icon_theme() {
+    local icon_theme="$1"
+
+    # Update Rofi icon theme config
+    mkdir -p "$(dirname "$ROFI_ICON_CONFIG")"
+    cat >"$ROFI_ICON_CONFIG" <<EOF
+* {
+  icon-theme: "$icon_theme";
+}
+EOF
+
+    # Update gsettings
+    gsettings set org.gnome.desktop.interface icon-theme "$icon_theme"
+
+    # Update GTK 3.0 settings
+    if [[ -f "$GTK_CONFIG" ]]; then
+        sed -i "s/^gtk-icon-theme-name=.*/gtk-icon-theme-name=$icon_theme/" "$GTK_CONFIG"
+    else
+        mkdir -p "$(dirname "$GTK_CONFIG")"
+        echo "[Settings]" >>"$GTK_CONFIG"
+        echo "gtk-icon-theme-name=$icon_theme" >>"$GTK_CONFIG"
+    fi
+
+    # Update GTK 2.0 settings
+    local GTK2_CONFIG="$HOME/.gtkrc-2.0"
+    if grep -q "^gtk-icon-theme-name=" "$GTK2_CONFIG" 2>/dev/null; then
+        sed -i "s/^gtk-icon-theme-name=.*/gtk-icon-theme-name=\"$icon_theme\"/" "$GTK2_CONFIG"
+    else
+        echo "gtk-icon-theme-name=\"$icon_theme\"" >>"$GTK2_CONFIG"
+    fi
+
+    # Update GTK 4.0 settings
+    local GTK4_CONFIG="$HOME/.config/gtk-4.0/settings.ini"
+    mkdir -p "$(dirname "$GTK4_CONFIG")"
+    if [[ -f "$GTK4_CONFIG" ]]; then
+        sed -i "s/^gtk-icon-theme-name=.*/gtk-icon-theme-name=$icon_theme/" "$GTK4_CONFIG"
+    else
+        echo "[Settings]" >>"$GTK4_CONFIG"
+        echo "gtk-icon-theme-name=$icon_theme" >>"$GTK4_CONFIG"
+    fi
+
+    # Update xsettingsd for X11 apps
+    local XSETTINGSD_CONFIG="$HOME/.config/xsettingsd/xsettingsd.conf"
+    mkdir -p "$(dirname "$XSETTINGSD_CONFIG")"
+    if grep -q "^Net/IconThemeName" "$XSETTINGSD_CONFIG" 2>/dev/null; then
+        sed -i "s|^Net/IconThemeName.*|Net/IconThemeName \"$icon_theme\"|" "$XSETTINGSD_CONFIG"
+    else
+        echo "Net/IconThemeName \"$icon_theme\"" >>"$XSETTINGSD_CONFIG"
+    fi
+
+    # Restart xsettingsd if running
+    pkill -HUP xsettingsd 2>/dev/null || killall -HUP xsettingsd 2>/dev/null
+}
+
+apply_icon_theme() {
+    local icon_theme="$1"
+
+    if [[ -z "$icon_theme" ]]; then
+        notify "Error" "No icon theme selected"
+        return 1
+    fi
+
+    notify "Applying Icon Theme" "Setting $icon_theme..."
+
+    set_icon_theme "$icon_theme"
+
+    # Run reload script if it exists
+    if [[ -x "$HOME/.local/bin/reload_all" ]]; then
+        "$HOME/.local/bin/reload_all" &
+    fi
+
+    notify "Icon Theme Applied" "$icon_theme has been set!"
+}
+
 show_icon_menu() {
-    # Placeholder for icon theme selection
-    local icon_themes="  Papirus\n  Numix\n  Breeze\n  Adwaita\n  Tela"
+    local current_theme=$(get_current_icon_theme)
+    local theme_list=$(list_icon_themes)
 
-    local selected=$(menu "Select Icon Theme" "$icon_themes")
+    local selected_theme=$(menu "Select Icon Theme" "$theme_list" "" "$current_theme")
 
-    if [[ "$selected" != "CNCLD" && -n "$selected" ]]; then
-        notify "Icons" "Icon theme switching coming soon!"
+    if [[ "$selected_theme" != "CNCLD" && -n "$selected_theme" ]]; then
+        apply_icon_theme "$selected_theme"
     fi
 
     back_to show_main_menu
