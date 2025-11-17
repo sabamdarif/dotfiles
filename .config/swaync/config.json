@@ -134,7 +134,7 @@
           },
           {
             "label": "Logout",
-            "command": "hyprctl dispatch exit"
+            "command": "niri msg action quit"
           }
         ]
       }
