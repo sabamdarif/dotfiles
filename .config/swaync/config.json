@@ -43,7 +43,7 @@
     "grouped": true
   },
 
-  "widgets": ["buttons-grid", "dnd", "menubar", "notifications", "title"],
+  "widgets": ["buttons-grid", "dnd", "menubar", "mpris", "notifications", "title"],
 
   "widget-config": {
     "title": {
