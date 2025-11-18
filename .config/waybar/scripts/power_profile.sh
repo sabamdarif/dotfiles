@@ -5,22 +5,7 @@ ICON_POWERSAVE="󰌪"
 ICON_BALANCED=""
 ICON_PERFORMANCE="󰓅"
 
-# Create state file if it doesn't exist
-if [ ! -f "$STATE_FILE" ]; then
-    echo "balanced" >"$STATE_FILE"
-fi
-
-get_current_mode() {
-    if [ -f "$STATE_FILE" ]; then
-        cat "$STATE_FILE"
-    else
-        echo "balanced"
-    fi
-}
-
 get_current_governor() {
-    # cpufreqctl outputs: "powersave powersave powersave..." (one per core)
-    # Just get the first one, redirect all errors
     local governor=$(cpufreqctl.auto-cpufreq --governor 2>/dev/null | head -n1 | awk '{print $1}')
     if [ -z "$governor" ]; then
         echo "unknown"
@@ -30,12 +15,33 @@ get_current_governor() {
 }
 
 get_current_epp() {
-    # Get EPP value - outputs similar format to governor
     local epp=$(cpufreqctl.auto-cpufreq --epp 2>/dev/null | head -n1 | awk '{print $1}')
     if [ -z "$epp" ]; then
         echo "unknown"
     else
         echo "$epp"
+    fi
+}
+
+# Detect current mode based on actual governor and EPP values
+detect_current_mode() {
+    local governor=$(get_current_governor)
+    local epp=$(get_current_epp)
+
+    # Determine mode based on actual system state
+    if [ "$governor" = "performance" ] && [ "$epp" = "performance" ]; then
+        echo "performance"
+    elif [ "$governor" = "powersave" ] && [ "$epp" = "power" ]; then
+        echo "powersave"
+    elif [ "$governor" = "powersave" ] && [[ "$epp" =~ ^balance ]]; then
+        echo "balanced"
+    else
+        # Fallback to state file or default to balanced
+        if [ -f "$STATE_FILE" ]; then
+            cat "$STATE_FILE"
+        else
+            echo "balanced"
+        fi
     fi
 }
 
@@ -65,7 +71,7 @@ set_power_mode() {
 }
 
 cycle_mode() {
-    local current=$(get_current_mode)
+    local current=$(detect_current_mode)
 
     case $current in
     powersave)
@@ -81,7 +87,7 @@ cycle_mode() {
 }
 
 output_json() {
-    local mode=$(get_current_mode)
+    local mode=$(detect_current_mode)
     local governor=$(get_current_governor)
     local epp=$(get_current_epp)
 
