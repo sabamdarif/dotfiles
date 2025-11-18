@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Check if running under wayland
+if [ "$WAYLAND_DISPLAY" = "" ]; then
+    echo "Error: Must be run under a wayland session."
+    exit 1
+fi
+
+# Get color position
+position=$(slurp -b 00000000 -p)
+
+# Exit if user cancelled
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+# Sleep to prevent issues with grim
+sleep 1
+
+# Get the color using grim and imagemagick/graphicsmagick
+if command -v gm &> /dev/null; then
+    color=$(grim -g "$position" -t png - \
+        | gm magick - -format '%[pixel:p{0,0}]' txt:- \
+        | tail -n 1 \
+        | rev \
+        | cut -d ' ' -f 1 \
+        | rev
+    )
+else
+    color=$(grim -g "$position" -t png - \
+        | magick - -format '%[pixel:p{0,0}]' txt:- \
+        | tail -n 1 \
+        | cut -d ' ' -f 4
+    )
+fi
+
+# Copy to clipboard
+echo $color | wl-copy -n
+
+# Show notification (optional - comment out if you don't want it)
+notify-send "Color copied" "$color"
