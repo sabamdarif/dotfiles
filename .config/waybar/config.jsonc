@@ -1,24 +1,53 @@
-{
-  "layer": "top",
-  "position": "top",
-  "height": 35,
-  "margin": "0 0 0 0",
-  "spacing": 2,
-  "modules-left": [
-    "custom/launcher",
-    "niri/workspaces",
-    "memory",
-    "cpu",
-    "network#speed",
-  ],
-  "modules-center": ["custom/camera-usage", "clock", "power-profiles-daemon"],
-  "modules-right": [
-    "privacy",
-    "tray",
-    "pulseaudio",
-    "network#info",
-    "battery",
-    "custom/notification",
-  ],
-  "include": ["~/.config/waybar/modules.json"],
-}
+[
+  {
+    "layer": "top",
+    "position": "top",
+    "height": 35,
+    "margin": "0 0 0 0",
+    "spacing": 2,
+    "modules-left": [
+      "custom/launcher",
+      "niri/workspaces",
+      "memory",
+      "cpu",
+      "network#speed"
+    ],
+    "modules-center": ["custom/camera-usage", "clock", "custom/power-profile"],
+    "modules-right": [
+      "privacy",
+      "tray",
+      "pulseaudio",
+      "network#info",
+      "battery",
+      "custom/notification"
+    ],
+    "include": ["~/.config/waybar/modules_top.json"]
+  }
+  // {
+  //   "layer": "top",
+  //   "position": "bottom",
+  //   "height": 48,
+  //   "margin": "0 0 0 0",
+  //   "spacing": 8,
+  //   "width": 2,
+  //   "mode": "hide",
+  //   "exclusive": false,
+  //   "passthrough": false,
+  //   // "start_hidden": true,
+  //   "modifier-reset": "release",
+  //   "modules-left": [
+  //       // "custom/os_button",
+  //       "custom/zen-browser",
+  //       "custom/files",
+  //       "custom/app-store",
+  //       "custom/ghostty",
+  //       "custom/telegram",
+  //       "custom/vesktop",
+  //       "custom/gimp",
+  //       "custom/bottles"
+  //   ],
+  //   "modules-center": ["wlr/taskbar"],
+  //   "modules-right": [],
+  //   "include": ["~/.config/waybar/modules_bottom.json"]
+  // }
+]

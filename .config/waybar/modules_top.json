@@ -12,8 +12,6 @@
       "focused": " ",
       "default": " "
     },
-    "on-scroll-up": "hyprctl dispatch workspace e-1",
-    "on-scroll-down": "hyprctl dispatch workspace e+1"
   },
   "tray": {
     // "icon-size": 14,
@@ -88,6 +86,14 @@
       "balanced": "",
       "power-saver": "󰌪"
     }
+  },
+  "custom/power-profile": {
+    "format": "{}",
+    "return-type": "json",
+    "interval": 3,
+    "exec": "~/.config/waybar/scripts/power_profile.sh status",
+    "on-click": "~/.config/waybar/scripts/power_profile.sh cycle",
+    "tooltip": true
   },
   "cpu": {
     "format": " {usage: >3}%",
