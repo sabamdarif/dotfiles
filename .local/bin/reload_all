@@ -1,19 +1,49 @@
 #!/bin/bash
 
+# Function to check if a process is running
+is_running() {
+    pgrep -x "$1" >/dev/null 2>&1
+}
+
 # Reload Hyprland
-hyprctl reload
+# hyprctl reload
 
-# Restart Waybar
-pkill waybar
-waybar &
+# Waybar - reload if running, start if not
+if is_running "waybar"; then
+    echo "Reloading Waybar..."
+    killall -SIGUSR2 waybar
+else
+    echo "Starting Waybar..."
+    waybar &
+    disown
+fi
 
-# Restart SwayNC
-pkill swaync
-swaync &
+# SwayNC - restart if running, start if not
+if is_running "swaync"; then
+    echo "Restarting SwayNC..."
+    swaync-client -R
+    swaync-client -rs
+else
+    echo "Starting SwayNC..."
+    swaync &
+    disown
+fi
 
-# Restart SwayOSD
-pkill swayosd-server
-swayosd-server &
+# SwayOSD - restart if running, start if not
+if is_running "swayosd-server"; then
+    echo "Restarting SwayOSD..."
+    pkill swayosd-server
+    sleep 0.5 # Brief pause to ensure clean shutdown
+    swayosd-server &
+    disown
+else
+    echo "Starting SwayOSD..."
+    swayosd-server &
+    disown
+fi
 
-# Restart hyprpolkitagent
+# Hyprpolkitagent - use systemctl to restart
+echo "Restarting hyprpolkitagent..."
 systemctl --user restart hyprpolkitagent
+
+echo "All services processed."
