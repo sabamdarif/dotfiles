@@ -2,12 +2,15 @@
 
 # Configuration
 WALLPAPER_PATH="$HOME/.config/background"
-LOG_FILE="/tmp/rofi-wallpaper.log"
+LOG_FILE="$HOME/.config/rofi/rofi-wallpaper.log"
+MODE=$(cat "$HOME/.config/matugen/current_mode")
 
 # Create log directory if it doesn't exist
 mkdir -p "$(dirname "$LOG_FILE")"
 
 # Function to log messages
+echo "" >"$LOG_FILE"
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >>"$LOG_FILE"
 }
@@ -62,7 +65,7 @@ setwall() {
 
     # Generate color palettes with matugen
     log "Running matugen..."
-    ~/.cargo/bin/matugen image --mode dark "$WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"
+    ~/.cargo/bin/matugen image --mode "$MODE" "$WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"
     log "matugen completed"
 
     # reload all services (removed exec to allow script to continue)
