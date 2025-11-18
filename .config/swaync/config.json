@@ -99,8 +99,8 @@
           "label": "  Coffee",
           "type": "toggle",
           "active": false,
-          "command": "sh -c '~/.config/swaync/scripts/toggle_hypridle.sh'",
-          "update-command": "sh -c '~/.config/swaync/scripts/update_hypridle.sh'"
+          "command": "sh -c '~/.config/swaync/scripts/toggle_coffice.sh'",
+          "update-command": "sh -c '~/.config/swaync/scripts/update_coffice.sh'"
         },
         {
           "label": "⏾ Night Light",
