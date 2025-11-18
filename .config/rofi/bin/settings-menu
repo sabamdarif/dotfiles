@@ -5,6 +5,7 @@ BACK_TO_EXIT=false
 
 # Configuration paths
 ROFI_FONT_CONFIG="$HOME/.config/rofi/themes/fonts.rasi"
+SWAYNC_FONT_CONFIG="$HOME/.config/swaync/fonts.css"
 ROFI_ICON_CONFIG="$HOME/.config/rofi/themes/icons.rasi"
 WAYBAR_FONT_CONFIG="$HOME/.config/waybar/fonts.css"
 GTK_CONFIG="$HOME/.config/gtk-3.0/settings.ini"
@@ -83,6 +84,20 @@ element-text {
 EOF
 }
 
+set_swaync_font() {
+    local font_name="$1"
+
+    # Create waybar config directory if it doesn't exist
+    mkdir -p "$(dirname "$SWAYNC_FONT_CONFIG")"
+
+    # Create or update waybar font configuration
+    cat >"$SWAYNC_FONT_CONFIG" <<EOF
+* {
+  font-family: "$font_name, FantasqueSansM Nerd Font Propo";
+}
+EOF
+}
+
 set_waybar_font() {
     local font_name="$1"
 
@@ -155,6 +170,7 @@ apply_font() {
     # Apply font to all configurations
     set_rofi_font "$font_name" "13" "11"
     set_waybar_font "$font_name"
+    set_swaync_font "$font_name"
     set_gtk_font "$font_name" "11"
     set_qt_font "$font_name" "11"
 
