@@ -390,6 +390,7 @@ binds {
     Mod+Alt+M { spawn "env" "DESKTOPINTEGRATION=1" "~/AppImages/youtube_music.appimage" "--no-sandbox"; }
     Mod+Alt+D { spawn "flatpak" "run" "dev.vencord.Vesktop"; }
     Mod+Alt+T { spawn "flatpak" "run" "org.telegram.desktop"; }
+    Mod+S { spawn "~/.config/rofi/bin/settings-menu"; }
 
     Mod+Q { close-window; }
     Mod+Shift+L { spawn "hyprlock"; }
@@ -455,7 +456,7 @@ binds {
     Mod+Shift+Minus { move-workspace-down; }
     Mod+Minus { focus-workspace-down; }
 
-    Mod+Shift+S { screenshot-window; }
+    Mod+Shift+S { spawn "sh" "-c" "file=\"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" && grim \"$file\" && notify-send -i \"$file\" '📸 Screenshot saved'"; }
     Mod+Alt+Shift+S { screenshot; }
 
     XF86AudioPlay { spawn "playerctl" "play-pause"; }
