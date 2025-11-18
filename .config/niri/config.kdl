@@ -156,7 +156,7 @@ layout {
     // You can change how the focus ring looks.
     focus-ring {
         // Uncomment this line to disable the focus ring.
-        // off
+        off
 
         // How many logical pixels the ring extends out from the windows.
         width 1.5
@@ -278,6 +278,7 @@ spawn-sh-at-startup "waybar"
 // spawn-sh-at-startup "swaync"
 spawn-sh-at-startup "swayosd-server"
 spawn-at-startup "kdeconnectd"
+spawn-at-startup "kdeconnect-indicator"
 
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
@@ -356,6 +357,13 @@ window-rule {
     match app-id="^libreoffice.*"
     match app-id="app.zen_browser.zen"
     open-maximized true
+}
+
+window-rule {
+    match app-id="org.kde.kdeconnect"
+    match app-id="kdeconnect"
+    match app-id="^kdeconnect.*"
+    open-floating true
 }
 
 // Example: block out two password managers from screen capture.
