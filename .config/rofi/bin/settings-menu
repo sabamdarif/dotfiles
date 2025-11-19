@@ -190,7 +190,7 @@ show_font_menu() {
     local current_font=$(get_current_font)
     local font_list=$(list_fonts)
 
-    local selected_font=$(menu "Select Font" "$font_list" "" "$current_font")
+    local selected_font=$(menu "  Select Font" "$font_list" "" "$current_font")
 
     if [[ "$selected_font" == "CNCLD" || -z "$selected_font" ]]; then
         back_to show_main_menu
@@ -201,18 +201,32 @@ show_font_menu() {
 }
 
 # ============================================================================
-# Theme Management Functions (Placeholder)
+# Theme Management Functions
 # ============================================================================
 
 show_theme_menu() {
-    # Placeholder for theme selection
-    local themes="  Dark Theme\n  Light Theme\n  Catppuccin\n  Nord\n  Dracula"
+    local themes="  Dark Theme\n  Light Theme"
 
-    local selected=$(menu "Select Theme" "$themes")
+    local selected=$(menu "󰸌  Select Theme" "$themes")
 
-    if [[ "$selected" != "CNCLD" && -n "$selected" ]]; then
-        notify "Theme" "Theme switching coming soon!"
-    fi
+    case "$selected" in
+    *"Dark Theme"*)
+        if [[ -x "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" ]]; then
+            "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" dark
+            notify "Theme Applied" "Dark theme activated"
+        else
+            notify "Error" "Dark mode script not found"
+        fi
+        ;;
+    *"Light Theme"*)
+        if [[ -x "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" ]]; then
+            "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" light
+            notify "Theme Applied" "Light theme activated"
+        else
+            notify "Error" "Dark mode script not found"
+        fi
+        ;;
+    esac
 
     back_to show_main_menu
 }
@@ -314,7 +328,7 @@ show_icon_menu() {
     local current_theme=$(get_current_icon_theme)
     local theme_list=$(list_icon_themes)
 
-    local selected_theme=$(menu "Select Icon Theme" "$theme_list" "" "$current_theme")
+    local selected_theme=$(menu "󰠱  Select Icon Theme" "$theme_list" "" "$current_theme")
 
     if [[ "$selected_theme" != "CNCLD" && -n "$selected_theme" ]]; then
         apply_icon_theme "$selected_theme"
@@ -459,7 +473,7 @@ run_color_picker() {
 }
 
 show_capture_menu() {
-    local selection=$(menu "Capture" "  Current Window\n  Select Area\n  Fullscreen\n  Color Picker")
+    local selection=$(menu "  Capture" "  Current Window\n󱗽  Select Area\n󰍹  Fullscreen\n  Color Picker")
 
     case "$selection" in
     *"Current Window"*) capture_current_window ;;
@@ -517,14 +531,14 @@ show_about_menu() {
 # ============================================================================
 
 show_main_menu() {
-    local selection=$(menu "Settings" "  Font\n󰸌  Theme\n  Icons\n  Capture\n  Refresh\n  Keybindings\n  About")
+    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰠱  Icons\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
 
     case "$selection" in
     *Font*) show_font_menu ;;
     *Theme*) show_theme_menu ;;
     *Icons*) show_icon_menu ;;
     *Capture*) show_capture_menu ;;
-    *Refresh*) show_update_menu ;;
+    *Reload*) show_update_menu ;;
     *Keybindings*) show_keybindings_menu ;;
     *About*) show_about_menu ;;
     *) exit 0 ;;
