@@ -50,3 +50,8 @@
 .local/bin/tor-prompt
 .config/mpv/fonts
 .config/mpv/scripts
+.var/app/page.tesk.Refine
+.local/bin/pipx
+.local/bin/userpath
+.config/swaync/coffice_state
+.config/waybar/.power_mode_state
