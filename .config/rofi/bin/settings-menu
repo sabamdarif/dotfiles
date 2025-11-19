@@ -517,8 +517,11 @@ get_default_terminal() {
 run_info_check() {
     local terminal=$(get_default_terminal)
 
-    # Run fastfetch and wait for user to press enter
-    "$terminal" -e bash -c "fastfetch; echo ''; read -p 'Press Enter to close...'"
+    if [[ "$terminal" == "ghostty" ]]; then
+        "$terminal" --fullscreen=false --title="Fastfetch" -e bash -c "fastfetch; read -p 'Press Enter to close...'"
+    else
+        "$terminal" -e bash -c "fastfetch; echo ''; read -p 'Press Enter to close...'"
+    fi
 }
 
 show_about_menu() {
