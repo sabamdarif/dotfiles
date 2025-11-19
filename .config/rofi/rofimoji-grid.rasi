@@ -22,7 +22,6 @@ window {
 mainbox {
     background-color: transparent;
     spacing: 16px;
-    children: [ inputbar, message, listview ];
 }
 
 inputbar {
@@ -30,32 +29,6 @@ inputbar {
     border-radius: 28px;
     padding: 16px 24px;
     spacing: 12px;
-    children: [ prompt, entry ];
-}
-
-prompt {
-    background-color: transparent;
-    text-color: @primary;
-    font: "Material Symbols Rounded 16";
-}
-
-entry {
-    background-color: transparent;
-    text-color: @on-surface;
-    placeholder: "Search emoji...";
-    placeholder-color: @on-surface-variant;
-}
-
-message {
-    background-color: @surface-container-high;
-    border-radius: 16px;
-    padding: 12px 16px;
-    text-color: @on-surface-variant;
-}
-
-textbox {
-    background-color: transparent;
-    text-color: @on-surface-variant;
 }
 
 listview {
@@ -87,78 +60,17 @@ element {
     text-color: @on-surface;
     orientation: vertical;
     border-radius: 16px;
-    // padding for each emoji boxes
     padding: 0px 16px 0px 16px;
     spacing: 0px;
     children: [ element-text ];
 }
 
-element normal.normal {
-    background-color: @surface-container-high;
-    text-color: @on-surface;
-}
-
-element normal.urgent {
-    background-color: @error-container;
-    text-color: @on-error-container;
-}
-
-element normal.active {
-    background-color: @primary-container;
-    text-color: @on-primary-container;
-}
-
-element selected.normal {
-    background-color: @primary-container;
-    text-color: @on-primary-container;
-}
-
-element selected.urgent {
-    background-color: @error;
-    text-color: @on-error;
-}
-
-element selected.active {
-    background-color: @primary;
-    text-color: @on-primary;
-}
-
-element alternate.normal {
-    background-color: @surface-container-high;
-    text-color: @on-surface;
-}
-
-element alternate.urgent {
-    background-color: @error-container;
-    text-color: @on-error-container;
-}
-
-element alternate.active {
-    background-color: @secondary-container;
-    text-color: @on-secondary-container;
-}
-
 element-text {
     background-color: transparent;
     text-color: inherit;
-    font: "Noto Color Emoji 36";
+    font: "Noto Color Emoji 22";
     horizontal-align: 0.5;
     vertical-align: 0.5;
     expand: true;
     margin: 8px 0px;
-}
-
-element-icon {
-    background-color: transparent;
-    size: 56px;
-    horizontal-align: 0.5;
-    vertical-align: 0.5;
-}
-
-error-message {
-    background-color: @surface-container;
-    border: 2px solid;
-    border-color: @error;
-    border-radius: 16px;
-    padding: 24px;
 }
