@@ -129,6 +129,7 @@ tooltip label {
 #custom-camera-usage,
 #clock,
 #custom-power-profile,
+#custom-bt-battery,
 #power-profiles-daemon {
     background-color: @inverse_primary;
     color: @on_surface;

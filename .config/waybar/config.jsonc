@@ -17,6 +17,7 @@
       "privacy",
       "tray",
       "pulseaudio",
+     "custom/bt-battery",
       "network#info",
       "battery",
       "custom/notification"
