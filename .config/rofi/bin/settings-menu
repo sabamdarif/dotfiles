@@ -10,6 +10,9 @@ ROFI_ICON_CONFIG="$HOME/.config/rofi/themes/icons.rasi"
 WAYBAR_FONT_CONFIG="$HOME/.config/waybar/fonts.css"
 GTK_CONFIG="$HOME/.config/gtk-3.0/settings.ini"
 QT_CONFIG="$HOME/.config/qt5ct/qt5ct.conf"
+NIRI_CONFIG="$HOME/.config/niri/config.kdl"
+HYPRLAND_CONFIG="$HOME/.config/hypr/hyprland.conf"
+SWAY_CONFIG="$HOME/.config/sway/config"
 
 back_to() {
     local parent_menu="$1"
@@ -498,17 +501,264 @@ show_update_menu() {
 }
 
 # ============================================================================
-# Keybinding Menu (Placeholder)
+# Keybinding Menu
 # ============================================================================
 
+parse_niri_keybinds() {
+    local config_file="$1"
+    local keybinds=""
+
+    if [[ ! -f "$config_file" ]]; then
+        echo "ERROR: Niri config not found at $config_file"
+        return 1
+    fi
+
+    # Read the binds section
+    local in_binds=false
+    while IFS= read -r line; do
+        # Detect binds section
+        [[ "$line" =~ ^[[:space:]]*binds[[:space:]]*\{ ]] && in_binds=true
+        [[ "$in_binds" == false ]] && continue
+
+        # Exit binds section
+        [[ "$line" =~ ^\}$ ]] && break
+
+        # Parse bindings with overlay title
+        if [[ "$line" =~ (Mod\+[^[:space:]]+|XF86[^[:space:]]+|Caps_Lock)[[:space:]]+hotkey-overlay-title=\"([^\"]+)\" ]]; then
+            local key="${BASH_REMATCH[1]}"
+            local desc="${BASH_REMATCH[2]}"
+            keybinds+="$key|$desc\n"
+        # Parse bindings without overlay title
+        elif [[ "$line" =~ ^[[:space:]]*(Mod\+[^[:space:]]+|XF86[^[:space:]]+|Caps_Lock)[[:space:]]*\{[[:space:]]*([^;]+) ]]; then
+            local key="${BASH_REMATCH[1]}"
+            local action="${BASH_REMATCH[2]}"
+            # Clean up action name
+            action=$(echo "$action" | sed -E 's/spawn|exec//g' | sed 's/"//g' | xargs | cut -d' ' -f1)
+            keybinds+="$key|$action\n"
+        fi
+    done <"$config_file"
+
+    echo -e "$keybinds"
+}
+
+parse_hyprland_keybinds() {
+    local config_file="$1"
+    local keybinds=""
+
+    if [[ ! -f "$config_file" ]]; then
+        echo "ERROR: Hyprland config not found at $config_file"
+        return 1
+    fi
+
+    # Get $mod value
+    local mod_key=$(grep -m1 '^\$mod[[:space:]]*=' "$config_file" | cut -d'=' -f2 | xargs)
+    [[ -z "$mod_key" ]] && mod_key="SUPER"
+
+    while IFS= read -r line; do
+        # Skip empty lines
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*$ ]] && continue
+
+        # Parse bind lines: bind[e|l|m|de] = modifiers, key, action, [params]
+        if [[ "$line" =~ ^bind[elmd]*[[:space:]]*=[[:space:]]*([^,]+),[[:space:]]*([^,]+),[[:space:]]*([^,]+)(,(.+))?$ ]]; then
+            local mods="${BASH_REMATCH[1]}"
+            local key="${BASH_REMATCH[2]}"
+            local action="${BASH_REMATCH[3]}"
+            local params="${BASH_REMATCH[5]}"
+
+            # Replace variables
+            mods="${mods//\$mod/$mod_key}"
+            mods=$(echo "$mods" | xargs)
+            key=$(echo "$key" | xargs)
+            action=$(echo "$action" | xargs)
+            params=$(echo "$params" | xargs)
+
+            # Build keybind string
+            local keybind="$mods+$key"
+            keybind="${keybind// /+}"
+
+            # Build description
+            local desc="$action"
+            [[ -n "$params" ]] && desc="$action: $params"
+
+            keybinds+="$keybind|$desc\n"
+        fi
+    done < <(grep -v "^#" "$config_file" | grep "^bind")
+
+    echo -e "$keybinds"
+}
+
+parse_sway_keybinds() {
+    local config_file="$1"
+    local keybinds=""
+
+    if [[ ! -f "$config_file" ]]; then
+        echo "ERROR: Sway config not found at $config_file"
+        return 1
+    fi
+
+    # Get variables
+    local mod_key=$(grep -m1 'set \$mod ' "$config_file" | awk '{print $3}')
+    [[ -z "$mod_key" ]] && mod_key="Mod4"
+
+    # Get directional variables if they exist
+    local left=$(grep 'set \$left' "$config_file" | awk '{print $3}')
+    local down=$(grep 'set \$down' "$config_file" | awk '{print $3}')
+    local up=$(grep 'set \$up' "$config_file" | awk '{print $3}')
+    local right=$(grep 'set \$right' "$config_file" | awk '{print $3}')
+
+    while IFS= read -r line; do
+        # Skip comments and empty
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "$line" ]] && continue
+
+        # Parse bindsym: bindsym [options] keybind action
+        if [[ "$line" =~ ^bindsym[[:space:]]+(--[^[:space:]]+[[:space:]]+)?([^[:space:]]+)[[:space:]]+(.+)$ ]]; then
+            local options="${BASH_REMATCH[1]}"
+            local keybind="${BASH_REMATCH[2]}"
+            local action="${BASH_REMATCH[3]}"
+
+            # Replace variables
+            keybind="${keybind//\$mod/$mod_key}"
+            [[ -n "$left" ]] && keybind="${keybind//\$left/$left}"
+            [[ -n "$down" ]] && keybind="${keybind//\$down/$down}"
+            [[ -n "$up" ]] && keybind="${keybind//\$up/$up}"
+            [[ -n "$right" ]] && keybind="${keybind//\$right/$right}"
+
+            # Clean action
+            action=$(echo "$action" | sed 's/exec //g' | xargs)
+
+            keybinds+="$keybind|$action\n"
+        fi
+    done < <(grep "^bindsym" "$config_file")
+
+    echo -e "$keybinds"
+}
+
+# ============================================================================
+# Keybinding Menu
+# ============================================================================
+
+format_keybinds_for_rofi() {
+    local keybinds="$1"
+    local formatted=""
+
+    while IFS='|' read -r key description; do
+        [[ -z "$key" ]] && continue
+
+        # Format with nice alignment (adjust width as needed)
+        printf -v line "%-40s → %s" "$key" "$description"
+        formatted+="$line\n"
+    done <<<"$keybinds"
+
+    echo -e "$formatted"
+}
+
+show_keybinds() {
+    local compositor_name="$1"
+    local keybinds="$2"
+    local icon="$3"
+
+    if [[ "$keybinds" == "ERROR:"* ]]; then
+        notify "Error" "$keybinds"
+        return 1
+    fi
+
+    local formatted=$(format_keybinds_for_rofi "$keybinds" | sort)
+    local count=$(echo -e "$formatted" | wc -l)
+
+    # Show in rofi with search functionality
+    local selection=$(echo -e "$formatted" | rofi -dmenu \
+        -i \
+        -p "$icon  $compositor_name Keybindings" \
+        -theme ~/.config/rofi/clipboard-monitor.rasi \
+        -mesg "󰍉 Type to search | Total: $count keybinds" \
+        -no-custom \
+        -format "s" \
+        2>/dev/null)
+
+    local exit_code=$?
+
+    # Handle clipboard operations
+    if [[ -n "$selection" ]]; then
+        if [[ $exit_code -eq 10 ]]; then
+            # Alt+c: Copy just the keybind
+            local keybind=$(echo "$selection" | awk -F'→' '{print $1}' | xargs)
+            echo -n "$keybind" | wl-copy
+            notify "Copied to Clipboard" "$keybind"
+        elif [[ $exit_code -eq 11 ]]; then
+            # Alt+Return: Copy full line
+            echo -n "$selection" | wl-copy
+            notify "Copied to Clipboard" "Full keybinding info"
+        fi
+    fi
+}
+
+show_niri_keybinds() {
+    local keybinds=$(parse_niri_keybinds "$NIRI_CONFIG")
+    show_keybinds "Niri" "$keybinds" ""
+}
+
+show_hyprland_keybinds() {
+    local keybinds=$(parse_hyprland_keybinds "$HYPRLAND_CONFIG")
+    show_keybinds "Hyprland" "$keybinds" ""
+}
+
+show_sway_keybinds() {
+    local keybinds=$(parse_sway_keybinds "$SWAY_CONFIG")
+    show_keybinds "Sway" "$keybinds" ""
+}
+
+# ============================================================================
+# Keybinding Menu
+# ============================================================================
+
+show_keybind_menu() {
+    local compositor=$(detect_compositor)
+
+    case "$compositor" in
+    niri)
+        # Offer multiple options for niri
+        local choice=$(menu "󰌌  Keybindings" "󰌌  All Keybindings\n  Applications Only\n󱂬  Window Management\n󱇚  Workspaces")
+
+        case "$choice" in
+        *"All Keybindings"*)
+            show_niri_keybinds
+            ;;
+        *"Applications"*)
+            local keybinds=$(parse_niri_keybinds "$NIRI_CONFIG" | grep -iE "spawn|open|launch|terminal|browser|file")
+            show_keybinds "Niri (Applications)" "$keybinds" ""
+            ;;
+        *"Window"*)
+            local keybinds=$(parse_niri_keybinds "$NIRI_CONFIG" | grep -iE "window|focus|move|close|fullscreen|maximize")
+            show_keybinds "Niri (Windows)" "$keybinds" "󱂬"
+            ;;
+        *"Workspaces"*)
+            local keybinds=$(parse_niri_keybinds "$NIRI_CONFIG" | grep -iE "workspace")
+            show_keybinds "Niri (Workspaces)" "$keybinds" "󱇚"
+            ;;
+        esac
+        ;;
+    hyprland)
+        show_hyprland_keybinds
+        ;;
+    sway)
+        show_sway_keybinds
+        ;;
+    *)
+        notify "Not Supported" "Keybinding viewer not available for: $compositor"
+        ;;
+    esac
+}
+
 show_keybindings_menu() {
-    notify "Keybindings" "Keybinding configuration coming soon!"
+    show_keybind_menu
     back_to show_main_menu
 }
 
 # ============================================================================
-# About Menu (Placeholder)
+# About Menu
 # ============================================================================
+
 get_default_terminal() {
     # Get terminal from environment variable or use ghostty as default
     echo "${TERMINAL:-ghostty}"
