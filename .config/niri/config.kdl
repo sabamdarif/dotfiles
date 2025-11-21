@@ -286,7 +286,7 @@ spawn-at-startup "kdeconnect-indicator"
 
 hotkey-overlay {
     // Uncomment this line to disable the "Important Hotkeys" pop-up at startup.
-    // skip-at-startup
+    skip-at-startup
 }
 
 // Uncomment this line to ask the clients to omit their client-side decorations if possible.
@@ -387,25 +387,28 @@ window-rule {
 }
 
 binds {
-    Mod+Return { spawn "ghostty"; }
-    Mod+E { spawn "nautilus"; }
-    Mod+B { spawn "flatpak" "run" "app.zen_browser.zen"; }
-    Mod+Space { spawn "~/.config/rofi/bin/mainmenu"; }
-    Mod+Shift+R { spawn "~/.local/bin/reload_all"; }
-    Mod+V { spawn "~/.config/rofi/bin/clipboard_monitor"; }
-    Mod+Period { spawn "~/.config/rofi/bin/emoji_selector"; }
-    Mod+W { spawn "~/.config/rofi/bin/rofi-wallpaper"; }
-    Mod+Shift+F {spawn "~/.config/rofi/bin/rofi-fd-search";}
-    Mod+Alt+M { spawn "env" "DESKTOPINTEGRATION=1" "~/AppImages/youtube_music.appimage" "--no-sandbox"; }
-    Mod+Alt+D { spawn "flatpak" "run" "dev.vencord.Vesktop"; }
-    Mod+Alt+T { spawn "flatpak" "run" "org.telegram.desktop"; }
-    Mod+S { spawn "~/.config/rofi/bin/settings-menu"; }
+    Mod+Return hotkey-overlay-title="Open Terminal (Ghostty)" {spawn "ghostty";}
+    Mod+E hotkey-overlay-title="Open File Manager (Nautilus)" {spawn "nautilus";}
+    Mod+B hotkey-overlay-title="Open Browser (Zen)" {spawn "flatpak" "run" "app.zen_browser.zen";}
+    Mod+Space hotkey-overlay-title="Open Main Menu (Rofi)" {spawn "~/.config/rofi/bin/mainmenu";}
+    Mod+Shift+R hotkey-overlay-title="Reload All (Custom Script)" {spawn "~/.local/bin/reload_all";}
+    Mod+V hotkey-overlay-title="Clipboard Monitor" {spawn "~/.config/rofi/bin/clipboard_monitor";}
+    Mod+Period hotkey-overlay-title="Emoji Selector" {spawn "~/.config/rofi/bin/emoji_selector";}
+    Mod+W hotkey-overlay-title="Wallpaper Selector" {spawn "~/.config/rofi/bin/rofi-wallpaper";}
+    Mod+Shift+F hotkey-overlay-title="File Search (fd)" {spawn "~/.config/rofi/bin/rofi-fd-search";}
+    Mod+Alt+M hotkey-overlay-title="Open YouTube Music AppImage" {
+    spawn "env" "DESKTOPINTEGRATION=1" "/home/sabamdarif/AppImages/youtube_music.appimage" "--no-sandbox";
+    }
+    Mod+Alt+D hotkey-overlay-title="Open Vesktop" {spawn "flatpak" "run" "dev.vencord.Vesktop";}
+    Mod+Alt+T hotkey-overlay-title="Open Telegram" {spawn "flatpak" "run" "org.telegram.desktop";}
+    Mod+S hotkey-overlay-title="Settings Menu" {spawn "~/.config/rofi/bin/settings-menu";}
 
     Mod+Q { close-window; }
-    Mod+Shift+L { spawn "hyprlock"; }
+    Mod+Shift+L hotkey-overlay-title="Lock screen" { spawn "hyprlock"; }
     Mod+Shift+E { quit; }
     Mod+F { fullscreen-window; }
     Mod+M { maximize-column; }
+    Mod+Shift+Slash { show-hotkey-overlay; }
 
     // focus binds
     Mod+Right { focus-column-right; }
@@ -465,7 +468,7 @@ binds {
     Mod+Shift+Minus { move-workspace-down; }
     Mod+Minus { focus-workspace-down; }
 
-    Mod+Shift+S { spawn "sh" "-c" "file=\"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" && grim \"$file\" && notify-send -i \"$file\" '📸 Screenshot saved'"; }
+    Mod+Shift+S hotkey-overlay-title="Take screenshot" { spawn "sh" "-c" "file=\"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" && grim \"$file\" && notify-send -i \"$file\" '📸 Screenshot saved'"; }
     Mod+Alt+Shift+S { screenshot; }
 
     XF86AudioPlay { spawn "playerctl" "play-pause"; }
