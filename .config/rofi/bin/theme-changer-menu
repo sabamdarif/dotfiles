@@ -1,0 +1,158 @@
+#!/bin/bash
+
+# Theme Changer Menu
+WAYBAR_CONFIG_DIR="$HOME/.config/waybar"
+WAYBAR_THEMES_DIR="$HOME/.config/waybar/themes"
+
+menu() {
+    local prompt="$1"
+    local options="$2"
+    local extra="$3"
+    local preselect="$4"
+
+    read -r -a args <<<"$extra"
+
+    if [[ -n "$preselect" ]]; then
+        local index
+        index=$(echo -e "$options" | grep -nxF "$preselect" | cut -d: -f1)
+        if [[ -n "$index" ]]; then
+            args+=("-c" "$index")
+        fi
+    fi
+
+    echo -e "$options" | rofi -dmenu -p "$prompt" -theme ~/.config/rofi/settings-menu.rasi "${args[@]}" 2>/dev/null
+}
+
+notify() {
+    notify-send "$1" "$2"
+}
+
+# ============================================================================
+# Dark/Light Theme Functions
+# ============================================================================
+
+toggle_dark_light_theme() {
+    local mode="$1"
+
+    if [[ -x "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" ]]; then
+        "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" "$mode"
+        notify "Theme Applied" "$(echo "$mode" | sed 's/./\U&/') theme activated"
+    else
+        notify "Error" "Dark mode script not found"
+    fi
+}
+
+show_dark_light_menu() {
+    local themes="󰖔  Dark Theme\n  Light Theme"
+    local selected=$(menu "󰔎  Select Color Scheme" "$themes")
+
+    case "$selected" in
+    *"Dark Theme"*) toggle_dark_light_theme "dark" ;;
+    *"Light Theme"*) toggle_dark_light_theme "light" ;;
+    esac
+}
+
+# ============================================================================
+# Waybar Theme Functions
+# ============================================================================
+
+list_waybar_themes() {
+    # List all available waybar themes
+    if [[ ! -d "$WAYBAR_THEMES_DIR" ]]; then
+        echo ""
+        return 1
+    fi
+
+    find "$WAYBAR_THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+}
+
+apply_waybar_theme() {
+    local theme_name="$1"
+    local theme_dir="$WAYBAR_THEMES_DIR/$theme_name"
+
+    if [[ ! -d "$theme_dir" ]]; then
+        notify "Error" "Theme directory not found: $theme_name"
+        return 1
+    fi
+
+    notify "Applying Waybar Theme" "Setting up $theme_name..."
+
+    # Remove old config files
+    rm -f "$WAYBAR_CONFIG_DIR/config.jsonc" \
+        "$WAYBAR_CONFIG_DIR/config" \
+        "$WAYBAR_CONFIG_DIR/style.css"
+
+    # Copy new theme files
+    local files_copied=0
+
+    if [[ -f "$theme_dir/config.jsonc" ]]; then
+        cp "$theme_dir/config.jsonc" "$WAYBAR_CONFIG_DIR/config.jsonc"
+        ((files_copied++))
+    fi
+
+    if [[ -f "$theme_dir/config" ]]; then
+        cp "$theme_dir/config" "$WAYBAR_CONFIG_DIR/config"
+        ((files_copied++))
+    fi
+
+    if [[ -f "$theme_dir/style.css" ]]; then
+        cp "$theme_dir/style.css" "$WAYBAR_CONFIG_DIR/style.css"
+        ((files_copied++))
+    fi
+
+    if [[ $files_copied -eq 0 ]]; then
+        notify "Error" "No valid config files found in theme: $theme_name"
+        return 1
+    fi
+
+    # Reload waybar
+    killall -SIGUSR2 waybar 2>/dev/null
+
+    notify "Waybar Theme Applied" "$theme_name is now active!"
+}
+
+show_waybar_theme_menu() {
+    local theme_list=$(list_waybar_themes)
+
+    if [[ -z "$theme_list" ]]; then
+        notify "No Themes Found" "Create themes in $WAYBAR_THEMES_DIR"
+        return 1
+    fi
+
+    local selected_theme=$(menu "󰸌  Select Waybar Theme" "$theme_list")
+
+    if [[ "$selected_theme" != "CNCLD" && -n "$selected_theme" ]]; then
+        apply_waybar_theme "$selected_theme"
+    fi
+}
+
+# ============================================================================
+# Main Theme Menu
+# ============================================================================
+
+show_rofi_theme_menu() {
+    notify "Coming Soon" "Rofi theme switcher will be available in a future update"
+}
+
+show_swaync_theme_menu() {
+    notify "Coming Soon" "SwayNC theme switcher will be available in a future update"
+}
+
+show_theme_menu() {
+    local selection=$(menu "󰸌  Theme Settings" "󰔎  Color Scheme (Dark/Light)\n󱔓  Waybar Theme\n󰰠  Rofi Theme\n󰂚  SwayNC Theme")
+
+    case "$selection" in
+    *"Color Scheme"*) show_dark_light_menu ;;
+    *"Waybar Theme"*) show_waybar_theme_menu ;;
+    *"Rofi Theme"*) show_rofi_theme_menu ;;
+    *"SwayNC Theme"*) show_swaync_theme_menu ;;
+    *) exit 0 ;;
+    esac
+}
+
+# ============================================================================
+# Entry Point
+# ============================================================================
+
+# Run the theme menu
+show_theme_menu

@@ -13,6 +13,7 @@ QT_CONFIG="$HOME/.config/qt5ct/qt5ct.conf"
 NIRI_CONFIG="$HOME/.config/niri/config.kdl"
 HYPRLAND_CONFIG="$HOME/.config/hypr/hyprland.conf"
 SWAY_CONFIG="$HOME/.config/sway/config"
+THEME_MENU_SCRIPT="$HOME/.config/rofi/bin/theme-changer-menu"
 
 back_to() {
     local parent_menu="$1"
@@ -208,28 +209,11 @@ show_font_menu() {
 # ============================================================================
 
 show_theme_menu() {
-    local themes="  Dark Theme\n  Light Theme"
-
-    local selected=$(menu "󰸌  Select Theme" "$themes")
-
-    case "$selected" in
-    *"Dark Theme"*)
-        if [[ -x "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" ]]; then
-            "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" dark
-            notify "Theme Applied" "Dark theme activated"
-        else
-            notify "Error" "Dark mode script not found"
-        fi
-        ;;
-    *"Light Theme"*)
-        if [[ -x "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" ]]; then
-            "$HOME/.config/swaync/scripts/toggle_dark_mode.sh" light
-            notify "Theme Applied" "Light theme activated"
-        else
-            notify "Error" "Dark mode script not found"
-        fi
-        ;;
-    esac
+    if [[ -x "$THEME_MENU_SCRIPT" ]]; then
+        "$THEME_MENU_SCRIPT"
+    else
+        notify "Error" "Theme menu script not found at $THEME_MENU_SCRIPT"
+    fi
 
     back_to show_main_menu
 }
