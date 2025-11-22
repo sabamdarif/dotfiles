@@ -1,0 +1,243 @@
+/*style_unified*/
+@import "colors.css";
+@import "fonts.css";
+
+* {
+    border: none;
+    border-radius: 0;
+    font-size: 14px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: @background;
+    color: @on_background;
+}
+
+tooltip {
+    border-radius: 12px;
+    background-color: @surface_container_high;
+    border: 1px solid @primary;
+    color: @on_surface;
+}
+
+/* Modules: Base Style */
+#clock,
+#custom-countdown,
+#custom-todo,
+#backlight,
+#pulseaudio,
+#custom-clip,
+#custom-taskmanager,
+#custom-galculator,
+#custom-snip,
+#tray,
+#idle_inhibitor,
+#custom-power,
+#custom-reboot,
+#custom-quit,
+#custom-lock,
+#custom-launcher,
+#network,
+#bluetooth,
+#custom-nightlight,
+#custom-bt-battery,
+#battery {
+    background: @primary;
+    color: @on_primary;
+    padding: 3px 13px;
+    margin: 4px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Modules: App Launcher Strip */
+#custom-chrome,
+#custom-terminal,
+#custom-code,
+#custom-music,
+#custom-thunar {
+    background: @primary;
+    color: @on_primary;
+    padding: 3px 13px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    margin-right: 2px;
+    border-radius: 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#custom-chrome {
+    margin-left: 0;
+    border-radius: 6px 0 0 6px;
+}
+
+#custom-thunar {
+    margin-right: 4px;
+    border-radius: 0 6px 6px 0;
+}
+
+/* Modules: Hover Effects */
+#custom-launcher:hover,
+#backlight:hover,
+#custom-todo:hover,
+#clock:hover,
+#custom-countdown:hover,
+#pulseaudio:hover,
+#custom-clip:hover,
+#custom-snip:hover,
+#custom-chrome:hover,
+#custom-terminal:hover,
+#custom-code:hover,
+#custom-taskmanager:hover,
+#custom-galculator:hover,
+#custom-music:hover,
+#custom-thunar:hover,
+#tray:hover,
+#idle_inhibitor:hover,
+#custom-power:hover,
+#custom-reboot:hover,
+#custom-quit:hover,
+#custom-lock:hover,
+#network:hover,
+#bluetooth:hover,
+#custom-nightlight:hover,
+#custom-bt-battery:hover,
+#battery:hover {
+    background: @primary_container;
+    color: @on_primary_container;
+}
+
+/* Modules: Specific Styles */
+#custom-countdown,
+#custom-todo,
+#clock {
+    background: @primary_fixed;
+    color: @on_primary_fixed;
+    font-weight: bold;
+}
+
+#pulseaudio.muted {
+    background: @tertiary;
+    color: @on_tertiary;
+}
+
+#keyboard-state {
+    background: transparent;
+}
+
+#keyboard-state label.locked {
+    background: @error;
+    color: @on_error;
+    padding: 0px 12px;
+    margin: 4px 0px;
+    border-radius: 6px;
+}
+
+#taskbar {
+    background: @surface_container_high;
+    padding: 0 5px;
+    margin: 4px;
+    border-radius: 6px;
+}
+
+#taskbar button {
+    background: transparent;
+    color: @on_surface;
+    padding: 0 8px;
+    border-bottom: 3px solid transparent;
+    transition: border-bottom-color 0.3s ease-out;
+}
+
+#taskbar button:hover {
+    border-bottom-color: @primary;
+}
+
+#taskbar button.active {
+    border-bottom-color: @primary_fixed;
+}
+
+/* Network Group Specific Styles */
+#network.disconnected {
+    background: @error;
+    color: @on_error;
+}
+
+#network.disabled {
+    background: @surface_container;
+    color: @on_surface_variant;
+}
+
+#network.linked,
+#network.connected {
+    background: @primary;
+    color: @on_primary;
+}
+
+#bluetooth.disabled,
+#bluetooth.off {
+    background: @surface_container;
+    color: @on_surface_variant;
+}
+
+#bluetooth.on,
+#bluetooth.connected {
+    background: @primary;
+    color: @on_primary;
+}
+
+#bluetooth.pairable {
+    background: @tertiary;
+    color: @on_tertiary;
+}
+
+/* Battery Group Specific Styles */
+#battery.charging,
+#battery.plugged {
+    background: @tertiary_container;
+    color: @on_tertiary_container;
+}
+
+#battery.warning:not(.charging) {
+    background: @tertiary;
+    color: @on_tertiary;
+}
+
+#battery.critical:not(.charging) {
+    background: @error;
+    color: @on_error;
+    animation: blink 0.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Nightlight Specific Styles */
+#custom-nightlight.active {
+    background: @tertiary_container;
+    color: @on_tertiary_container;
+    padding: 3px 13px;
+    margin: 4px;
+    border-radius: 6px;
+}
+
+#custom-nightlight.inactive {
+    background: @surface_container;
+    color: @on_surface_variant;
+    padding: 3px 13px;
+    margin: 4px;
+    border-radius: 6px;
+}
+
+#custom-nightlight.active:hover {
+    background: @tertiary;
+    color: @on_tertiary;
+}
+
+#custom-nightlight.inactive:hover {
+    background: @primary;
+    color: @on_primary;
+}
