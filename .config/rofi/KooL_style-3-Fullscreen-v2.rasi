@@ -21,6 +21,7 @@ configuration {
 
 /* ---- Load colors ---- */
 @import "~/.config/rofi/themes/colors.rasi"
+@import "~/.config/rofi/themes/fonts.rasi"
 
 /*****----- Main Window -----*****/
 window {

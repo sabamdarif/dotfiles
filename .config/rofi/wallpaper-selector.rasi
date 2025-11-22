@@ -1,8 +1,4 @@
-/*
- * Modern Wallpaper Selector Theme
- * Material You Design - Matches swaync color scheme
- */
-
+@import "~/.config/rofi/themes/fonts.rasi"
 @import "~/.config/rofi/themes/colors.rasi"
 
 configuration {

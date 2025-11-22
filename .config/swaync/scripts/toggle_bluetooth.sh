@@ -8,7 +8,6 @@ if bluetoothctl show 2>/dev/null | grep -qF "Powered: yes"; then
     notify-send "Scanning for Bluetooth devices..."
     bluetoothctl scan on >/dev/null 2>&1 &
     scan_pid=$!
-    sleep 3 # Wait longer for scan to find devices
 
     # Get list of all devices (paired and discovered)
     bt_list=$(bluetoothctl devices | awk '{$1=$2=""; print substr($0,3)}' | sort -u)

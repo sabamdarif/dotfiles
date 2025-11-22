@@ -1,10 +1,5 @@
-/* ---- Global Configuration Fonts ---- */
 @import "~/.config/rofi/themes/fonts.rasi"
-
-/* note: Main themes in ~/.config/rofi/themes */
-/* You can manually change here or you can use rofi theme selector SUPER SHIFT E */
-
+@import "~/.config/rofi/themes/colors.rasi"
+@theme "~/.config/rofi/themes/icons.rasi"
 
 @theme "~/.config/rofi/clipboard-monitor.rasi"
-
-@theme "~/.config/rofi/themes/icons.rasi"
