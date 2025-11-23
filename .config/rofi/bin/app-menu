@@ -1,0 +1,3 @@
+#!/bin/bash
+
+rofi -show drun -replace -theme ~/.config/rofi/app-menu.rasi

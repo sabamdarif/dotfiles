@@ -1,3 +1,0 @@
-#!/bin/bash
-
-rofi -show drun -replace -theme ~/.config/rofi/KooL_style-3-Fullscreen-v2.rasi

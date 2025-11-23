@@ -3,6 +3,8 @@
 # Theme Changer Menu
 WAYBAR_CONFIG_DIR="$HOME/.config/waybar"
 WAYBAR_THEMES_DIR="$HOME/.config/waybar/themes"
+ROFI_CONFIG_DIR="$HOME/.config/rofi"
+ROFI_THEMES_DIR="$HOME/.config/rofi/themes"
 
 menu() {
     local prompt="$1"
@@ -106,8 +108,10 @@ apply_waybar_theme() {
     fi
 
     # Reload waybar
-    killall -SIGUSR2 waybar 2>/dev/null
-
+    # killall -SIGUSR2 waybar 2>/dev/null # didn't use it as it sometime leave some old theme artifact on the waybar
+    pkill waybar
+    waybar &
+    disown
     notify "Waybar Theme Applied" "$theme_name is now active!"
 }
 
@@ -127,16 +131,139 @@ show_waybar_theme_menu() {
 }
 
 # ============================================================================
-# Main Theme Menu
+# Rofi Theme Functions
 # ============================================================================
 
-show_rofi_theme_menu() {
-    notify "Coming Soon" "Rofi theme switcher will be available in a future update"
+list_rofi_menu_types() {
+    # List all menu types (folders in themes directory, excluding non-menu folders)
+    if [[ ! -d "$ROFI_THEMES_DIR" ]]; then
+        echo ""
+        return 1
+    fi
+
+    find "$ROFI_THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; |
+        grep -v -E "^(colors|fonts|icons)$" | sort
 }
+
+list_rofi_themes_for_menu() {
+    local menu_type="$1"
+    local menu_themes_dir="$ROFI_THEMES_DIR/$menu_type"
+
+    if [[ ! -d "$menu_themes_dir" ]]; then
+        echo ""
+        return 1
+    fi
+
+    find "$menu_themes_dir" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+}
+
+apply_rofi_theme() {
+    local menu_type="$1"
+    local theme_name="$2"
+    local theme_file="$ROFI_THEMES_DIR/$menu_type/$theme_name/${menu_type}.rasi"
+    local target_file="$ROFI_CONFIG_DIR/${menu_type}.rasi"
+
+    if [[ ! -f "$theme_file" ]]; then
+        notify "Error" "Theme file not found: $theme_name/${menu_type}.rasi"
+        return 1
+    fi
+
+    # Backup existing file if it exists
+    if [[ -f "$target_file" ]]; then
+        cp "$target_file" "${target_file}.bak"
+    fi
+
+    # Copy theme file to config directory
+    cp "$theme_file" "$target_file"
+
+    notify "Rofi Theme Applied" "$theme_name applied to $menu_type!"
+}
+
+show_rofi_theme_list() {
+    local menu_type="$1"
+    local theme_list=$(list_rofi_themes_for_menu "$menu_type")
+
+    if [[ -z "$theme_list" ]]; then
+        notify "No Themes Found" "No themes available for $menu_type"
+        return 1
+    fi
+
+    local selected_theme=$(menu "󰰠  Select Theme for $menu_type" "$theme_list")
+
+    if [[ "$selected_theme" != "CNCLD" && -n "$selected_theme" ]]; then
+        apply_rofi_theme "$menu_type" "$selected_theme"
+    fi
+}
+
+show_rofi_theme_menu() {
+    local menu_types=$(list_rofi_menu_types)
+
+    if [[ -z "$menu_types" ]]; then
+        notify "No Menu Types Found" "Create menu type folders in $ROFI_THEMES_DIR"
+        return 1
+    fi
+
+    # Format menu types with icons
+    local formatted_menu=""
+    while IFS= read -r menu_type; do
+        case "$menu_type" in
+        "app-menu") formatted_menu+="󰀻  App Menu\n" ;;
+        "clipboard-monitor") formatted_menu+="󰅇  Clipboard Monitor\n" ;;
+        "emoji-selector" | "rofimoji-grid") formatted_menu+="󰞅  Emoji Picker\n" ;;
+        "wallpaper-selector") formatted_menu+="󰸉  Wallpaper Selector\n" ;;
+        "settings-menu") formatted_menu+="󰒓  Settings Menu\n" ;;
+        "wifi-menu") formatted_menu+="󰖩  WiFi Menu\n" ;;
+        *) formatted_menu+="󰍉  $(echo "$menu_type" | sed 's/-/ /g; s/\b\(.\)/\u\1/g')\n" ;;
+        esac
+    done <<<"$menu_types"
+
+    # Remove trailing newline
+    formatted_menu="${formatted_menu%\\n}"
+
+    local selected=$(menu "󰰠  Select Menu Type" "$formatted_menu")
+
+    if [[ "$selected" == "CNCLD" || -z "$selected" ]]; then
+        return 0
+    fi
+
+    # Extract the actual menu type from the selection
+    local actual_menu_type=""
+    case "$selected" in
+    *"App Menu"*) actual_menu_type="app-menu" ;;
+    *"Clipboard Monitor"*) actual_menu_type="clipboard-monitor" ;;
+    *"Emoji Picker"*)
+        # Check which one exists
+        if [[ -d "$ROFI_THEMES_DIR/emoji-selector" ]]; then
+            actual_menu_type="emoji-selector"
+        elif [[ -d "$ROFI_THEMES_DIR/rofimoji-grid" ]]; then
+            actual_menu_type="rofimoji-grid"
+        fi
+        ;;
+    *"Wallpaper Selector"*) actual_menu_type="wallpaper-selector" ;;
+    *"Settings Menu"*) actual_menu_type="settings-menu" ;;
+    *"WiFi Menu"*) actual_menu_type="wifi-menu" ;;
+    *)
+        # Try to extract from formatted name
+        actual_menu_type=$(echo "$selected" | sed 's/^[^ ]* *//' | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+        ;;
+    esac
+
+    if [[ -n "$actual_menu_type" ]]; then
+        show_rofi_theme_list "$actual_menu_type"
+    fi
+}
+
+# ============================================================================
+# SwayNC Theme Functions
+# ============================================================================
 
 show_swaync_theme_menu() {
     notify "Coming Soon" "SwayNC theme switcher will be available in a future update"
 }
+
+# ============================================================================
+# Main Theme Menu
+# ============================================================================
 
 show_theme_menu() {
     local selection=$(menu "󰸌  Theme Settings" "󰔎  Color Scheme (Dark/Light)\n󱔓  Waybar Theme\n󰰠  Rofi Theme\n󰂚  SwayNC Theme")
