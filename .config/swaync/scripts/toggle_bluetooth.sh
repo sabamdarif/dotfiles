@@ -8,13 +8,18 @@ if bluetoothctl show 2>/dev/null | grep -qF "Powered: yes"; then
     notify-send "Scanning for Bluetooth devices..."
     bluetoothctl scan on >/dev/null 2>&1 &
     scan_pid=$!
+    
+    # Wait for scan to find devices
+    sleep 3
 
-    # Get list of all devices (paired and discovered)
-    bt_list=$(bluetoothctl devices | awk '{$1=$2=""; print substr($0,3)}' | sort -u)
-
-    # Stop scanning
-    kill $scan_pid 2>/dev/null
+    # Stop scanning first
     bluetoothctl scan off >/dev/null 2>&1
+    kill $scan_pid 2>/dev/null
+    wait $scan_pid 2>/dev/null
+    sleep 0.5
+    
+    # Get list of all devices (paired and discovered) after scan is stopped
+    bt_list=$(bluetoothctl devices | awk '{$1=$2=""; print substr($0,3)}' | sort -u)
 
     # Get paired devices
     paired_devices=$(bluetoothctl devices Paired | awk '{$1=$2=""; print substr($0,3)}')
@@ -78,12 +83,18 @@ else
         bluetoothctl power on
         sleep 2 # Wait for Bluetooth to power on
     fi
+    
+    # Make sure scanning is completely stopped before checking status
+    bluetoothctl scan off >/dev/null 2>&1
+    sleep 0.5
 
     # Check if device is already connected
-    is_connected=$(bluetoothctl info "$mac_address" | grep "Connected: yes")
+    device_info=$(bluetoothctl info "$mac_address" 2>/dev/null)
+    is_connected=$(echo "$device_info" | grep -F "Connected: yes")
 
     if [[ -n "$is_connected" ]]; then
         # Disconnect the device
+        notify-send "Disconnecting..." "Disconnecting from \"$device_name\"..."
         bluetoothctl disconnect "$mac_address" >/dev/null 2>&1
         notify-send "Bluetooth Disconnected" "Disconnected from \"$device_name\"."
     else
@@ -99,6 +110,7 @@ else
         fi
 
         # Connect to the device
+        notify-send "Connecting..." "Connecting to \"$device_name\"..."
         if bluetoothctl connect "$mac_address" >/dev/null 2>&1; then
             notify-send "Bluetooth Connected" "Successfully connected to \"$device_name\"."
         else

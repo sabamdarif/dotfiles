@@ -4,6 +4,19 @@
 # Full-featured WiFi management script
 
 ROFI_THEME="$HOME/dotfiles/.config/rofi/wifi-menu.rasi"
+LOG_FILE="$HOME/.cache/wifi-manager.log"
+
+# Logging function
+log() {
+    local level="$1"
+    shift
+    local message="$*"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
+}
+
+# Initialize log file
+mkdir -p "$(dirname "$LOG_FILE")"
+log "INFO" "==================== WiFi Manager Started ===================="
 
 # Check if WiFi is enabled
 is_wifi_enabled() {
@@ -13,13 +26,22 @@ is_wifi_enabled() {
 # Toggle WiFi on/off
 toggle_wifi() {
     if is_wifi_enabled; then
+        log "INFO" "Disabling WiFi"
         nmcli radio wifi off
         notify-send -a "WiFi Manager" -i "network-wireless-disabled" "WiFi Disabled" "WiFi has been turned off"
+        log "INFO" "WiFi disabled successfully"
         echo "false"
     else
+        log "INFO" "Enabling WiFi"
+        notify-send -a "WiFi Manager" -i "network-wireless-acquiring" "WiFi Enabling" "Searching for available networks..."
         nmcli radio wifi on
         sleep 2
-        notify-send -a "WiFi Manager" -i "network-wireless" "WiFi Enabled" "WiFi has been turned on"
+        # Trigger a scan
+        log "INFO" "Starting network scan"
+        nmcli device wifi rescan >/dev/null 2>&1 &
+        sleep 1
+        notify-send -a "WiFi Manager" -i "network-wireless" "WiFi Enabled" "Networks found. Select a network to connect."
+        log "INFO" "WiFi enabled successfully, scan initiated"
         echo "true"
     fi
 }
@@ -66,10 +88,12 @@ scan_networks() {
 
     # Trigger background scan if requested
     if [[ "$rescan" == "true" ]]; then
+        log "INFO" "Triggering background network rescan"
         nmcli device wifi rescan >/dev/null 2>&1 &
     fi
 
     # Get network list from cache
+    log "DEBUG" "Fetching network list from cache"
     nmcli -t -f SSID,SIGNAL,SECURITY,IN-USE device wifi list
 }
 
@@ -133,17 +157,40 @@ connect_to_network() {
     local ssid="$1"
     local password="$2"
     local is_saved="$3"
+    
+    log "INFO" "Attempting to connect to network: $ssid (saved: $is_saved)"
+    
+    # Get current connection
+    local current_connection
+    current_connection=$(get_current_connection)
+    
+    if [[ -n "$current_connection" ]]; then
+        log "INFO" "Currently connected to: $current_connection"
+    else
+        log "INFO" "No active WiFi connection"
+    fi
+    
+    # If we're already connected to a different network, disconnect first
+    if [[ -n "$current_connection" ]] && [[ "$current_connection" != "$ssid" ]]; then
+        log "INFO" "Switching networks: $current_connection -> $ssid"
+        send_notification "Switching Network" "Disconnecting from $current_connection..."
+        disconnect_current
+        sleep 1
+    fi
 
     if [[ "$is_saved" == "true" ]]; then
         # Try to connect to saved network
+        log "INFO" "Connecting to saved network: $ssid"
         if nmcli connection up "$ssid" >/dev/null 2>&1; then
+            log "INFO" "Successfully connected to saved network: $ssid"
             send_notification "WiFi Connected" "Successfully connected to $ssid"
             return 0
         else
+            log "WARN" "Failed to connect using saved connection, may need password"
             # If saved connection fails, prompt for password
             if [[ -z "$password" ]]; then
                 password=$(prompt_password "$ssid")
-                [[ -z "$password" ]] && return 1
+                [[ -z "$password" ]] && log "INFO" "User cancelled password prompt" && return 1
             fi
         fi
     fi
@@ -151,15 +198,19 @@ connect_to_network() {
     # Connect with password or without
     local output
     if [[ -n "$password" ]]; then
+        log "INFO" "Connecting to $ssid with password"
         output=$(nmcli device wifi connect "$ssid" password "$password" 2>&1)
     else
+        log "INFO" "Connecting to $ssid without password (open network)"
         output=$(nmcli device wifi connect "$ssid" 2>&1)
     fi
 
     if [[ $? -eq 0 ]]; then
+        log "INFO" "Successfully connected to: $ssid"
         send_notification "WiFi Connected" "Successfully connected to $ssid"
         return 0
     else
+        log "ERROR" "Failed to connect to $ssid - $output"
         send_notification "Connection Failed" "Failed to connect to $ssid"
         return 1
     fi
@@ -167,21 +218,27 @@ connect_to_network() {
 
 # Disconnect from current network
 disconnect_current() {
+    log "INFO" "Attempting to disconnect from current network"
     if nmcli device disconnect wlan0 >/dev/null 2>&1 ||
         nmcli device disconnect wlp0s20f3 >/dev/null 2>&1; then
+        log "INFO" "Successfully disconnected from network"
         send_notification "WiFi Disconnected" "Disconnected from network"
         return 0
     fi
+    log "ERROR" "Failed to disconnect from network"
     return 1
 }
 
 # Forget network
 forget_network() {
     local ssid="$1"
+    log "INFO" "Attempting to forget network: $ssid"
     if nmcli connection delete "$ssid" >/dev/null 2>&1; then
+        log "INFO" "Successfully forgot network: $ssid"
         send_notification "Network Forgotten" "Removed $ssid from saved networks"
         return 0
     fi
+    log "ERROR" "Failed to forget network: $ssid"
     return 1
 }
 
@@ -274,32 +331,54 @@ manage_saved_networks() {
 # Main menu
 main_menu() {
     local rescan="${1:-true}"
+    
+    log "INFO" "Main menu opened (rescan: $rescan)"
 
     if ! is_wifi_enabled; then
-        local options=" Enable WiFi
- Exit"
+        log "INFO" "WiFi is currently disabled"
+        local options=" Enable WiFi
+ Exit"
 
         local selection
         selection=$(echo "$options" | show_rofi "WiFi (Disabled)")
 
         # Exit if nothing selected (Esc pressed)
-        [[ -z "$selection" ]] && return
+        [[ -z "$selection" ]] && log "INFO" "User cancelled from disabled menu" && return
 
         if [[ "$selection" == *"Enable WiFi"* ]]; then
-            toggle_wifi >/dev/null
+            log "INFO" "User selected: Enable WiFi"
+            notify-send -a "WiFi Manager" -i "network-wireless-acquiring" "WiFi Enabling" "Searching for available networks..."
+            nmcli radio wifi on
+            sleep 2
+            # Trigger a scan
+            nmcli device wifi rescan >/dev/null 2>&1 &
+            sleep 1
+            notify-send -a "WiFi Manager" -i "network-wireless" "WiFi Enabled" "Networks found. Select a network to connect."
+            # Show the network list
             main_menu "false"
         fi
         return
     fi
 
+    log "INFO" "WiFi is currently enabled"
+
     # Start background scan
     if [[ "$rescan" == "true" ]]; then
+        log "INFO" "User requested network rescan"
+        notify-send -a "WiFi Manager" -i "network-wireless-acquiring" "Rescanning" "Searching for networks..."
         nmcli device wifi rescan >/dev/null 2>&1 &
+        sleep 1
     fi
 
     # Get current connection
     local current
     current=$(get_current_connection)
+    
+    if [[ -n "$current" ]]; then
+        log "INFO" "Currently connected to network: $current"
+    else
+        log "INFO" "Not connected to any network"
+    fi
 
     # Build menu options
     local options=" Refresh / Rescan
@@ -352,51 +431,73 @@ ${display}"
     selection=$(echo "$options" | show_rofi "WiFi Manager - $network_count networks")
 
     # Exit if nothing selected (Esc pressed)
-    [[ -z "$selection" ]] && return
+    [[ -z "$selection" ]] && log "INFO" "User cancelled from main menu" && return
+    
+    log "INFO" "User selected: $selection"
 
     case "$selection" in
     *"Refresh"* | *"Rescan"*)
+        log "INFO" "Initiating network rescan"
         main_menu "true"
         ;;
     *"Disable WiFi"*)
+        log "INFO" "Disabling WiFi via menu"
         toggle_wifi >/dev/null
         ;;
     *"Disconnect from"*)
+        log "INFO" "Disconnecting from current network via menu"
         disconnect_current
         ;;
     *"Manage Saved"*)
+        log "INFO" "Opening saved networks menu"
         manage_saved_networks
         ;;
     *"Exit"*)
+        log "INFO" "User exited WiFi Manager"
         exit 0
         ;;
     *)
         # Network selected - find matching network in list
+        # Strip the rofi index prefix (format is "index:display")
+        local selection_display="${selection#*:}"
+        log "DEBUG" "Selection after stripping index: $selection_display"
+        
         local found=false
         while IFS='|' read -r net_display net_ssid net_security net_in_use net_is_saved; do
-            if [[ "$net_display" == "$selection" ]]; then
+            if [[ "$net_display" == "$selection_display" ]]; then
                 found=true
+                log "INFO" "Network selected: $net_ssid (security: $net_security, saved: $net_is_saved, in_use: $net_in_use)"
 
                 if [[ "$net_in_use" == "*" ]]; then
                     # Already connected
+                    log "INFO" "Opening options menu for connected network: $net_ssid"
                     network_options_menu "$net_ssid" "true"
                 elif [[ "$net_is_saved" == "true" ]]; then
                     # Saved network
+                    log "INFO" "Connecting to saved network: $net_ssid"
                     connect_to_network "$net_ssid" "" "true"
                 elif [[ "$net_security" == "Open" ]]; then
                     # Open network
+                    log "INFO" "Connecting to open network: $net_ssid"
                     connect_to_network "$net_ssid" "" "false"
                 else
                     # Secured network - prompt for password
+                    log "INFO" "Prompting for password for secured network: $net_ssid"
                     local password
                     password=$(prompt_password "$net_ssid")
                     if [[ -n "$password" ]]; then
                         connect_to_network "$net_ssid" "$password" "false"
+                    else
+                        log "INFO" "User cancelled password entry for: $net_ssid"
                     fi
                 fi
                 break
             fi
         done <<<"$network_list"
+        
+        if [[ "$found" == "false" ]]; then
+            log "WARN" "Selected network not found in network list: $selection_display"
+        fi
         ;;
     esac
 }
@@ -404,16 +505,20 @@ ${display}"
 # Handle command line arguments
 case "${1:-}" in
 --toggle)
+    log "INFO" "CLI command: --toggle"
     toggle_wifi
     ;;
 --status)
+    log "INFO" "CLI command: --status"
     is_wifi_enabled && echo "true" || echo "false"
     ;;
 --enable)
+    log "INFO" "CLI command: --enable"
     nmcli radio wifi on
     send_notification "WiFi Enabled" "WiFi has been enabled"
     ;;
 --disable)
+    log "INFO" "CLI command: --disable"
     nmcli radio wifi off
     send_notification "WiFi Disabled" "WiFi has been disabled"
     ;;
@@ -426,6 +531,9 @@ case "${1:-}" in
     echo "  (no args)  Show interactive menu"
     ;;
 *)
+    log "INFO" "Launching interactive menu"
     main_menu "true"
     ;;
 esac
+
+log "INFO" "==================== WiFi Manager Exited ===================="
