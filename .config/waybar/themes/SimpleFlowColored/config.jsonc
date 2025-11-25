@@ -283,8 +283,8 @@
       {
           "format": "",
           "tooltip": true,
-          "tooltip-format": "Menu\nRight click to change theme",
-          "on-click": "~/.config/rofi/bin/mainmenu",
+          "tooltip-format": "App Menu",
+          "on-click": "~/.config/rofi/bin/app-menu",
       },
 
       "custom/chrome":
