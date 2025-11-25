@@ -64,8 +64,8 @@ elif [ "$chosen_device" = "󰂲  Disable Bluetooth" ]; then
     rfkill block bluetooth
     notify-send "Bluetooth Disabled" "Bluetooth has been turned off."
 else
-    # Remove icon prefix to get device name
-    device_name="${chosen_device:3}"
+    # Remove icon prefix to get device name (strip leading emoji/icon and space)
+    device_name=$(echo "$chosen_device" | sed 's/^[[:space:]]*[^ ]*[[:space:]]*//')
 
     # Get MAC address of the device
     mac_address=$(bluetoothctl devices | grep -F "$device_name" | awk '{print $2}')
@@ -76,21 +76,28 @@ else
     fi
 
     # Check if Bluetooth is powered on, if not, power it on first
+    bt_was_off=false
     if ! bluetoothctl show 2>/dev/null | grep -qF "Powered: yes"; then
+        bt_was_off=true
         notify-send "Enabling Bluetooth..." "Powering on Bluetooth to connect..."
         rfkill unblock bluetooth
         sleep 0.5
         bluetoothctl power on
-        sleep 2 # Wait for Bluetooth to power on
+        sleep 2.5 # Wait longer for Bluetooth to fully power on and stabilize
     fi
     
     # Make sure scanning is completely stopped before checking status
     bluetoothctl scan off >/dev/null 2>&1
     sleep 0.5
 
-    # Check if device is already connected
+    # Check if device is already connected (only if Bluetooth was already on)
     device_info=$(bluetoothctl info "$mac_address" 2>/dev/null)
     is_connected=$(echo "$device_info" | grep -F "Connected: yes")
+    
+    # If Bluetooth was just turned on, skip the disconnect check
+    if [ "$bt_was_off" = true ]; then
+        is_connected=""
+    fi
 
     if [[ -n "$is_connected" ]]; then
         # Disconnect the device

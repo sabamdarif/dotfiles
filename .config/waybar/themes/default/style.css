@@ -164,7 +164,8 @@ tooltip label {
 }
 
 #custom-power-profile,
-#power-profiles-daemon {
+#power-profiles-daemon,
+#custom-updates {
     background-color: @tertiary_container;
     color: @on_tertiary_container;
     border-radius: 24px;
