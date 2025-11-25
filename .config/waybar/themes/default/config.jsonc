@@ -189,7 +189,7 @@
         "tooltip-format-ethernet": "  {ifname} ({ipaddr}/{cidr})",
         "tooltip-format-disconnected": "⚠  Disconnected",
         // "on-click": "ghostty -e nmtui"
-        "on-click": "nm-connection-editor"
+        "on-click": "~/.config/swaync/scripts/toggle_wifi.sh"
       },
       "network#speed": {
         "interface": "wlp2s0",
