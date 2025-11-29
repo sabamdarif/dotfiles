@@ -11,7 +11,7 @@ log() {
     local level="$1"
     shift
     local message="$*"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >>"$LOG_FILE"
 }
 
 # Initialize log file
@@ -157,19 +157,19 @@ connect_to_network() {
     local ssid="$1"
     local password="$2"
     local is_saved="$3"
-    
+
     log "INFO" "Attempting to connect to network: $ssid (saved: $is_saved)"
-    
+
     # Get current connection
     local current_connection
     current_connection=$(get_current_connection)
-    
+
     if [[ -n "$current_connection" ]]; then
         log "INFO" "Currently connected to: $current_connection"
     else
         log "INFO" "No active WiFi connection"
     fi
-    
+
     # If we're already connected to a different network, disconnect first
     if [[ -n "$current_connection" ]] && [[ "$current_connection" != "$ssid" ]]; then
         log "INFO" "Switching networks: $current_connection -> $ssid"
@@ -331,7 +331,7 @@ manage_saved_networks() {
 # Main menu
 main_menu() {
     local rescan="${1:-true}"
-    
+
     log "INFO" "Main menu opened (rescan: $rescan)"
 
     if ! is_wifi_enabled; then
@@ -373,7 +373,7 @@ main_menu() {
     # Get current connection
     local current
     current=$(get_current_connection)
-    
+
     if [[ -n "$current" ]]; then
         log "INFO" "Currently connected to network: $current"
     else
@@ -432,7 +432,7 @@ ${display}"
 
     # Exit if nothing selected (Esc pressed)
     [[ -z "$selection" ]] && log "INFO" "User cancelled from main menu" && return
-    
+
     log "INFO" "User selected: $selection"
 
     case "$selection" in
@@ -461,7 +461,7 @@ ${display}"
         # Strip the rofi index prefix (format is "index:display")
         local selection_display="${selection#*:}"
         log "DEBUG" "Selection after stripping index: $selection_display"
-        
+
         local found=false
         while IFS='|' read -r net_display net_ssid net_security net_in_use net_is_saved; do
             if [[ "$net_display" == "$selection_display" ]]; then
@@ -494,7 +494,7 @@ ${display}"
                 break
             fi
         done <<<"$network_list"
-        
+
         if [[ "$found" == "false" ]]; then
             log "WARN" "Selected network not found in network list: $selection_display"
         fi
