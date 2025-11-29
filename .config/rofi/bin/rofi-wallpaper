@@ -2,6 +2,7 @@
 
 # Configuration
 WALLPAPER_PATH="$HOME/.config/background"
+BLURRED_WALLPAPER_PATH="$HOME/.config/blurred-background"
 LOG_FILE="$HOME/.config/rofi/rofi-wallpaper.log"
 MODE=$(cat "$HOME/.config/matugen/current_mode")
 
@@ -38,9 +39,18 @@ setwall() {
     fi
     log "matugen found"
 
-    # Delete old wallpaper if it exists
+    # Check if ImageMagick is installed
+    if ! command -v magick >/dev/null 2>&1; then
+        log "ERROR: 'magick' (ImageMagick) is not installed"
+        echo "Error: 'magick' (ImageMagick) is not installed"
+        return 1
+    fi
+    log "ImageMagick found"
+
+    # Delete old wallpapers if they exist
     [[ -f "$WALLPAPER_PATH" ]] && rm -f "$WALLPAPER_PATH"
-    log "Old wallpaper removed (if existed)"
+    [[ -f "$BLURRED_WALLPAPER_PATH" ]] && rm -f "$BLURRED_WALLPAPER_PATH"
+    log "Old wallpapers removed (if existed)"
 
     # Copy new wallpaper
     cp "$wallpaper" "$WALLPAPER_PATH"
@@ -61,6 +71,29 @@ setwall() {
         swaybg -i "$WALLPAPER_PATH" -m fill &
     else
         log "ERROR: Neither swww nor swaybg found"
+    fi
+
+    # Create blurred version
+    log "Creating blurred wallpaper..."
+    magick "$WALLPAPER_PATH" -blur 0x8 "$BLURRED_WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"
+    if [[ $? -ne 0 ]]; then
+        log "ERROR: Failed to create blurred wallpaper"
+        echo "Error: Failed to create blurred wallpaper"
+        return 1
+    fi
+    log "Blurred wallpaper created successfully"
+
+    # Set blurred wallpaper with swaybg on a different output (if needed)
+    # Or you can use it as a lockscreen background, etc.
+    log "Setting blurred wallpaper with swaybg..."
+    if command -v swaybg >/dev/null 2>&1; then
+        # Kill existing swaybg processes for blurred wallpaper
+        pkill -f "swaybg.*$BLURRED_WALLPAPER_PATH"
+        # Start swaybg with blurred wallpaper
+        swaybg -i "$BLURRED_WALLPAPER_PATH" -m fill &
+        log "Blurred wallpaper set with swaybg"
+    else
+        log "WARNING: swaybg not found, blurred wallpaper created but not applied"
     fi
 
     # Generate color palettes with matugen

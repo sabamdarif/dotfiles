@@ -106,10 +106,29 @@ input {
     position x=1280 y=0
 }
 
+
+// Make the wallpaper stationary, rather than moving with workspaces.
+layer-rule {
+    // This is for swaybg; change for other wallpaper tools.
+    // Find the right namespace by running niri msg layers.
+    match namespace="^wallpaper$"
+    place-within-backdrop true
+}
+
+// Optionally, disable the workspace shadows in the overview.
+overview {
+    workspace-shadow {
+        off
+    }
+}
+
 // Settings that influence how windows are positioned and sized.
 // Find more information on the wiki:
 // https://yalter.github.io/niri/Configuration:-Layout
 layout {
+
+    background-color "transparent"
+
     // Set gaps around windows in logical pixels.
     gaps 3
 
@@ -280,6 +299,7 @@ spawn-sh-at-startup "swayosd-server"
 spawn-at-startup "kdeconnectd"
 spawn-at-startup "kdeconnect-indicator"
 spawn-at-startup "~/.config/waybar/scripts/check-updates.sh"
+spawn-sh-at-startup "swaybg -i ~/.config/blurred-background -m fill"
 
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
