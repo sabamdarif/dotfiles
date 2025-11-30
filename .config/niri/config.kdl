@@ -345,7 +345,11 @@ animations {
     // off
 
     // Slow down all animations by this factor. Values below 1 speed them up instead.
-    // slowdown 3.0
+    slowdown 2.5
+    window-open {
+        duration-ms 150
+        curve "linear"
+    }
 }
 
 // Window rules let you adjust behavior for individual windows.
