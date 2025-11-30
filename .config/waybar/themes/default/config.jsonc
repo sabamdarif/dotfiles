@@ -12,9 +12,9 @@
             "cpu",
             "network#speed"
         ],
-        "modules-center": ["custom/updates", "custom/camera-usage", "clock", "custom/power-profile"],
+        "modules-center": ["custom/updates", "custom/mic-camera-usage", "clock", "custom/power-profile"],
         "modules-right": [
-            "privacy",
+            // "privacy",
             "tray",
             "pulseaudio",
             "network#info",
@@ -63,10 +63,10 @@
             "ignore-monitor": false,
             "expand": false
         },
-        "custom/camera-usage": {
+        "custom/mic-camera-usage": {
             "return-type": "json",
-            "exec": "~/.config/waybar/scripts/camera_usage.sh",
-            "restart-interval": 5,
+            "exec": "~/.config/waybar/scripts/mic_and_camera_usage.sh",
+            // "restart-interval": 5,
             // "interval": 2,
             "hide-empty-text": true
         },

@@ -20,7 +20,7 @@
       /////////////////////////////////////////////
 
       "modules-left": [ "custom/launcher", "niri/workspaces", "custom/chrome", "custom/terminal", "custom/code", "custom/music", "custom/thunar"],
-      "modules-center": ["custom/camera-usage", "wlr/taskbar", "custom/notification"],
+      "modules-center": ["custom/mic-camera-usage", "wlr/taskbar", "custom/notification"],
       "modules-right": ["keyboard-state", "custom/countdown", "group/group-tools", "pulseaudio", "backlight", "tray", "clock", "group/group-network" , "group/group-battery", "group/group-power"],
 
 
@@ -62,13 +62,13 @@
     "escape": true
     },
 
-      "custom/camera-usage": {
-    "return-type": "json",
-    "exec": "~/.config/waybar/scripts/camera_usage.sh",
-    "restart-interval": 5,
-    // "interval": 2,
-    "hide-empty-text": true
-  },
+     "custom/mic-camera-usage": {
+            "return-type": "json",
+            "exec": "~/.config/waybar/scripts/mic_and_camera_usage.sh",
+            // "restart-interval": 5,
+            // "interval": 2,
+            "hide-empty-text": true
+    },
 
       "niri/workspaces":
       {

@@ -154,7 +154,7 @@ tooltip label {
  * Utility Indicators
  * -------------------------------------------------------------------------- */
 
-#custom-camera-usage {
+#custom-mic-camera-usage {
     background-color: @error;
     color: @on_error;
     border-radius: 24px;

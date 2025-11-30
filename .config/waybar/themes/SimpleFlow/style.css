@@ -41,7 +41,8 @@ tooltip {
 #custom-lock,
 #custom-launcher,
 #network,
-#bluetooth {
+#bluetooth,
+#custom-mic-camera-usage {
     background: @surface_container_high;
     color: @on_surface;
     padding: 3px 13px;

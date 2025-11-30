@@ -42,7 +42,8 @@ tooltip {
 #bluetooth,
 #custom-nightlight,
 #custom-bt-battery,
-#battery {
+#battery,
+#custom-mic-camera-usage {
     background: @primary;
     color: @on_primary;
     padding: 3px 13px;
