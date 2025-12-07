@@ -1,89 +1,76 @@
 #!/bin/bash
 
-STATE_FILE="$HOME/.config/waybar/.power_mode_state"
 ICON_POWERSAVE="󰌪"
-ICON_BALANCED=""
 ICON_PERFORMANCE="󰓅"
 
+# Check if using auto-cpufreq daemon or manual control
+is_auto_cpufreq_active() {
+    systemctl is-active --quiet auto-cpufreq
+}
+
 get_current_governor() {
-    local governor=$(cpufreqctl.auto-cpufreq --governor 2>/dev/null | head -n1 | awk '{print $1}')
-    if [ -z "$governor" ]; then
-        echo "unknown"
-    else
-        echo "$governor"
-    fi
+    cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null
 }
 
 get_current_epp() {
-    local epp=$(cpufreqctl.auto-cpufreq --epp 2>/dev/null | head -n1 | awk '{print $1}')
-    if [ -z "$epp" ]; then
-        echo "unknown"
-    else
-        echo "$epp"
-    fi
+    cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference 2>/dev/null
 }
 
-# Detect current mode based on actual governor and EPP values
 detect_current_mode() {
     local governor=$(get_current_governor)
     local epp=$(get_current_epp)
 
-    # Determine mode based on actual system state
+    # Performance mode: governor=performance AND epp=performance
+    # Everything else is powersave
     if [ "$governor" = "performance" ] && [ "$epp" = "performance" ]; then
         echo "performance"
-    elif [ "$governor" = "powersave" ] && [ "$epp" = "power" ]; then
-        echo "powersave"
-    elif [ "$governor" = "powersave" ] && [[ "$epp" =~ ^balance ]]; then
-        echo "balanced"
     else
-        # Fallback to state file or default to balanced
-        if [ -f "$STATE_FILE" ]; then
-            cat "$STATE_FILE"
-        else
-            echo "balanced"
-        fi
+        echo "powersave"
     fi
 }
 
 set_power_mode() {
     local mode=$1
 
-    case $mode in
-    powersave)
-        # Set powersave governor and power EPP
-        pkexec cpufreqctl.auto-cpufreq --governor --set=powersave >/dev/null 2>&1
-        pkexec cpufreqctl.auto-cpufreq --epp --set=power >/dev/null 2>&1
-        echo "powersave" >"$STATE_FILE"
-        ;;
-    balanced)
-        # Set powersave governor with balance_performance EPP
-        pkexec cpufreqctl.auto-cpufreq --governor --set=powersave >/dev/null 2>&1
-        pkexec cpufreqctl.auto-cpufreq --epp --set=balance_performance >/dev/null 2>&1
-        echo "balanced" >"$STATE_FILE"
-        ;;
-    performance)
-        # Set performance governor and performance EPP
-        pkexec cpufreqctl.auto-cpufreq --governor --set=performance >/dev/null 2>&1
-        pkexec cpufreqctl.auto-cpufreq --epp --set=performance >/dev/null 2>&1
-        echo "performance" >"$STATE_FILE"
-        ;;
-    esac
+    if is_auto_cpufreq_active; then
+        # If auto-cpufreq daemon is running, stop it first
+        case $mode in
+        powersave)
+            pkexec sh -c 'systemctl stop auto-cpufreq; echo powersave | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null; echo power | tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference > /dev/null'
+            ;;
+        performance)
+            pkexec sh -c 'systemctl stop auto-cpufreq; echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null; echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference > /dev/null'
+            ;;
+        esac
+    else
+        # Direct control without auto-cpufreq
+        case $mode in
+        powersave)
+            pkexec sh -c 'echo powersave | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null; echo power | tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference > /dev/null'
+            ;;
+        performance)
+            pkexec sh -c 'echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null; echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference > /dev/null'
+            ;;
+        esac
+    fi
 }
 
-cycle_mode() {
+toggle_mode() {
     local current=$(detect_current_mode)
 
-    case $current in
-    powersave)
-        set_power_mode "balanced"
-        ;;
-    balanced)
+    if [ "$current" = "powersave" ]; then
+        echo "Switching to performance mode..." >&2
         set_power_mode "performance"
-        ;;
-    performance)
+    else
+        echo "Switching to powersave mode..." >&2
         set_power_mode "powersave"
-        ;;
-    esac
+    fi
+
+    # Wait a moment for changes to take effect
+    sleep 0.5
+
+    # Show new status
+    echo "New mode: $(detect_current_mode)" >&2
 }
 
 output_json() {
@@ -93,15 +80,17 @@ output_json() {
 
     local icon=""
     local text=""
+    local extra=""
+
+    # Check if auto-cpufreq is running
+    if is_auto_cpufreq_active; then
+        extra=" (auto-cpufreq active)"
+    fi
 
     case $mode in
     powersave)
         icon="$ICON_POWERSAVE"
         text="Power Saver"
-        ;;
-    balanced)
-        icon="$ICON_BALANCED"
-        text="Balanced"
         ;;
     performance)
         icon="$ICON_PERFORMANCE"
@@ -109,15 +98,14 @@ output_json() {
         ;;
     esac
 
-    # Ensure clean output - only JSON, nothing else
-    printf '{"text":"%s","tooltip":"Power Profile: %s\\nGovernor: %s\\nEPP: %s","class":"%s"}\n' \
-        "$icon" "$text" "$governor" "$epp" "$mode"
+    printf '{"text":"%s","tooltip":"Power Profile: %s%s\\nGovernor: %s\\nEPP: %s","class":"%s"}\n' \
+        "$icon" "$text" "$extra" "$governor" "$epp" "$mode"
 }
 
 # Main logic
 case "${1:-status}" in
-cycle)
-    cycle_mode
+toggle)
+    toggle_mode
     ;;
 status)
     output_json
