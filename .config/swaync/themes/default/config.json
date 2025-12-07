@@ -93,7 +93,7 @@
           "type": "toggle",
           "active": false,
           "command": "swayosd-client --output-volume mute-toggle",
-          "update-command": "sh -c 'set +e;pactl get-source-mute @DEFAULT_SOURCE@ | grep -q \"no\" && echo true || echo false'"
+          "update-command": "pactl get-sink-mute @DEFAULT_SINK@ | grep -q yes && echo true || echo false"
         },
         {
           "label": "  Coffee",
