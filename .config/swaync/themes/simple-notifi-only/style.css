@@ -1,0 +1,363 @@
+@import "colors.css";
+@import "fonts.css";
+
+* {
+    color: @on_surface;
+}
+
+/* Main control center */
+.control-center {
+    background: @background;
+    border-radius: 12px;
+    border: 1px solid @outline_variant;
+    box-shadow: 0 4px 20px alpha(@shadow, 0.5);
+    padding: 0;
+}
+
+.control-center-list {
+    background: transparent;
+    padding: 4px;
+}
+
+.control-center-list-placeholder {
+    opacity: 0.5;
+    color: @on_surface;
+}
+
+.blank-window {
+    background: transparent;
+}
+
+/* Hide scrollbar */
+scrollbar,
+scrollbar trough,
+scrollbar slider {
+    all: unset;
+    opacity: 0;
+    background: transparent;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* DND widget */
+.widget-dnd {
+    background: @surface_container_high;
+    margin: 8px;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid @outline_variant;
+}
+
+.widget-dnd * {
+    color: @on_surface;
+}
+
+.widget-dnd>switch {
+    border-radius: 12px;
+    background: @surface_container;
+    border: 1px solid @outline_variant;
+    min-width: 48px;
+    min-height: 20px;
+}
+
+.widget-dnd>switch:checked {
+    background: @primary;
+    border: 1px solid @primary;
+}
+
+.widget-dnd>switch slider {
+    background: @outline;
+    border-radius: 10px;
+    min-width: 20px;
+    min-height: 20px;
+}
+
+.widget-dnd>switch:checked slider {
+    background: @on_primary;
+}
+
+/* MPRIS widget */
+.widget-mpris {
+    background: @surface_container_high;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px;
+    border: 1px solid @outline_variant;
+    transition: background-color 0.3s ease;
+}
+
+.widget-mpris * {
+    color: @on_surface;
+}
+
+.widget-mpris:hover {
+    background: @surface_container_highest;
+    border-color: @primary;
+}
+
+.widget-mpris-player {
+    background: transparent;
+    padding: 0;
+}
+
+.widget-mpris-album-art {
+    border-radius: 12px;
+    margin-right: 12px;
+}
+
+.widget-mpris-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: @on_surface;
+}
+
+.widget-mpris-subtitle {
+    font-size: 14px;
+    color: @outline;
+}
+
+.widget-mpris-player>box {
+    padding: 8px;
+}
+
+.widget-mpris-player button {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    color: @on_surface;
+}
+
+.widget-mpris-player button:hover {
+    background: @surface_container_highest;
+}
+
+/* Title widget */
+.widget-title {
+    background: @surface_container_high;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 16px;
+    border-radius: 6px;
+    margin: 8px;
+    border: 1px solid @outline_variant;
+    color: @on_surface;
+}
+
+.widget-title>button {
+    font-size: 14px;
+    color: @on_primary_container !important;
+    background: @primary_container;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.widget-title>button * {
+    color: @on_primary_container !important;
+}
+
+.widget-title>button:hover {
+    background: @primary;
+    color: @on_primary !important;
+}
+
+.widget-title>button:hover * {
+    color: @on_primary !important;
+}
+
+/* Notifications */
+.notification-row {
+    outline: none;
+    background: transparent;
+    margin: 0;
+    padding: 0;
+}
+
+.notification-row:focus,
+.notification-row:hover {
+    background: transparent;
+}
+
+.notification-row .notification-background {
+    padding: 0;
+    margin: 0;
+}
+
+.notification-row .notification-background .close-button {
+    background: transparent;
+    color: @outline;
+    border-radius: 6px;
+    min-width: 24px;
+    min-height: 24px;
+    border: none;
+    padding: 0;
+    margin-top: 4px;
+    margin-right: 4px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.notification-row .notification-background .close-button:hover {
+    background: @error;
+    color: @on_error;
+}
+
+.notification-row .notification-background .notification {
+    background: @surface_container_high;
+    border-radius: 6px;
+    padding: 6px;
+    margin: 2px 4px;
+    border: 1px solid @outline_variant;
+    transition: background-color 0.3s ease;
+}
+
+.notification-row .notification-background .notification * {
+    color: @on_surface;
+}
+
+.notification-row .notification-background .notification .notification-default-action {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+}
+
+.notification-row .notification-background .notification .notification-default-action:hover {
+    background: @surface_container_highest;
+}
+
+.notification-row .notification-background .notification.low {
+    border-left: 3px solid @secondary;
+}
+
+.notification-row .notification-background .notification.normal {
+    border-left: 3px solid @primary;
+}
+
+.notification-row .notification-background .notification.critical {
+    background: @error_container;
+    border: 2px solid @error;
+}
+
+.notification-row .notification-background .notification.critical * {
+    color: @on_error_container;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content {
+    background: transparent;
+    padding: 4px;
+}
+
+.notification-row .notification-background .notification .notification-content .text-box .summary {
+    font-size: 15px;
+    font-weight: bold;
+    color: @on_surface;
+}
+
+.notification-row .notification-background .notification .notification-content .text-box .time {
+    font-size: 13px;
+    font-weight: 500;
+    color: @outline;
+    margin-right: 12px;
+}
+
+.notification-row .notification-background .notification .notification-content .text-box .body {
+    font-size: 14px;
+    font-weight: 400;
+    margin-top: 2px;
+    color: @on_surface;
+}
+
+.notification-row .notification-background .notification .notification-content .image {
+    border-radius: 10px;
+    margin: 2px 6px 2px 2px;
+}
+
+/* Notification Actions */
+.notification-action {
+    background: @surface_container_highest;
+    color: @on_surface;
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin: 4px;
+    border: 1px solid @outline_variant;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.notification-action:hover {
+    background: @primary;
+    color: @on_primary;
+}
+
+/* Group Notifications */
+.notification-group {
+    background: transparent;
+    border-radius: 6px;
+    padding: 0;
+    margin: 2px 4px;
+    border: none;
+}
+
+.notification-group-headers {
+    background: @surface_container_high;
+    border-radius: 6px;
+    padding: 6px;
+    margin-bottom: 4px;
+    border: 1px solid @outline_variant;
+}
+
+.notification-group-headers * {
+    color: @on_surface;
+}
+
+.notification-group-icon {
+    border-radius: 6px;
+}
+
+.notification-group-collapse-button {
+    background: @surface_container_highest;
+    color: @on_surface;
+    border-radius: 6px;
+    padding: 4px 10px;
+    border: none;
+    margin-top: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.notification-group-collapse-button:hover {
+    background: @primary;
+    color: @on_primary;
+}
+
+/* Inline Reply */
+.inline-reply {
+    background: @surface_container_highest;
+    border-radius: 6px;
+    border: 1px solid @outline_variant;
+    padding: 6px;
+    margin-top: 4px;
+}
+
+.inline-reply-entry {
+    background: transparent;
+    border: none;
+    color: @on_surface;
+}
+
+.inline-reply-button {
+    background: @primary;
+    color: @on_primary;
+    border-radius: 6px;
+    padding: 4px 10px;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.inline-reply-button:hover {
+    background: @primary_container;
+    color: @on_primary_container;
+}
