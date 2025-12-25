@@ -5,6 +5,8 @@ WAYBAR_CONFIG_DIR="$HOME/.config/waybar"
 WAYBAR_THEMES_DIR="$HOME/.config/waybar/themes"
 ROFI_CONFIG_DIR="$HOME/.config/rofi"
 ROFI_THEMES_DIR="$HOME/.config/rofi/themes"
+SWAYNC_CONFIG_DIR="$HOME/.config/swaync"
+SWAYNC_THEMES_DIR="$HOME/.config/swaync/themes"
 
 menu() {
     local prompt="$1"
@@ -29,6 +31,10 @@ notify() {
     notify-send "$1" "$2"
 }
 
+is_running() {
+    pgrep -x "$1" >/dev/null 2>&1
+}
+
 # ============================================================================
 # Dark/Light Theme Functions
 # ============================================================================
@@ -45,7 +51,7 @@ toggle_dark_light_theme() {
 }
 
 show_dark_light_menu() {
-    local themes="󰖔  Dark Theme\n  Light Theme"
+    local themes="󰖔  Dark Theme\n  Light Theme"
     local selected=$(menu "󰔎  Select Color Scheme" "$themes")
 
     case "$selected" in
@@ -257,8 +263,76 @@ show_rofi_theme_menu() {
 # SwayNC Theme Functions
 # ============================================================================
 
+list_swaync_themes() {
+    # List all available SwayNC themes
+    if [[ ! -d "$SWAYNC_THEMES_DIR" ]]; then
+        echo ""
+        return 1
+    fi
+
+    find "$SWAYNC_THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+}
+
+apply_swaync_theme() {
+    local theme_name="$1"
+    local theme_dir="$SWAYNC_THEMES_DIR/$theme_name"
+
+    if [[ ! -d "$theme_dir" ]]; then
+        notify "Error" "Theme directory not found: $theme_name"
+        return 1
+    fi
+
+    notify "Applying SwayNC Theme" "Setting up $theme_name..."
+
+    # Remove old config files
+    rm -f "$SWAYNC_CONFIG_DIR/style.css" \
+        "$SWAYNC_CONFIG_DIR/config.json"
+
+    # Copy new theme files
+    local files_copied=0
+
+    if [[ -f "$theme_dir/config.json" ]]; then
+        cp "$theme_dir/config.json" "$SWAYNC_CONFIG_DIR/config.json"
+        ((files_copied++))
+    fi
+
+    if [[ -f "$theme_dir/style.css" ]]; then
+        cp "$theme_dir/style.css" "$SWAYNC_CONFIG_DIR/style.css"
+        ((files_copied++))
+    fi
+
+    if [[ $files_copied -eq 0 ]]; then
+        notify "Error" "No valid config files found in theme: $theme_name"
+        return 1
+    fi
+
+    # Reload or start SwayNC
+    if is_running "swaync"; then
+        echo "Restarting SwayNC..."
+        swaync-client -R
+        swaync-client -rs
+    else
+        echo "Starting SwayNC..."
+        swaync &
+        disown
+    fi
+
+    notify "SwayNC Theme Applied" "$theme_name is now active!"
+}
+
 show_swaync_theme_menu() {
-    notify "Coming Soon" "SwayNC theme switcher will be available in a future update"
+    local theme_list=$(list_swaync_themes)
+
+    if [[ -z "$theme_list" ]]; then
+        notify "No Themes Found" "Create themes in $SWAYNC_THEMES_DIR"
+        return 1
+    fi
+
+    local selected_theme=$(menu "󰂚  Select SwayNC Theme" "$theme_list")
+
+    if [[ "$selected_theme" != "CNCLD" && -n "$selected_theme" ]]; then
+        apply_swaync_theme "$selected_theme"
+    fi
 }
 
 # ============================================================================
