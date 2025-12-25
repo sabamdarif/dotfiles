@@ -1,0 +1,13 @@
+// Environment variables configuration
+// https://yalter.github.io/niri/Configuration%3A-Miscellaneous.html#environment
+
+environment {
+  XCURSOR_SIZE "24"
+  GDK_SCALE "1.0"
+  XDG_CURRENT_DESKTOP "niri"
+  TERMINAL "ghostty"
+  QT_QPA_PLATFORM "wayland"
+  ELECTRON_OZONE_PLATFORM_HINT "auto"
+  QT_QPA_PLATFORMTHEME "qt6ct"
+  QT_QPA_PLATFORMTHEME_QT "qt6ct"
+}
