@@ -6,7 +6,7 @@
 (protocol-version 277)
 (file-version 15)
 
-(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/resynthesizer/resynthesizer" 0
+(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/resynthesizer/resynthesizer" 1761809623
     (proc-def "plug-in-resynthesizer" 1
          "Resynthesizer engine"
          "Image search/replace by patch match"
@@ -30,7 +30,7 @@
         (proc-arg 6 "GParamDouble" "gdouble" "autism" "Sensitivity to outliers of distance measure" "Parameter of distance measure" 3 0 1 0.11700000000000001)
         (proc-arg 1 "GParamInt" "gint" "neighbours" "Count of pixels in a patch" "More is high quality but slow" 3 1 100 9)
         (proc-arg 1 "GParamInt" "gint" "trys" "Max search probes per pass" "More is high quality but slow" 3 1 10000 200)))
-(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-uncrop/plug-in-uncrop.scm" 0
+(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-uncrop/plug-in-uncrop.scm" 1761809623
     (proc-def "plug-in-uncrop" 1
          "Enlarge image by synthesizing a border that matches the edge, maintaining perspective.  Works best for small, natural edges. Undo a Crop instead, if possible!"
          ""
@@ -49,7 +49,7 @@
         (proc-arg 10 "GimpParamCoreObjectArray" "GimpCoreObjectArray" "drawables" "Drawables" "The input drawables" 259 "GimpDrawable")
         (proc-arg 1 "GParamInt" "gint" "adjustment" "Percent enlargement" "Percent enlargement" 3 0 100 10)
         (proc-arg 5 "GParamBoolean" "gboolean" "toggle" "Anti-erase the enlargment" "Anti-erase the enlargment" 3 0)))
-(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-resynth-fill-pattern/plug-in-resynth-fill-pattern.scm" 0
+(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-resynth-fill-pattern/plug-in-resynth-fill-pattern.scm" 1761809623
     (proc-def "plug-in-fill-pattern-resynth" 1
          "Seamlessly fill with a pattern using synthesis."
          ""
@@ -67,7 +67,7 @@
         (proc-arg 9 "GimpParamImage" "GimpImage" "image" "Image" "The input image" 3 0)
         (proc-arg 10 "GimpParamCoreObjectArray" "GimpCoreObjectArray" "drawables" "Drawables" "The input drawables" 259 "GimpDrawable")
         (proc-arg 12 "GimpParamPattern" "GimpPattern" "pattern" "Pattern" "Pattern" 3 0 0 1965)))
-(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-resynth-controls/plug-in-resynth-controls.scm" 0
+(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-resynth-controls/plug-in-resynth-controls.scm" 1761809623
     (proc-def "plug-in-resynth-controls" 1
          "Use the resynthesizer engine's control panel.Requires plugin 'plug-in-resynthesizer' is installed."
          ""
@@ -95,7 +95,7 @@
         (proc-arg 1 "GParamInt" "gint" "adjustment-2" "Neighborhood size" "Neighborhood size" 3 1 100 30)
         (proc-arg 1 "GParamInt" "gint" "adjustment-3" "Search thoroughness" "Search thoroughness" 3 1 500 200)
         (proc-arg 6 "GParamDouble" "gdouble" "adjustment-4" "Sensitivity to outliers" "Sensitivity to outliers" 3 0.10000000000000001 1 0.12)))
-(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-render-texture/plug-in-render-texture.scm" 0
+(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-render-texture/plug-in-render-texture.scm" 1761809623
     (proc-def "plug-in-render-texture" 1
          "Create a new image with texture from the current image or selection. Optionally, create image edges suited for further, seamless tiling. "
          ""
@@ -114,7 +114,7 @@
         (proc-arg 10 "GimpParamCoreObjectArray" "GimpCoreObjectArray" "drawables" "Drawables" "The input drawables" 259 "GimpDrawable")
         (proc-arg 6 "GParamDouble" "gdouble" "adjustment" "Ratio of size of new image to source selection" "Ratio of size of new image to source selection" 3 0.5 10 2)
         (proc-arg 5 "GParamBoolean" "gboolean" "toggle" "Make new image edges suitable for seamless tiling" "Make new image edges suitable for seamless tiling" 3 0)))
-(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-map-style/plug-in-map-style.scm" 0
+(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-map-style/plug-in-map-style.scm" 1761809623
     (proc-def "plug-in-map-style" 1
          "Transfer style (color and surface) from a chosen source to the selected layer. "
          ""
@@ -134,7 +134,7 @@
         (proc-arg 9 "GimpParamDrawable" "GimpDrawable" "drawable" "Source of style" "Source of style" 3 1)
         (proc-arg 1 "GParamInt" "gint" "adjustment" "Percent transfer" "Percent transfer" 3 10 90 10)
         (proc-arg 1 "GParamInt" "gint" "option" "Map by" "Map by" 3 0 1 0)))
-(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-heal-transparency/plug-in-heal-transparency.scm" 0
+(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-heal-transparency/plug-in-heal-transparency.scm" 1761809623
     (proc-def "plug-in-heal-transparency" 1
          "Removes alpha channel by synthesis.  Fill outward for edges, inward for holes."
          ""
@@ -153,7 +153,7 @@
         (proc-arg 10 "GimpParamCoreObjectArray" "GimpCoreObjectArray" "drawables" "Drawables" "The input drawables" 259 "GimpDrawable")
         (proc-arg 1 "GParamInt" "gint" "adjustment" "Context sampling width (pixels)" "Context sampling width (pixels)" 3 1 10000 50)
         (proc-arg 1 "GParamInt" "gint" "option" "Filling order" "Filling order" 3 0 2 0)))
-(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-heal-selection/plug-in-heal-selection.scm" 0
+(plug-in-def "${gimp_installation_dir}/extensions/plug-ins/plug-in-heal-selection/plug-in-heal-selection.scm" 1761809623
     (proc-def "plug-in-heal-selection" 1
          "Heal the selection from surroundings as if using the heal tool."
          ""

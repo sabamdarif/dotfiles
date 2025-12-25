@@ -249,7 +249,7 @@
             "exec": "cat ~/.cache/total-update-tooltip",
             "exec-if": "[ -f ~/.cache/total-update-tooltip ]",
             "interval": 10,
-            "on-click": "ghostty -e bash -c 'sudo dnf upgrade -y; flatpak update -y; read -p \"Press enter to close\"'"
+            "on-click": "ghostty -e bash -c 'echo \"Updating Flatpak...\"; flatpak update -y; echo; echo \"Preparing DNF offline update...\"; sudo dnf offline-upgrade download && { read -p \"Reboot now to install DNF updates? (y/n): \" -n 1 -r; echo; [[ $REPLY =~ ^[Yy]$ ]] && sudo dnf offline-upgrade reboot || echo \"Updates will install on next reboot.\"; } || echo \"No DNF updates available.\"; read -p \"Press Enter to close...\"'"
         }
     }
 ]

@@ -1,8 +1,8 @@
 # GIMP user context
 
-(tool "gimp-text-tool")
+(tool "gimp-by-color-select-tool")
 (paint-info "gimp-paintbrush")
-(brush "2. Hardness 050")
+(brush "2. Block 02")
 (dynamics "Pressure Size")
 (mybrush "100% Opaque")
 (pattern "Pine")

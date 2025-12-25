@@ -1,101 +1,95 @@
-/* ---- 💫 https://github.com/JaKooLit 💫 ---- */
-/* KooL Hyprland Rofi Style 3 - Full screen v2 */
-/* credit: https://github.com/adi1090x/rofi */
-
-/*****----- Configuration -----*****/
+/**
+* Based on https://github.com/adi1090x/rofi/blob/master/files/launchers/type-2/style-8.rasi
+**/
 configuration {
-    modi:                       "drun,run,filebrowser";
+	modi:                       "drun";
     show-icons:                 true;
-    display-drun:               "  apps";
-    display-run:                "  term";
-    display-filebrowser:        "  files";
-    display-window:             "  window";
-	display-ssh:                "  SSH";
-    drun-display-format:        "{name}";
-    window-format:              "{w} · {c} · {t}";
-    hover-select:               true;
-    me-select-entry:            "MouseSecondary";
-    me-accept-entry:            "MousePrimary";
+    display-drun:               " Applications";
+	drun-display-format:        "{name}";
 }
 
-
-/* ---- Load colors ---- */
-@import "~/.config/rofi/themes/colors.rasi"
+/*****----- Global Properties -----*****/
+@import "~/.config/rofi/themes/icons.rasi"
 @import "~/.config/rofi/themes/fonts.rasi"
+@import "~/.config/rofi/themes/colors.rasi"
 
 /*****----- Main Window -----*****/
 window {
     transparency:                "real";
     location:                    center;
     anchor:                      center;
-    fullscreen:                  true;
+    fullscreen:                  false;
+    width:                       1000px;
     x-offset:                    0px;
-    y-offset:                    40px;
+    y-offset:                    0px;
+
     enabled:                     true;
-    margin:                      40px 0px 0px 0px;
+    margin:                      0px;
     padding:                     0px;
     border:                      0px solid;
-    border-radius:               0px;
+    border-radius:               20px;
     border-color:                @primary;
-    background-color:            #000000aa;
+    background-color:            @surface;
     cursor:                      "default";
 }
 
 /*****----- Main Box -----*****/
 mainbox {
     enabled:                     true;
-    spacing:                     100px;
-    margin:                      0px;
-    padding:                     60px 80px;
+    spacing:                     20px;
+    margin:                      40px;
+    padding:                     0px;
     border:                      0px solid;
     border-radius:               0px 0px 0px 0px;
     border-color:                @primary;
     background-color:            transparent;
-    children:                    [ "inputbar", "message", "listview" ];
+    children:                    [ "inputbar", "listview" ];
 }
 
 /*****----- Inputbar -----*****/
 inputbar {
     enabled:                     true;
-    spacing:                     10px;
-    margin:                      0% 28%;
-    padding:                     10px;
-    border:                      1px solid;
-    border-radius:               6px;
-    border-color:                @outline;
+    spacing:                     0px;
+    margin:                      0px;
+    padding:                     0px;
+    border:                      0px solid;
+    border-radius:               100%;
+    border-color:                @primary;
     background-color:            @surface-container;
     text-color:                  @on-surface;
-    children:                    [ "prompt", "entry" ];
+    children:                    [ "prompt", "textbox-prompt-colon", "entry" ];
 }
 
 prompt {
     enabled:                     true;
-    background-color:            transparent;
-    text-color:                  @primary;
+    padding:                     15px;
+    border-radius:               100%;
+    background-color:            @primary;
+    text-color:                  @on-primary;
 }
-
 textbox-prompt-colon {
     enabled:                     true;
     expand:                      false;
     str:                         "::";
-    background-color:            transparent;
-    text-color:                  @primary;
+    padding:                     15px;
+    background-color:            inherit;
+    text-color:                  inherit;
 }
-
 entry {
     enabled:                     true;
-    background-color:            transparent;
-    text-color:                  @on-surface;
+    padding:                     15px 0px;
+    background-color:            inherit;
+    text-color:                  inherit;
     cursor:                      text;
-    placeholder:                 "  Search  👀 NOTE: CTRL TAB to change MODE";
-    placeholder-color:           @on-surface-variant;
+    placeholder:                 "Search...";
+    placeholder-color:           inherit;
 }
 
 /*****----- Listview -----*****/
 listview {
     enabled:                     true;
-    columns:                     7;
-    lines:                       4;
+    columns:                     6;
+    lines:                       3;
     cycle:                       true;
     dynamic:                     true;
     scrollbar:                   false;
@@ -103,7 +97,8 @@ listview {
     reverse:                     false;
     fixed-height:                true;
     fixed-columns:               true;
-    spacing:                     10px;
+    
+    spacing:                     20px;
     margin:                      0px;
     padding:                     0px;
     border:                      0px solid;
@@ -113,83 +108,71 @@ listview {
     text-color:                  @on-surface;
     cursor:                      "default";
 }
-
 scrollbar {
-    handle-width:                2px;
+    handle-width:                5px ;
     handle-color:                @primary;
     border-radius:               0px;
-    background-color:            @surface-container-low;
+    background-color:            @surface-container;
 }
 
 /*****----- Elements -----*****/
 element {
     enabled:                     true;
-    spacing:                     15px;
+    spacing:                     20px;
     margin:                      0px;
-    padding:                     35px 10px;
+    padding:                     0px;
     border:                      0px solid;
-    border-radius:               15px;
+    border-radius:               0px;
     border-color:                @primary;
     background-color:            transparent;
     text-color:                  @on-surface;
     orientation:                 vertical;
     cursor:                      pointer;
 }
-
 element normal.normal {
     background-color:            transparent;
     text-color:                  @on-surface;
 }
-
 element selected.normal {
-    background-color:            inherit;
+    background-color:            transparent;
     text-color:                  @on-surface;
 }
-
-element-text selected,
-element selected.selected {
-    background-color:            @primary;
-    text-color:                  @on-primary;
-    border-radius:               20px;
-    padding:                     20px;
-}
-
 element-icon {
-    background-color:            transparent;
+    padding:                     30px;
+    border-radius:               20px;
+    background-color:            @surface-container;
     text-color:                  inherit;
-    size:                        7%;
+    size:                        64px;
     cursor:                      inherit;
 }
-
 element-text {
+    padding:                     10px;
     background-color:            transparent;
     text-color:                  inherit;
     highlight:                   inherit;
     cursor:                      inherit;
     vertical-align:              0.5;
     horizontal-align:            0.5;
-    padding:                     30px;
+}
+element-text selected {
+    border-radius:               100%;
+    background-color:            @primary;
+    text-color:                  @on-primary;
 }
 
 /*****----- Message -----*****/
-message {
-    background-color:            transparent;
-    border:                      0px;
-}
-
 error-message {
-    padding:                     0px;
-    border-color:                @error;
-    background-color:            transparent;
+    padding:                     20px;
+    border:                      2px solid;
+    border-radius:               20px;
+    border-color:                @primary;
+    background-color:            @surface;
     text-color:                  @on-surface;
 }
-
 textbox {
-    padding:                     20px;
-    border-radius:               15px;
-    background-color:            @surface-container-high;
+    background-color:            @surface;
     text-color:                  @on-surface;
     vertical-align:              0.5;
-    horizontal-align:            0.5;
+    horizontal-align:            0.0;
     highlight:                   none;
 }

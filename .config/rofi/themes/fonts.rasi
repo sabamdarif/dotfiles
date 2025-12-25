@@ -1,7 +1,7 @@
 * {
-  font: "Noto Serif, FantasqueSansM Nerd Font Propo 13";
+  font: "Red Hat Text, FantasqueSansM Nerd Font Propo 13";
 }
 
 element-text {
-  font: "Noto Serif, FantasqueSansM Nerd Font Propo 11";
+  font: "Red Hat Text, FantasqueSansM Nerd Font Propo 11";
 }
