@@ -43,7 +43,8 @@ tooltip {
 #network,
 #bluetooth,
 #custom-mic-camera-usage,
-#custom-power-profile {
+#custom-power-profile,
+#custom-updates {
     background: @surface_container_high;
     color: @on_surface;
     padding: 3px 13px;
@@ -113,7 +114,8 @@ tooltip {
 #custom-reboot:hover,
 #custom-quit:hover,
 #custom-lock:hover,
-#custom-power-profile:hover {
+#custom-power-profile:hover,
+#custom-updates:hover {
     background: @primary;
     color: @on_primary;
 }
