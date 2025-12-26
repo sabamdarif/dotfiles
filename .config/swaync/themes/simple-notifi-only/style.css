@@ -137,22 +137,19 @@ scrollbar slider {
 /* Title widget */
 .widget-title {
     background: @surface_container_high;
-    font-size: 18px;
-    font-weight: bold;
-    padding: 16px;
+    font-weight: 700;
+    padding: 10px;
     border-radius: 6px;
-    margin: 8px;
     border: 1px solid @outline_variant;
     color: @on_surface;
 }
 
 .widget-title>button {
-    font-size: 14px;
     color: @on_primary_container !important;
     background: @primary_container;
     border: none;
     border-radius: 6px;
-    padding: 8px 16px;
+    padding: 6px 16px 6px 16px;
     font-weight: 500;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
