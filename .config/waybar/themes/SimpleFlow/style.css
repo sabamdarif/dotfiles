@@ -171,3 +171,35 @@ tooltip {
 #taskbar button.active {
     border-bottom-color: @primary_container;
 }
+
+#battery {
+    background-color: @tertiary_container;
+    color: @on_tertiary_container;
+}
+
+#battery.charging,
+#battery.plugged {
+    background-color: @primary_container;
+    color: @primary;
+    border: 1px solid alpha(@primary, 0.3);
+}
+
+#battery.warning:not(.charging) {
+    background-color: @tertiary_container;
+    color: @tertiary;
+    border: 1px solid alpha(@tertiary, 0.3);
+}
+
+#battery.critical:not(.charging) {
+    background: @error;
+    color: @on_error;
+    border: 1px solid alpha(@error, 0.5);
+    animation: blink 0.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+    to {
+        background-color: alpha(@error, 0.8);
+        color: @on_error;
+    }
+}
