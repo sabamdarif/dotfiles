@@ -51,7 +51,7 @@ toggle_dark_light_theme() {
 }
 
 show_dark_light_menu() {
-    local themes="󰖔  Dark Theme\n  Light Theme"
+    local themes="󰖔  Dark Theme\n󰖨  Light Theme"
     local selected=$(menu "󰔎  Select Color Scheme" "$themes")
 
     case "$selected" in

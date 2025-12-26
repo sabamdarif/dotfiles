@@ -83,7 +83,7 @@ mode-switcher{
 }
 
 button {
-    padding:                     15px;
+    padding:                     10px;
     border-radius:               10px;
     background-color:            @surface-container-high;
     text-color:                  inherit;

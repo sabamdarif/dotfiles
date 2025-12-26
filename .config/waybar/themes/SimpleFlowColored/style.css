@@ -43,7 +43,9 @@ tooltip {
 #custom-nightlight,
 #custom-bt-battery,
 #battery,
-#custom-mic-camera-usage {
+#custom-mic-camera-usage,
+#custom-power-profile,
+#custom-updates {
     background: @primary;
     color: @on_primary;
     padding: 3px 13px;
@@ -104,7 +106,9 @@ tooltip {
 #bluetooth:hover,
 #custom-nightlight:hover,
 #custom-bt-battery:hover,
-#battery:hover {
+#battery:hover,
+#custom-power-profile:hover,
+#custom-updates:hover {
     background: @primary_container;
     color: @on_primary_container;
 }
@@ -112,7 +116,8 @@ tooltip {
 /* Modules: Specific Styles */
 #custom-countdown,
 #custom-todo,
-#clock {
+#clock,
+#custom-power-profile {
     background: @primary_fixed;
     color: @on_primary_fixed;
     font-weight: bold;

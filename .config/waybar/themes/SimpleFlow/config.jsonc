@@ -1,58 +1,58 @@
-      /////////////////////////////////
-      //                             //
-      //  // Waybar configuration//  //
-      //                             //
-      /////////////////////////////////
+/////////////////////////////////
+//                             //
+//  // Waybar configuration//  //
+//                             //
+/////////////////////////////////
 
-      {
-          "layer": "top",
-          "position": "top",
-          "height": 38,
-          "spacing": 2,
-          "margin-top": 0,
-          "margin-bottom": 0,
-          "reload_style_on_change": true,
+{
+    "layer": "top",
+    "position": "top",
+    "height": 38,
+    "spacing": 2,
+    "margin-top": 0,
+    "margin-bottom": 0,
+    "reload_style_on_change": true,
 
-          /////////////////////////////////////////////
-          //                                         //
-          //  // Choose the order of the modules //  //
-          //                                         //
-          /////////////////////////////////////////////
+    /////////////////////////////////////////////
+    //                                         //
+    //  // Choose the order of the modules //  //
+    //                                         //
+    /////////////////////////////////////////////
 
-          "modules-left": [ "custom/launcher", "niri/workspaces", "custom/chrome", "custom/terminal", "custom/code", "custom/music", "custom/thunar"],
-          "modules-center": ["custom/mic-camera-usage", "wlr/taskbar", "custom/notification"],
-          "modules-right": ["keyboard-state", "custom/countdown", "group/group-tools", "pulseaudio", "backlight", "tray", "clock", "group/group-network" , "group/group-battery", "group/group-power"],
-
-
-          ///////////////////////////////////
-          //                               //
-          //  // Modules configuration//   //
-          //                               //
-          ///////////////////////////////////
+    "modules-left": [ "custom/launcher", "niri/workspaces", "custom/chrome", "custom/terminal", "custom/code", "custom/music", "custom/thunar", "custom/updates", "custom/power-profile"],
+    "modules-center": ["custom/mic-camera-usage", "wlr/taskbar", "custom/notification"],
+    "modules-right": ["keyboard-state", "custom/countdown", "group/group-tools", "pulseaudio", "backlight", "tray", "clock", "group/group-network" , "group/group-battery", "group/group-power"],
 
 
-          "wlr/taskbar":
-          {
-              "format": "{icon}",
-              "icon-size": 20,
-              "tooltip-format": "{title:.50}",
-              "on-click": "minimize-raise",
-              "on-click-middle": "close",
-              "on-click-right": "fullscreen"
-          },
+    ///////////////////////////////////
+    //                               //
+    //  // Modules configuration//   //
+    //                               //
+    ///////////////////////////////////
 
-          "custom/notification": {
+
+    "wlr/taskbar":
+    {
+        "format": "{icon}",
+        "icon-size": 20,
+        "tooltip-format": "{title:.50}",
+        "on-click": "minimize-raise",
+        "on-click-middle": "close",
+        "on-click-right": "fullscreen"
+    },
+
+    "custom/notification": {
         "tooltip": true,
         "format": "<span size='16pt'>{icon}</span>",
         "format-icons": {
-          "notification": "󱅫",
-          "none": "󰂜",
-          "dnd-notification": "󰂠",
-          "dnd-none": "󰪓",
-          "inhibited-notification": "󰂛",
-          "inhibited-none": "󰪑",
-          "dnd-inhibited-notification": "󰂛",
-          "dnd-inhibited-none": "󰪑"
+            "notification": "󱅫",
+            "none": "󰂜",
+            "dnd-notification": "󰂠",
+            "dnd-none": "󰪓",
+            "inhibited-notification": "󰂛",
+            "inhibited-none": "󰪑",
+            "dnd-inhibited-notification": "󰂛",
+            "dnd-inhibited-none": "󰪑"
         },
         "return-type": "json",
         "exec-if": "which swaync-client",
@@ -60,83 +60,83 @@
         "on-click": "swaync-client -t -sw",
         "on-click-right": "swaync-client -d -sw",
         "escape": true
-        },
+    },
 
-        "custom/mic-camera-usage": {
-            "return-type": "json",
-            "exec": "~/.config/waybar/scripts/mic_and_camera_usage.sh",
-            // "restart-interval": 5,
-            // "interval": 2,
-            "hide-empty-text": true
-        },
+    "custom/mic-camera-usage": {
+        "return-type": "json",
+        "exec": "~/.config/waybar/scripts/mic_and_camera_usage.sh",
+        // "restart-interval": 5,
+        // "interval": 2,
+        "hide-empty-text": true
+    },
 
-          "niri/workspaces":
-          {
-              "format": "{icon}",
-              "format-icons":
-              {
-                  "urgent": "",
-                  "active": "",
-                  "default": ""
-              },
-              "sort-by-number": true,
-              "on-click": "activate"
-          },
-
-          "keyboard-state":
-          {
-              "capslock": true,
-              "format": "{icon}",
-              "format-icons":
-              {
-                  "locked": " Caps ",
-                  "unlocked": ""
-              }
-          },
-
-          "idle_inhibitor":
-          {
-              "format": "{icon}",
-              "format-icons":
-              {
-                  "activated": "",
-                  "deactivated": ""
-              }
-          },
-
-          "tray":
-          {
-              "icon-size": 20,
-              "spacing": 10
-          },
-
-          "clock":
-          {
-              "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
-              "format-alt": "{:%d-%m-%Y}",
-              "format": "{:%I:%M %p}"
-          },
-
-         "group/group-battery":
+    "niri/workspaces":
+    {
+        "format": "{icon}",
+        "format-icons":
         {
-            "orientation": "inherit",
-            "drawer":
-            {
-                "transition-duration": 500,
-                "children-class": "battery-items",
-                "transition-left-to-right": false
-            },
-            "modules": [
-                "battery",
-                "custom/bt-battery"
-            ]
+            "urgent": "",
+            "active": "",
+            "default": ""
         },
-          "battery": {
+        "sort-by-number": true,
+        "on-click": "activate"
+    },
+
+    "keyboard-state":
+    {
+        "capslock": true,
+        "format": "{icon}",
+        "format-icons":
+        {
+            "locked": " Caps ",
+            "unlocked": ""
+        }
+    },
+
+    "idle_inhibitor":
+    {
+        "format": "{icon}",
+        "format-icons":
+        {
+            "activated": "",
+            "deactivated": ""
+        }
+    },
+
+    "tray":
+    {
+        "icon-size": 20,
+        "spacing": 10
+    },
+
+    "clock":
+    {
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "format-alt": "{:%d-%m-%Y}",
+        "format": "{:%I:%M %p}"
+    },
+
+    "group/group-battery":
+    {
+        "orientation": "inherit",
+        "drawer":
+        {
+            "transition-duration": 500,
+            "children-class": "battery-items",
+            "transition-left-to-right": false
+        },
+        "modules": [
+            "battery",
+            "custom/bt-battery"
+        ]
+    },
+    "battery": {
         "interval": 2, // Poll every 2 seconds
         "states": {
-          "good": 95,
-          "warning": 30,
-          "critical": 15
+            "good": 95,
+            "warning": 30,
+            "critical": 15
         },
         "format": "{icon} {capacity}%",
         "format-charging": "{icon} {capacity}%",
@@ -145,283 +145,297 @@
         // "format-good": "", // An empty format will hide the module
         // "format-full": "",
         "format-icons": {
-          "charging": ["󰢜", "󰂇", "󰢝", "󰂉", "󰂅"],
-          "default": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"]
+            "charging": ["󰢜", "󰂇", "󰢝", "󰂉", "󰂅"],
+            "default": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"]
         }
-      },
-           "custom/bt-battery": {
+    },
+    "custom/bt-battery": {
         "exec": "~/.config/waybar/scripts/bt-battery.sh",
         "interval": 3,
         "format": "{}",
         "tooltip": false
-        },
-          "backlight":
-          {
-              "device": "acpi_video0", // Assuming acpi_video0, adjust if needed
-              "tooltip": false,
-              "format": "{percent}% {icon}",
-              "format-icons": ["", ""],
-              "on-scroll-up": "brightnessctl s +5%",
-              "on-scroll-down": "brightnessctl s 5%-"
-          },
+    },
+    "backlight":
+    {
+        "device": "acpi_video0", // Assuming acpi_video0, adjust if needed
+        "tooltip": false,
+        "format": "{percent}% {icon}",
+        "format-icons": ["", ""],
+        "on-scroll-up": "brightnessctl s +5%",
+        "on-scroll-down": "brightnessctl s 5%-"
+    },
 
-          "pulseaudio":
-          {
-              "format": "{volume}% {icon}",
-              "tooltip": false,
-              "format-bluetooth": "{volume}% {icon}",
-              "format-bluetooth-muted": "{icon} {format_source}",
-              "format-muted": "󰝟 {format_source}",
-              "format-source": "",
-              "format-source-muted": "",
-              "format-icons":
-              {
-                  "headphone": "",
-                  "hands-free": "",
-                  "headset": "",
-                  "phone": "",
-                  "portable": "",
-                  "car": "",
-                  "default": ["", "", ""]
-              },
-              "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
-          },
-
-
-          ///////////////////////////
-          //                       //
-          //  // Custom module //  //
-          //                       //
-          ///////////////////////////  
-
-          "group/group-tools":
-          {
-              "orientation": "inherit",
-              "drawer":
-              {
-                  "transition-duration": 500,
-                  "children-class": "other-apps",
-                  "transition-left-to-right": false
-              },
-              "modules": [
-                  "custom/snip",
-                  "custom/nightlight",
-                  "custom/clip",
-                  "custom/galculator",
-                  "custom/taskmanager"
-
-              ]
-          },
-
-          "group/group-network":
+    "pulseaudio":
+    {
+        "format": "{volume}% {icon}",
+        "tooltip": false,
+        "format-bluetooth": "{volume}% {icon}",
+        "format-bluetooth-muted": "{icon} {format_source}",
+        "format-muted": "󰝟 {format_source}",
+        "format-icons":
         {
-            "orientation": "inherit",
-            "drawer":
-            {
-                "transition-duration": 500,
-                "children-class": "network-items",
-                "transition-left-to-right": false
-            },
-            "modules": [
-                "network",
-                "bluetooth",
-            ]
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
         },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    },
 
-        "network":
-          {
-        "interface": "wlp2s0", // (Optional) To force the use of this interface
-        "format": "⚠  Disabled",
+
+    ///////////////////////////
+    //                       //
+    //  // Custom module //  //
+    //                       //
+    ///////////////////////////
+
+    "group/group-tools":
+    {
+        "orientation": "inherit",
+        "drawer":
+        {
+            "transition-duration": 500,
+            "children-class": "other-apps",
+            "transition-left-to-right": false
+        },
+        "modules": [
+            "custom/snip",
+            "custom/nightlight",
+            "custom/clip",
+            "custom/galculator",
+            "custom/taskmanager"
+
+        ]
+    },
+
+    "group/group-network":
+    {
+        "orientation": "inherit",
+        "drawer":
+        {
+            "transition-duration": 500,
+            "children-class": "network-items",
+            "transition-left-to-right": false
+        },
+        "modules": [
+            "network",
+            "bluetooth",
+        ]
+    },
+
+    "network": {
+        "interface": "wlp2s0",
+        "interval": 1,
+        "format": "⚠ Disabled",
         "format-wifi": "  {essid}",
-        "format-ethernet": "  Wired",
+        "format-ethernet": "  Wired",
         "format-disconnected": "⚠  Disconnected",
-        "tooltip-format": " {ifname} via {gwaddri}",
-        "tooltip-format-wifi": "   {essid} ({signalStrength}%)",
-        "tooltip-format-ethernet": "  {ifname} ({ipaddr}/{cidr})",
+        "tooltip-format": " {ifname} via {gwaddr}\n  {bandwidthDownBytes}   {bandwidthUpBytes}",
+        "tooltip-format-wifi": "  {essid} ({signalStrength}%)\n  {bandwidthDownBytes}   {bandwidthUpBytes}",
+        "tooltip-format-ethernet": "  {ifname} ({ipaddr}/{cidr})\n  {bandwidthDownBytes}   {bandwidthUpBytes}",
         "tooltip-format-disconnected": "⚠  Disconnected",
-        // "on-click": "ghostty -e nmtui"
         "on-click": "~/.config/swaync/scripts/toggle_wifi.sh"
-          },
+    },
 
-           "bluetooth":
-        {
-            "format": "󰂯",
-            "format-disabled": "󰂲 disabled",
-            "format-off": "󰂲 off",
-            "format-connected": "󰂱 {num_connections}",
-            "tooltip-format": "{controller_alias}\t{controller_address}",
-            "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{device_enumerate}",
-            "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
-            "on-click": "~/.config/swaync/scripts/toggle_bluetooth.sh"
-        },
+    "bluetooth":
+    {
+        "format": "󰂯",
+        "format-disabled": "󰂲 disabled",
+        "format-off": "󰂲 off",
+        "format-connected": "󰂱 {num_connections}",
+        "tooltip-format": "{controller_alias}\t{controller_address}",
+        "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+        "on-click": "~/.config/swaync/scripts/toggle_bluetooth.sh"
+    },
 
-          ///////////////////////////
-          //                       //
-          //  // Apps section //   //
-          //                       //
-          ///////////////////////////
+    ///////////////////////////
+    //                       //
+    //  // Apps section //   //
+    //                       //
+    ///////////////////////////
 
-
-          "group/group-apps":
-          {
-              "orientation": "inherit",
-              "drawer":
-              {
-                  "transition-duration": 500,
-                  "children-class": "other-apps",
-                  "transition-left-to-right": true
-              },
-              "modules": [
-                  "custom/chrome",
-                  "custom/terminal",
-                  "custom/music",
-                  "custom/thunar"
-              ]
-          },
-
-          "custom/launcher":
-          {
-              "format": "",
-              "tooltip": true,
-              "tooltip-format": "App Menu",
-              "on-click": "~/.config/rofi/bin/app-menu",
-          },
-
-          "custom/chrome":
-          {
-              "format": "󰈹",
-              "tooltip": true,
-              "tooltip-format": "Zen-Browser",
-              "on-click": "flatpak run app.zen_browser.zen",
-          },
-
-          "custom/terminal":
-          {
-              "format": "",
-              "tooltip": true,
-              "tooltip-format": "Terminal",
-              "on-click": "ghostty",
-          },
-
-          "custom/code":
-          {
-              "format": "",
-              "tooltip": true,
-              "tooltip-format": "NeoVim",
-              "on-click": "ghostty --fullscreen --command=nvim"
-          },
-
-          "custom/taskmanager":
-          {
-              "format": "",
-              "tooltip": true,
-              "tooltip-format": "Task Manager",
-              "on-click": "gnome-system-monitor"
-          },
-
-          "custom/galculator":
-          {
-              "format": "󰪚",
-              "tooltip": true,
-              "tooltip-format": "Culator",
-              "on-click": "gnome-calculator"
-          },
-
-          "custom/music":
-          {
-              "format": "󰎄",
-              "tooltip": true,
-              "tooltip-format": "Music",
-              "on-click": "env DESKTOPINTEGRATION=1 /home/sabamdarif/AppImages/youtube_music.appimage --no-sandbox",
-          },
-
-          "custom/thunar":
-          {
-              "format": "",
-              "tooltip": true,
-              "tooltip-format": "File Manager",
-              "on-click": "nautilus"
-          },
-
-          "custom/snip": {
-              "format": "",
-              "tooltip": true,
-              "tooltip-format": "Screenshot",
-              "on-click": "sh -c 'file=\"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" && grim \"$file\" && notify-send -i \"$file\" \"📸 Screenshot saved\"'"
-          },
-
-         "custom/nightlight":
-        {
-            "format": "{}",
-            "exec": "~/.config/waybar/scripts/nightlight-status.sh",
-            "interval": 5,
+    "custom/updates": {
+            "format": "󰅢 {}",
             "return-type": "json",
-            "tooltip": true,
-            "on-click": "~/.config/swaync/scripts/toggle_night_light.sh && pkill -RTMIN+8 waybar"
+            "exec": "cat ~/.cache/total-update-tooltip",
+            "exec-if": "[ -f ~/.cache/total-update-tooltip ]",
+            "interval": 10,
+            "on-click": "ghostty -e bash -c 'echo \"Updating Flatpak...\"; flatpak update -y; echo; echo \"Preparing DNF offline update...\"; sudo dnf offline-upgrade download && { read -p \"Reboot now to install DNF updates? (y/n): \" -n 1 -r; echo; [[ $REPLY =~ ^[Yy]$ ]] && sudo dnf offline-upgrade reboot || echo \"Updates will install on next reboot.\"; } || echo \"No DNF updates available.\"; read -p \"Press Enter to close...\"'"
         },
 
-          "custom/clip":
-          {
-              "format": "",
-              "tooltip": true,
-              "tooltip-format": "Clipboard",
-              "on-click": "~/.config/rofi/bin/clipboard_monitor"
-          },
+    "custom/power-profile": {
+        "format": "{}",
+        "return-type": "json",
+        "interval": 3,
+        "exec": "~/.config/waybar/scripts/power_profile.sh status",
+        "on-click": "~/.config/waybar/scripts/power_profile.sh cycle",
+        "tooltip": true
+    },
+
+    "group/group-apps":
+    {
+        "orientation": "inherit",
+        "drawer":
+        {
+            "transition-duration": 500,
+            "children-class": "other-apps",
+            "transition-left-to-right": true
+        },
+        "modules": [
+            "custom/chrome",
+            "custom/terminal",
+            "custom/music",
+            "custom/thunar"
+        ]
+    },
+
+    "custom/launcher":
+    {
+        "format": "",
+        "tooltip": true,
+        "tooltip-format": "App Menu",
+        "on-click": "~/.config/rofi/bin/app-menu",
+    },
+
+    "custom/chrome":
+    {
+        "format": "󰈹",
+        "tooltip": true,
+        "tooltip-format": "Zen-Browser",
+        "on-click": "flatpak run app.zen_browser.zen",
+    },
+
+    "custom/terminal":
+    {
+        "format": "",
+        "tooltip": true,
+        "tooltip-format": "Terminal",
+        "on-click": "ghostty",
+    },
+
+    "custom/code":
+    {
+        "format": "",
+        "tooltip": true,
+        "tooltip-format": "NeoVim",
+        "on-click": "ghostty --fullscreen --command=nvim"
+    },
+
+    "custom/taskmanager":
+    {
+        "format": "",
+        "tooltip": true,
+        "tooltip-format": "Task Manager",
+        "on-click": "gnome-system-monitor"
+    },
+
+    "custom/galculator":
+    {
+        "format": "󰪚",
+        "tooltip": true,
+        "tooltip-format": "Culator",
+        "on-click": "gnome-calculator"
+    },
+
+    "custom/music":
+    {
+        "format": "󰎄",
+        "tooltip": true,
+        "tooltip-format": "Music",
+        "on-click": "env DESKTOPINTEGRATION=1 /home/sabamdarif/AppImages/youtube_music.appimage --no-sandbox",
+    },
+
+    "custom/thunar":
+    {
+        "format": "",
+        "tooltip": true,
+        "tooltip-format": "File Manager",
+        "on-click": "nautilus"
+    },
+
+    "custom/snip": {
+        "format": "",
+        "tooltip": true,
+        "tooltip-format": "Screenshot",
+        "on-click": "sh -c 'file=\"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" && grim \"$file\" && notify-send -i \"$file\" \"📸 Screenshot saved\"'"
+    },
+
+    "custom/nightlight":
+    {
+        "format": "{}",
+        "exec": "~/.config/waybar/scripts/nightlight-status.sh",
+        "interval": 5,
+        "return-type": "json",
+        "tooltip": true,
+        "on-click": "~/.config/swaync/scripts/toggle_night_light.sh && pkill -RTMIN+8 waybar"
+    },
+
+    "custom/clip":
+    {
+        "format": "",
+        "tooltip": true,
+        "tooltip-format": "Clipboard",
+        "on-click": "~/.config/rofi/bin/clipboard_monitor"
+    },
 
 
-          ///////////////////////////
-          //                       //
-          //  // Power section //  //
-          //                       //
-          ///////////////////////////
+    ///////////////////////////
+    //                       //
+    //  // Power section //  //
+    //                       //
+    ///////////////////////////
 
 
-          "group/group-power":
-          {
-              "orientation": "inherit",
-              "drawer":
-              {
-                  "transition-duration": 500,
-                  "children-class": "not-power",
-                  "transition-left-to-right": false
-              },
-              "modules": [
-                  "custom/power",
-                  "custom/quit",
-                  "custom/lock",
-                  "custom/reboot"
-              ]
-          },
+    "group/group-power":
+    {
+        "orientation": "inherit",
+        "drawer":
+        {
+            "transition-duration": 500,
+            "children-class": "not-power",
+            "transition-left-to-right": false
+        },
+        "modules": [
+            "custom/power",
+            "custom/quit",
+            "custom/lock",
+            "custom/reboot"
+        ]
+    },
 
-          "custom/quit":
-          {
-              "format": "󰗼",
-              "tooltip": true,
-              "tooltip-format": "Logout",
-              "on-click": "niri msg action quit"
-          },
+    "custom/quit":
+    {
+        "format": "󰗼",
+        "tooltip": true,
+        "tooltip-format": "Logout",
+        "on-click": "niri msg action quit"
+    },
 
-          "custom/lock":
-          {
-              "format": "󰍁",
-              "tooltip": true,
-              "tooltip-format": "Lock",
-              "on-click": "hyprlock"
-          },
+    "custom/lock":
+    {
+        "format": "󰍁",
+        "tooltip": true,
+        "tooltip-format": "Lock",
+        "on-click": "hyprlock"
+    },
 
-          "custom/reboot":
-          {
-              "format": "󰜉",
-              "tooltip": true,
-              "tooltip-format": "Reboot",
-              "on-click": "systemctl reboot"
-          },
+    "custom/reboot":
+    {
+        "format": "󰜉",
+        "tooltip": true,
+        "tooltip-format": "Reboot",
+        "on-click": "systemctl reboot"
+    },
 
-          "custom/power":
-          {
-              "format": "",
-              "tooltip": true,
-              "tooltip-format": "Shutdown",
-              "on-click": "systemctl poweroff"
-          }
-      }
+    "custom/power":
+    {
+        "format": "",
+        "tooltip": true,
+        "tooltip-format": "Shutdown",
+        "on-click": "systemctl poweroff"
+    }
+}

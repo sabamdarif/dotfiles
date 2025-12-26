@@ -77,3 +77,4 @@
 .local/bin/pyrsa-verify
 .local/bin/pytesseract
 .local/bin/tqdm
+.config/ghostty/themes/Matugen

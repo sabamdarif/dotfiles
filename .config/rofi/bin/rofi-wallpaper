@@ -64,7 +64,7 @@ setwall() {
     # Set wallpaper with swaybg or swww (choose one)
     if command -v swww >/dev/null 2>&1; then
         log "Using swww to set wallpaper"
-        swww img "$WALLPAPER_PATH" --transition-type center --transition-duration 2 2>&1 | tee -a "$LOG_FILE"
+        swww img "$WALLPAPER_PATH" --resize fit --transition-type center --transition-duration 2 2>&1 | tee -a "$LOG_FILE"
     elif command -v swaybg >/dev/null 2>&1; then
         log "Using swaybg to set wallpaper"
         pkill swaybg

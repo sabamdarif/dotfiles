@@ -41,10 +41,10 @@ output_path = '~/.config/gtk-4.0/colors.css'
 # output_path = '~/.config/sway/colors.conf'
 # post_hook = 'swaymsg reload'
 
-[templates.hyprland]
-input_path = '~/.config/matugen/templates/hyprland-colors.conf'
-output_path = '~/.config/hypr/colors.conf'
-post_hook = 'hyprctl reload'
+# [templates.hyprland]
+# input_path = '~/.config/matugen/templates/hyprland-colors.conf'
+# output_path = '~/.config/hypr/colors.conf'
+# post_hook = 'hyprctl reload'
 
 # Note: the output path needs to be ~/.local/share/color-schemes/
 # in order for qt*ct to be able to find the color sheme
@@ -55,3 +55,28 @@ output_path = '~/.local/share/color-schemes/Matugen.colors'
 [templates.qt6ct]
 input_path = '~/.config/matugen/templates/qtct-colors.conf'
 output_path = '~/.local/share/color-schemes/Matugen.colors'
+
+[templates.ghostty]
+input_path = '~/.config/matugen/templates/ghostty.conf'
+output_path = '~/.config/ghostty/themes/Matugen'
+post_hook = 'pkill -SIGUSR2 ghostty'
+
+[templates.yazi]
+input_path = '~/.config/matugen/templates/yazi.toml'
+output_path = '~/.config/yazi/theme.toml'
+
+[templates.lazygit]
+input_path = '~/.config/matugen/templates/lazygit.yml'
+output_path = '~/.config/lazygit/config.yml'
+
+[templates.betterdiscord]
+input_path = '~/.config/matugen/templates/betterdiscord.css'
+output_path = '~/.var/app/dev.vencord.Vesktop/config/vesktop/themes/Matugen.css'
+
+[templates.zen-userchrome]
+input_path = "~/.config/matugen/templates/zen-browser-userChrome.css"
+output_path = "~/.var/app/app.zen_browser.zen/.zen/l7yrpi0v.Default (release)/chrome/userChrome.css"
+
+[templates.zen-usercontent]
+input_path = "~/.config/matugen/templates/zen-browser-userContent.css"
+output_path = "~/.var/app/app.zen_browser.zen/.zen/l7yrpi0v.Default (release)/chrome/userContent.css"

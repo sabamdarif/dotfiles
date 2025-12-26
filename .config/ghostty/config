@@ -3,7 +3,7 @@ font-family = "MesloLGLDZ Nerd Font"
 font-size = 13
 
 # Appearance
-theme = "TokyoNight Night"
+theme = "Matugen"
 
 # Window Configuration
 window-decoration = true
