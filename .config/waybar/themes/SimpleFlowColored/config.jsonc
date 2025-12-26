@@ -76,8 +76,8 @@
           "format-icons":
           {
               "urgent": "",
-              "active": "",
-              "default": ""
+              "active": "",
+              "default": ""
           },
           "sort-by-number": true,
           "on-click": "activate"
@@ -172,8 +172,6 @@
           "format-bluetooth": "{volume}% {icon}",
           "format-bluetooth-muted": "{icon} {format_source}",
           "format-muted": "󰝟 {format_source}",
-          "format-source": "",
-          "format-source-muted": "",
           "format-icons":
           {
               "headphone": "",

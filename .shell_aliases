@@ -13,7 +13,7 @@ export GPG_TTY=$(tty)
 # Alias's to change the directory
 alias web='cd /var/www/html'
 # Alias's to modified commands
-alias rm='trash -v'
+alias rm='trash -vi'
 alias trashlist='trash-list'
 alias cleantrash='trash-empty'
 alias mkdir='mkdir -p'

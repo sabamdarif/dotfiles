@@ -678,7 +678,7 @@ show_keybinds() {
 }
 
 show_niri_keybinds() {
-    local keybinds=$(parse_niri_keybinds "$NIRI_CONFIG")
+    local keybinds=$(parse_niri_keybinds "$(dirname "$NIRI_CONFIG")"/config.d/keybinding.kdl)
     show_keybinds "Niri" "$keybinds" ""
 }
 
