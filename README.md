@@ -10,7 +10,7 @@
 | ------------------------- | ----------------------- |
 | ![NEOVIM](./img/nvim.png) | ![ZSH](./img/zinit.png) |
 
-| SETTINGS                             | EMOJI                                  | CLIPBOARD                      |
+| SETTINGS                             | CLIPBOARD                              | EMOJI                          |
 | ------------------------------------ | -------------------------------------- | ------------------------------ |
 | ![SETTINGS](./img/settings-rofi.png) | ![CLIPBOARD](./img/clipboard-rofi.png) | ![EMOJI](./img/emoji-rofi.png) |
 
