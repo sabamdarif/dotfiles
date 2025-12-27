@@ -249,15 +249,13 @@ network_options_menu() {
 
     local options=""
     if [[ "$connected" == "true" ]]; then
-        options=" Disconnect
+        options="   Disconnect
   Forget Network
-󰌑 Back to Menu
- Exit"
+󰌑 Back to Menu"
     else
-        options=" Connect
+        options="  Connect
   Forget Network
-󰌑 Back to Menu
- Exit"
+󰌑 Back to Menu"
     fi
 
     local selection
@@ -292,9 +290,7 @@ manage_saved_networks() {
         return
     fi
 
-    local options="󰌑 Back to Menu
- Exit
-───────────────────"
+    local options="󰌑 Back to Menu"
 
     while IFS= read -r conn; do
         options="${options}
@@ -310,9 +306,6 @@ manage_saved_networks() {
     case "$selection" in
     *"Back"*)
         main_menu "false"
-        ;;
-    *"Exit"*)
-        exit 0
         ;;
     "  "*)
         local ssid="${selection#  }"
@@ -336,11 +329,10 @@ main_menu() {
 
     if ! is_wifi_enabled; then
         log "INFO" "WiFi is currently disabled"
-        local options=" Enable WiFi
- Exit"
+        local options=" Enable WiFi"
 
         local selection
-        selection=$(echo "$options" | show_rofi "WiFi (Disabled)")
+        selection=$(echo "$options" | show_rofi "")
 
         # Exit if nothing selected (Esc pressed)
         [[ -z "$selection" ]] && log "INFO" "User cancelled from disabled menu" && return
@@ -381,22 +373,18 @@ main_menu() {
     fi
 
     # Build menu options
-    local options=" Refresh / Rescan
- Disable WiFi"
+    local options="  Rescan
+  Disable WiFi"
 
     if [[ -n "$current" ]]; then
-        options=" Refresh / Rescan
- Disconnect from $current
- Disable WiFi
+        options="  Rescan
+  Disconnect from $current
+  Disable WiFi
   Manage Saved Networks"
     else
         options="${options}
   Manage Saved Networks"
     fi
-
-    options="${options}
- Exit
-───────────────────"
 
     # Get and format networks
     local network_data
@@ -426,9 +414,9 @@ ${display}"
         ((network_count++))
     done <<<"$network_data"
 
-    # Show menu
+    # Show menu with empty prompt
     local selection
-    selection=$(echo "$options" | show_rofi "WiFi Manager - $network_count networks")
+    selection=$(echo "$options" | show_rofi "")
 
     # Exit if nothing selected (Esc pressed)
     [[ -z "$selection" ]] && log "INFO" "User cancelled from main menu" && return
@@ -451,10 +439,6 @@ ${display}"
     *"Manage Saved"*)
         log "INFO" "Opening saved networks menu"
         manage_saved_networks
-        ;;
-    *"Exit"*)
-        log "INFO" "User exited WiFi Manager"
-        exit 0
         ;;
     *)
         # Network selected - find matching network in list
