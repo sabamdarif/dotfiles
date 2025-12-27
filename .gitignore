@@ -78,3 +78,7 @@
 .local/bin/pytesseract
 .local/bin/tqdm
 .config/ghostty/themes/Matugen
+.config/rofi/powermenu-action.rasi.bak
+.gnupg/private-keys-v1.d
+.gnupg/public-keys.d
+.gnupg/trustdb.gpg

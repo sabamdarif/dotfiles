@@ -18,5 +18,5 @@
 
 mimeapps\.list
 
-\img
+^img$
 README\.md

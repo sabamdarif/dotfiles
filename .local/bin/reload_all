@@ -42,6 +42,9 @@ else
     disown
 fi
 
+# reload niri config
+niri msg action load-config-file
+
 # Hyprpolkitagent - use systemctl to restart
 # echo "Restarting hyprpolkitagent..."
 # systemctl --user restart hyprpolkitagent
