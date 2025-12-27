@@ -166,11 +166,16 @@ list_rofi_themes_for_menu() {
 apply_rofi_theme() {
     local menu_type="$1"
     local theme_name="$2"
-    local theme_file="$ROFI_THEMES_DIR/$menu_type/$theme_name/${menu_type}.rasi"
-    local target_file="$ROFI_CONFIG_DIR/${menu_type}.rasi"
+
+    # Determine the source and target file names
+    local source_file_name="${menu_type}.rasi"
+    local target_file_name="${menu_type}.rasi"
+
+    local theme_file="$ROFI_THEMES_DIR/$menu_type/$theme_name/${source_file_name}"
+    local target_file="$ROFI_CONFIG_DIR/${target_file_name}"
 
     if [[ ! -f "$theme_file" ]]; then
-        notify "Error" "Theme file not found: $theme_name/${menu_type}.rasi"
+        notify "Error" "Theme file not found: $theme_name/${source_file_name}"
         return 1
     fi
 
@@ -219,6 +224,7 @@ show_rofi_theme_menu() {
         "wallpaper-selector") formatted_menu+="󰸉  Wallpaper Selector\n" ;;
         "settings-menu") formatted_menu+="󰒓  Settings Menu\n" ;;
         "wifi-menu") formatted_menu+="󰖩  WiFi Menu\n" ;;
+        "powermenu-action") formatted_menu+="󰐥  Power Menu\n" ;;
         *) formatted_menu+="󰍉  $(echo "$menu_type" | sed 's/-/ /g; s/\b\(.\)/\u\1/g')\n" ;;
         esac
     done <<<"$menu_types"
@@ -248,6 +254,7 @@ show_rofi_theme_menu() {
     *"Wallpaper Selector"*) actual_menu_type="wallpaper-selector" ;;
     *"Settings Menu"*) actual_menu_type="settings-menu" ;;
     *"WiFi Menu"*) actual_menu_type="wifi-menu" ;;
+    *"Power Menu"*) actual_menu_type="powermenu-action" ;;
     *)
         # Try to extract from formatted name
         actual_menu_type=$(echo "$selected" | sed 's/^[^ ]* *//' | tr '[:upper:]' '[:lower:]' | tr ' ' '-')

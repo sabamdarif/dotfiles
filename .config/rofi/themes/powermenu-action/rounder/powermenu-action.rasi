@@ -1,0 +1,113 @@
+@import "~/.config/rofi/themes/fonts.rasi"
+@import "~/.config/rofi/themes/colors.rasi"
+
+* {
+    background-color: transparent;
+    text-color: @on-surface;
+}
+
+window {
+    transparency: "real";
+    location: center;
+    anchor: center;
+    fullscreen: false;
+    width: 400px;
+    border-radius: 16px;
+    background-color: @surface-container;
+    border: 2px;
+    border-color: @primary;
+    padding: 0px;
+}
+
+mainbox {
+    enabled: true;
+    spacing: 0px;
+    background-color: transparent;
+    children: [ "message", "listview" ];
+}
+
+message {
+    enabled: true;
+    padding: 20px;
+    margin: 0px;
+    background-color: transparent;
+    text-color: @on-surface;
+    border: 0px;
+    border-radius: 0px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: @on-surface;
+    vertical-align: 0.5;
+    horizontal-align: 0.5;
+    padding: 0px;
+}
+
+listview {
+    enabled: true;
+    columns: 2;
+    lines: 1;
+    cycle: false;
+    dynamic: false;
+    scrollbar: false;
+    layout: vertical;
+    reverse: false;
+    fixed-height: true;
+    fixed-columns: true;
+    spacing: 15px;
+    padding: 0px 25px 30px 25px;
+    background-color: transparent;
+}
+
+element {
+    enabled: true;
+    spacing: 12px;
+    padding: 15px 20px;
+    border-radius: 15px;
+    background-color: @surface-container-high;
+    text-color: @on-surface;
+    cursor: pointer;
+    border: 2px;
+    border-color: transparent;
+}
+
+element normal.normal {
+    background-color: @surface-container-high;
+    text-color: @on-surface;
+}
+
+element selected.normal {
+    background-color: @primary-container;
+    text-color: @on-primary-container;
+    border-color: @primary;
+}
+
+element-icon {
+    background-color: transparent;
+    text-color: inherit;
+    cursor: inherit;
+    vertical-align: 0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    cursor: inherit;
+    vertical-align: 0.5;
+    horizontal-align: 0.5;
+}
+
+inputbar {
+    enabled: false;
+}
+
+error-message {
+    padding: 28px;
+    margin: 28px;
+    background-color: @error-container;
+    text-color: @on-error-container;
+    border-radius: 16px;
+    border: 2px;
+    border-color: @error;
+}

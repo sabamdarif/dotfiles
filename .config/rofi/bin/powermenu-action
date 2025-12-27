@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+# Power menu confirmation dialog
+# Usage: powermenu-action [poweroff|reboot|logout|lock]
+
+ACTION="$1"
+CONFIG_DIR="$HOME/.config/rofi"
+THEME="$CONFIG_DIR/powermenu-action.rasi"
+
+# Validate action
+case "$ACTION" in
+poweroff | reboot | logout | lock) ;;
+*)
+    echo "Usage: $0 [poweroff|reboot|logout|lock]"
+    exit 1
+    ;;
+esac
+
+case "$ACTION" in
+poweroff)
+    MESSAGE="Are you sure you want to shut down?"
+    COMMAND="systemctl poweroff"
+    ;;
+reboot)
+    MESSAGE="Are you sure you want to restart?"
+    COMMAND="systemctl reboot"
+    ;;
+logout)
+    MESSAGE="Are you sure you want to logout?"
+    COMMAND="niri msg action quit --skip-confirmation"
+    ;;
+lock)
+    MESSAGE="Lock the screen now?"
+    COMMAND="hyprlock"
+    ;;
+esac
+
+# Show rofi dialog
+CHOICE=$(echo -e "  Yes\n󰜺  No" | rofi \
+    -dmenu \
+    -theme "$THEME" \
+    -mesg "$MESSAGE" \
+    -selected-row 0 \
+    -no-fixed-num-lines \
+    -no-custom)
+
+# Handle choice
+case "$CHOICE" in
+"  Yes")
+    eval "$COMMAND"
+    exit 0
+    ;;
+"󰜺  No" | "")
+    exit 0
+    ;;
+esac
+
+exit 0
