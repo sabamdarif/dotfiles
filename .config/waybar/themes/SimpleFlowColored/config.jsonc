@@ -272,7 +272,7 @@
         "return-type": "json",
         "interval": 3,
         "exec": "~/.config/waybar/scripts/power_profile.sh status",
-        "on-click": "~/.config/waybar/scripts/power_profile.sh cycle",
+        "on-click": "~/.config/waybar/scripts/power_profile.sh toggle",
         "tooltip": true
     },
 
@@ -412,7 +412,7 @@
         "format": "󰗼",
         "tooltip": true,
         "tooltip-format": "Logout",
-        "on-click": "niri msg action quit"
+        "on-click": "~/.config/rofi/bin/powermenu-action logout"
     },
 
     "custom/lock":
@@ -420,7 +420,7 @@
         "format": "󰍁",
         "tooltip": true,
         "tooltip-format": "Lock",
-        "on-click": "hyprlock"
+        "on-click": "~/.config/rofi/bin/powermenu-action lock"
     },
 
     "custom/reboot":
@@ -428,7 +428,7 @@
         "format": "󰜉",
         "tooltip": true,
         "tooltip-format": "Reboot",
-        "on-click": "systemctl reboot"
+        "on-click": "~/.config/rofi/bin/powermenu-action reboot"
     },
 
     "custom/power":
@@ -436,6 +436,6 @@
         "format": "",
         "tooltip": true,
         "tooltip-format": "Shutdown",
-        "on-click": "systemctl poweroff"
+        "on-click": "~/.config/rofi/bin/powermenu-action poweroff"
     }
 }
