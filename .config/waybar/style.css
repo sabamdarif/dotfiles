@@ -14,11 +14,11 @@
 }
 
 window#waybar {
-    background-color: alpha(@background, 0.95);
-    border: 0px solid @foreground;
+    /* background-color: alpha(@background, 0.95); */
+    /* border: 0px solid @foreground; */
     border-radius: 24px;
     margin-top: 15px;
-    box-shadow: 0 2px 8px alpha(@shadow, 0.15);
+    /* box-shadow: 0 2px 8px alpha(@shadow, 0.15); */
 }
 
 tooltip {

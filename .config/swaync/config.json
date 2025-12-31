@@ -89,7 +89,7 @@
           "update-command": "sh -c '~/.config/swaync/scripts/update_bluetooth.sh'"
         },
         {
-          "label": "󰕾 Mute",
+          "label": "  Mute",
           "type": "toggle",
           "active": false,
           "command": "swayosd-client --output-volume mute-toggle",
@@ -135,23 +135,19 @@
         "actions": [
           {
             "label": "Shutdown",
-            "command": "systemctl poweroff"
+            "command": "~/.config/rofi/bin/powermenu-action poweroff"
           },
           {
             "label": "Reboot",
-            "command": "systemctl reboot"
-          },
-          {
-            "label": "Suspend",
-            "command": "systemctl suspend"
+            "command": "~/.config/rofi/bin/powermenu-action reboot"
           },
           {
             "label": "Lock",
-            "command": "hyprlock"
+            "command": "~/.config/rofi/bin/powermenu-action lock"
           },
           {
             "label": "Logout",
-            "command": "niri msg action quit"
+            "command": "~/.config/rofi/bin/powermenu-action logout"
           }
         ]
       }

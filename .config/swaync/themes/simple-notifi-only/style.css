@@ -10,7 +10,6 @@
     background: @background;
     border-radius: 12px;
     border: 1px solid @outline_variant;
-    box-shadow: 0 4px 20px alpha(@shadow, 0.5);
     padding: 0;
 }
 

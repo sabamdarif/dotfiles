@@ -16,13 +16,6 @@
 .config/GIMP/3.0/tool-options
 .config/GIMP/3.0/internal-data
 /.config/mpv/chapters
-.config/waybar/colors.css
-.config/swayosd/colors.css
-.config/swaync/colors.css
-.config/background
-.config/rofi/themes/colors.rasi
-.config/sway/colors.conf
-.config/hypr/colors.conf
 .var/app/app.zen_browser.zen
 .var/app/io.github.kolunmi.Bazaar
 .local/share/applications
@@ -41,8 +34,6 @@
 .var/app/com.usebottles.bottles
 .var/app/it.mijorus.gearlever
 .var/app/com.protonvpn.www
-.config/gtk-4.0/colors.css
-.config/gtk-3.0/colors.css
 .local/bin/f2py
 .local/bin/faker
 .local/bin/numpy-config
@@ -82,3 +73,6 @@
 .gnupg/private-keys-v1.d
 .gnupg/public-keys.d
 .gnupg/trustdb.gpg
+.var/app/com.github.tchx84.Flatseal
+.config/mango/config.conf.bak
+.local/bin/httpx

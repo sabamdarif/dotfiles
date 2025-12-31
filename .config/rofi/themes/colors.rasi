@@ -1,0 +1,50 @@
+* {
+    primary: #f7bb70ee;
+    primary-fixed: #ffddb7;
+    primary-fixed-dim: #f7bb70;
+    on-primary: #462a00ee;
+    on-primary-fixed: #2a1700;
+    on-primary-fixed-variant: #653e00;
+    primary-container: #653e00;
+    on-primary-container: #ffddb7;
+    secondary: #dfc2a2bb;
+    secondary-fixed: #fcddbc;
+    secondary-fixed-dim: #dfc2a2;
+    on-secondary: #3f2d17bb;
+    on-secondary-fixed: #281805;
+    on-secondary-fixed-variant: #57432b;
+    secondary-container: #57432bbb;
+    on-secondary-container: #fcddbcbb;
+    tertiary: #bbcd9e;
+    tertiary-fixed: #d6e9b9;
+    tertiary-fixed-dim: #bbcd9e;
+    on-tertiary: #263513;
+    on-tertiary-fixed: #121f02;
+    on-tertiary-fixed-variant: #3c4c28;
+    tertiary-container: #3c4c2899;
+    on-tertiary-container: #d6e9b9bb;
+    error: #ffb4abbb;
+    on-error: #690005bb;
+    error-container: #93000acc;
+    on-error-container: #ffdad6cc;
+    surface-tint: #f7bb70;
+    surface: #18120c99;  /* 60% opacity */
+    on-surface: #eee0d4;
+    on-surface-variant: #d4c4b5;
+    outline: #9c8e80;
+    outline-variant: #504539;
+    shadow: #000000;
+    scrim: #000000;
+    inverse-surface: #eee0d4;
+    inverse-on-surface: #362f27bb;
+    inverse-primary: #825512;
+    surface-dim: #18120c99;  /* 60% opacity */
+    surface-bright: #40383099;  /* 60% opacity */
+    surface-container-lowest: #130d07bb;  /* 70% opacity */
+    surface-container-low: #211a13bb;  /* 70% opacity */
+    surface-container: #251e17bb;  /* 70% opacity */
+    surface-container-high: #302921bb;  /* 70% opacity */
+    surface-container-highest: #3b332bbb;  /* 70% opacity */
+    wallpaper-image-width: url("/home/sabamdarif/.config/background", width);
+    wallpaper-image-height: url("/home/sabamdarif/.config/background", height);
+}

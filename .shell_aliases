@@ -7,7 +7,6 @@ else
 fi
 alias ls='eza --icons'
 alias neofetch='fastfetch'
-export GPG_TTY=$(tty)
 #set zoxiide as cd
 # eval "$(zoxide init --cmd cd zsh)"
 # Alias's to change the directory
@@ -21,6 +20,7 @@ alias vi='nvim'
 alias vi='nvim'
 alias vim='nvim'
 alias n='nvim'
+alias py="python3"
 # Search files in the current folder
 alias f="find . | grep "
 alias c="clear"
@@ -57,3 +57,35 @@ alias listfont="magick convert -list font | grep -iE 'font:.*'"
 alias psu="ps aux"
 alias psg="ps aux | grep -i" # Usage: psg process_name
 alias docker-cleanup="docker system prune -a --volumes"
+
+# -------------------------------------------
+# Suffix Aliases - Open Files by Extension
+# -------------------------------------------
+# Just type the filename to open it with the associated program
+alias -s json=jless
+alias -s md='$EDITOR'
+# alias -s sh='$EDITOR'
+alias -s py='$EDITOR'
+alias -s go='$EDITOR'
+alias -s rs='$EDITOR'
+alias -s txt=nano
+alias -s log=cat
+alias -s py='$EDITOR'
+alias -s js='$EDITOR'
+alias -s ts='$EDITOR'
+alias -s html=open
+
+# -------------------------------------------
+# Global Aliases - Use Anywhere in Commands
+# -------------------------------------------
+# Redirect stderr to /dev/null
+alias -g NE='2>/dev/null'
+
+# Redirect stdout to /dev/null
+alias -g NO='>/dev/null'
+
+# Redirect both stdout and stderr to /dev/null
+alias -g NUL='>/dev/null 2>&1'
+
+# Pipe to jq
+alias -g J='| jq'

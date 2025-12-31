@@ -6,6 +6,7 @@ BACK_TO_EXIT=false
 # Configuration paths
 ROFI_FONT_CONFIG="$HOME/.config/rofi/themes/fonts.rasi"
 SWAYNC_FONT_CONFIG="$HOME/.config/swaync/fonts.css"
+SWAYLOCK_FONT_CONFIG="$HOME/.config/swaylock/font"
 ROFI_ICON_CONFIG="$HOME/.config/rofi/themes/icons.rasi"
 WAYBAR_FONT_CONFIG="$HOME/.config/waybar/fonts.css"
 GTK_CONFIG="$HOME/.config/gtk-3.0/settings.ini"
@@ -14,6 +15,8 @@ NIRI_CONFIG="$HOME/.config/niri/config.kdl"
 HYPRLAND_CONFIG="$HOME/.config/hypr/hyprland.conf"
 SWAY_CONFIG="$HOME/.config/sway/config"
 THEME_MENU_SCRIPT="$HOME/.config/rofi/bin/theme-changer-menu"
+IDLE_TIME_FILE="$HOME/.local/state/idle-time"
+IDLE_SCRIPT="$HOME/.config/niri/scripts/idle.sh"
 
 back_to() {
     local parent_menu="$1"
@@ -102,6 +105,18 @@ set_swaync_font() {
 EOF
 }
 
+set_swaylock_font() {
+    local font_name="$1"
+
+    # Create waybar config directory if it doesn't exist
+    mkdir -p "$(dirname "$SWAYLOCK_FONT_CONFIG")"
+
+    # Create or update waybar font configuration
+    cat >"$SWAYLOCK_FONT_CONFIG" <<EOF
+    CUTTRNT_FONT="$font_name"
+EOF
+}
+
 set_waybar_font() {
     local font_name="$1"
 
@@ -175,6 +190,7 @@ apply_font() {
     set_rofi_font "$font_name" "13" "11"
     set_waybar_font "$font_name"
     set_swaync_font "$font_name"
+    set_swaylock_font "$font_name"
     set_gtk_font "$font_name" "11"
     set_qt_font "$font_name" "11"
 
@@ -319,6 +335,56 @@ show_icon_menu() {
 
     if [[ "$selected_theme" != "CNCLD" && -n "$selected_theme" ]]; then
         apply_icon_theme "$selected_theme"
+    fi
+
+    back_to show_main_menu
+}
+
+# ============================================================================
+# Swayidle Timeout Management
+# ============================================================================
+
+get_current_idle_timeout() {
+    if [[ -f "$IDLE_TIME_FILE" ]]; then
+        cat "$IDLE_TIME_FILE"
+    else
+        echo "10 minutes"
+    fi
+}
+
+set_idle_timeout() {
+    local timeout="$1"
+
+    if [[ -z "$timeout" ]]; then
+        notify "Error" "No timeout selected"
+        return 1
+    fi
+
+    # Create state directory if it doesn't exist
+    mkdir -p "$(dirname "$IDLE_TIME_FILE")"
+
+    # Write timeout to file
+    echo "$timeout" >"$IDLE_TIME_FILE"
+
+    notify "Idle Timeout Set" "Timeout set to $timeout"
+
+    # Run idle script
+    if [[ -x "$IDLE_SCRIPT" ]]; then
+        bash "$IDLE_SCRIPT" &
+        disown
+    else
+        notify "Warning" "Idle script not found at $IDLE_SCRIPT"
+    fi
+}
+
+show_idle_menu() {
+    local current_timeout=$(get_current_idle_timeout)
+    local options="5 minutes\n10 minutes\n20 minutes\n30 minutes"
+
+    local selected_timeout=$(menu "󰥔  Idle Timeout" "$options" "" "$current_timeout")
+
+    if [[ "$selected_timeout" != "CNCLD" && -n "$selected_timeout" ]]; then
+        set_idle_timeout "$selected_timeout"
     fi
 
     back_to show_main_menu
@@ -768,12 +834,13 @@ show_about_menu() {
 # ============================================================================
 
 show_main_menu() {
-    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰠱  Icons\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
+    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰠱  Icons\n󰥔  Idle Timeout\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
 
     case "$selection" in
     *Font*) show_font_menu ;;
     *Theme*) show_theme_menu ;;
     *Icons*) show_icon_menu ;;
+    *"Idle Timeout"*) show_idle_menu ;;
     *Capture*) show_capture_menu ;;
     *Reload*) show_update_menu ;;
     *Keybindings*) show_keybindings_menu ;;
@@ -791,6 +858,7 @@ go_to_menu() {
     *font*) show_font_menu ;;
     *theme*) show_theme_menu ;;
     *icon*) show_icon_menu ;;
+    *"Idle Timeout"*) show_idle_menu ;;
     *capture*) show_capture_menu ;;
     *refresh*) show_update_menu ;;
     *keybind*) show_keybindings_menu ;;

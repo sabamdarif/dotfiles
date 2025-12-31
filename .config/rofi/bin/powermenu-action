@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Power menu confirmation dialog
 # Usage: powermenu-action [poweroff|reboot|logout|lock]
@@ -16,6 +16,14 @@ poweroff | reboot | logout | lock) ;;
     ;;
 esac
 
+if [ "$XDG_CURRENT_DESKTOP" == "niri" ]; then
+    logout_cmd="niri msg action quit --skip-confirmation"
+elif [ "$XDG_CURRENT_DESKTOP" == "niri" ]; then
+    logout_cmd="mmsg -d quit"
+else
+    echo "[ERROR]: XDG_CURRENT_DESKTOP has no value"
+fi
+
 case "$ACTION" in
 poweroff)
     MESSAGE="Are you sure you want to shut down?"
@@ -27,11 +35,11 @@ reboot)
     ;;
 logout)
     MESSAGE="Are you sure you want to logout?"
-    COMMAND="niri msg action quit --skip-confirmation"
+    COMMAND="${logout_cmd}"
     ;;
 lock)
     MESSAGE="Lock the screen now?"
-    COMMAND="hyprlock"
+    COMMAND="$HOME/.local/bin/lockscreen"
     ;;
 esac
 

@@ -80,3 +80,7 @@ output_path = "~/.var/app/app.zen_browser.zen/.zen/l7yrpi0v.Default (release)/ch
 [templates.zen-usercontent]
 input_path = "~/.config/matugen/templates/zen-browser-userContent.css"
 output_path = "~/.var/app/app.zen_browser.zen/.zen/l7yrpi0v.Default (release)/chrome/userContent.css"
+
+[templates.swaylock]
+input_path = '~/.config/matugen/templates/swaylock-colors.sh'
+output_path = '~/dotfiles/.config/swaylock/colors'

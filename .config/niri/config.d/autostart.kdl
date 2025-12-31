@@ -18,6 +18,7 @@ spawn-at-startup "kdeconnectd"
 spawn-at-startup "kdeconnect-indicator"
 spawn-at-startup "~/.config/waybar/scripts/check-updates.sh"
 spawn-sh-at-startup "swaybg -i ~/.config/blurred-background -m fill"
+spawn-sh-at-startup "~/.config/niri/scripts/idle.sh"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"

@@ -43,7 +43,11 @@ else
 fi
 
 # reload niri config
-niri msg action load-config-file
+if [ "$XDG_CURRENT_DESKTOP" == "niri" ]; then
+    niri msg action load-config-file
+elif [ "$XDG_CURRENT_DESKTOP" == "mango" ]; then
+    mmsg -d reload_config
+fi
 
 # Hyprpolkitagent - use systemctl to restart
 # echo "Restarting hyprpolkitagent..."

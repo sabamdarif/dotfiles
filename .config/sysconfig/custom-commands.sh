@@ -20,6 +20,8 @@ sudo dnf install \
 sudo dnf install \
     https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-"$(rpm -E %fedora)".noarch.rpm -y
 
+dnf install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release -y
+
 sudo dnf remove swaylock -y
 
 sudo timedatectl set-timezone Asia/Kolkata
@@ -53,3 +55,10 @@ wget -O "$HOME"/.config/mpv/scripts/thumbfast.lua https://raw.githubusercontent.
 # fonts
 wget -O "$HOME"/.config/mpv/fonts/fluent-system-icons.ttf https://github.com/Samillion/ModernZ/releases/download/v0.2.8/fluent-system-icons.ttf
 wget -O "$HOME"/.config/mpv/fonts/material-design-icons.ttf https://github.com/Samillion/ModernZ/releases/download/v0.2.8/material-design-icons.ttf
+
+git clone https://github.com/AdnanHodzic/auto-cpufreq.git
+cd auto-cpufreq && sudo ./auto-cpufreq-installer
+cd ~ || return
+rm -rf auto-cpufreq
+sudo systemctl mask power-profiles-daemon.service
+sudo systemctl enable --now auto-cpufreq
