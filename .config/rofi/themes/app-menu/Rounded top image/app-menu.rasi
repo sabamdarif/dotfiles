@@ -1,0 +1,159 @@
+// Config //
+configuration {
+    modi:                        "drun,filebrowser,window,run";
+    show-icons:                  true;
+    display-drun:                "";
+    display-run:                 "";
+    display-filebrowser:         "";
+    display-window:              "";
+    drun-display-format:         "{name}";
+    window-format:               "{w}{t}";
+}
+
+@import "~/.config/rofi/themes/icons.rasi"
+@import "~/.config/rofi/themes/fonts.rasi"
+@import "~/.config/rofi/themes/colors.rasi"
+
+// Main //
+window {
+    height:                      600px;
+    width:                       900px;
+    transparency:                "real";
+    fullscreen:                  false;
+    enabled:                     true;
+    cursor:                      "default";
+    spacing:                     0px;
+    padding:                     0px;
+    border-radius:               30px;
+    border-color:                @primary;
+    background-color:            @surface-container;
+}
+mainbox {
+    enabled:                     true;
+    spacing:                     0px;
+    padding:                     0px;
+    border-radius:               30px;
+    orientation:                 vertical;
+    children:                    [ "inputbar" , "listbox" ];
+    background-color:            transparent;
+    background-image:            url("~/.config/blurred-background", height);
+}
+
+
+// Inputs //
+inputbar {
+    enabled:                     true;
+    spacing:                     0px;
+    padding:                     80px;
+    border-radius:               30px;
+    children:                    [ "entry" ];
+    background-color:            transparent;
+}
+entry {
+    border-radius:               25px;
+    enabled:                     true;
+    spacing:                     10px;
+    padding:                     15px;
+    text-color:                  @on-surface;
+    background-color:            @surface-container;
+}
+
+
+// Lists //
+listbox {
+    padding:                     0px;
+    spacing:                     0px;
+    border-radius:               30px;
+    orientation:                 horizontal;
+    children:                    [ "listview" , "mode-switcher" ];
+    background-color:            @surface-container;
+}
+listview {
+    padding:                     20px;
+    spacing:                     10px;
+    enabled:                     true;
+    columns:                     2;
+    lines:                       3;
+    cycle:                       true;
+    dynamic:                     true;
+    scrollbar:                   false;
+    layout:                      vertical;
+    reverse:                     false;
+    fixed-height:                true;
+    fixed-columns:               true;
+    cursor:                      "default";
+    border-radius:               30px;
+    background-color:            transparent;
+    text-color:                  @on-surface;
+}
+
+
+// Modes //
+mode-switcher {
+    orientation:                 vertical;
+    width:                       100px;
+    enabled:                     true;
+    padding:                     20px 10px 20px 0px;
+    spacing:                     20px;
+    border-radius:               50%;
+    background-color:            transparent;
+}
+button {
+    cursor:                      pointer;
+    border-radius:               50px;
+    background-color:            @surface-container;
+    text-color:                  @on-surface;
+}
+button selected {
+    border-radius:               40px;
+    background-color:            @primary;
+    text-color:                  @on-primary;
+}
+
+
+// Elements //
+element {
+    enabled:                     true;
+    spacing:                     0px;
+    padding:                     12px;
+    cursor:                      pointer;
+    border-radius:               40px;
+    background-color:            transparent;
+    text-color:                  @on-surface;
+}
+element selected.normal {
+    border-radius:               40px;
+    background-color:            @primary-container;
+    text-color:                  @on-primary-container;
+}
+element-icon {
+    size:                        48px;
+    cursor:                      inherit;
+    border-radius:               40px;
+    background-color:            transparent;
+    text-color:                  inherit;
+}
+element-text {
+    vertical-align:              0.5;
+    horizontal-align:            0.0;
+    cursor:                      inherit;
+    background-color:            transparent;
+    text-color:                  inherit;
+}
+
+// Error message //
+error-message {
+    text-color:                  @on-surface;
+    background-color:            @surface-container;
+    border-radius:               30px;
+    text-transform:              capitalize;
+    children:                    [ "textbox" ];
+}
+
+textbox {
+    text-color:                  inherit;
+    background-color:            inherit;
+    border-radius:               20px;
+    vertical-align:              0.5;
+    horizontal-align:            0.5;
+}
