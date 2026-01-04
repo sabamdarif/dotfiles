@@ -4,7 +4,9 @@
 WALLPAPER_PATH="$HOME/.config/background"
 BLURRED_WALLPAPER_PATH="$HOME/.config/blurred-background"
 LOG_FILE="$HOME/.config/rofi/rofi-wallpaper.log"
-MODE=$(cat "$HOME/.config/matugen/current_mode")
+MODE=$(cat "$HOME/.config/matugen/current_mode" 2>/dev/null || echo "dark")
+WALLPAPER_DIR="$HOME/Pictures/wallpapers/"
+THEME_FILE="$HOME/.config/rofi/wallpaper-selector.rasi"
 
 # Create log directory if it doesn't exist
 mkdir -p "$(dirname "$LOG_FILE")"
@@ -53,8 +55,7 @@ setwall() {
     log "Old wallpapers removed (if existed)"
 
     # Copy new wallpaper
-    cp "$wallpaper" "$WALLPAPER_PATH"
-    if [[ $? -ne 0 ]]; then
+    if ! cp "$wallpaper" "$WALLPAPER_PATH"; then
         log "ERROR: Failed to copy wallpaper"
         echo "Error: Failed to copy wallpaper"
         return 1
@@ -75,8 +76,7 @@ setwall() {
 
     # Create blurred version
     log "Creating blurred wallpaper..."
-    magick "$WALLPAPER_PATH" -blur 0x8 "$BLURRED_WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"
-    if [[ $? -ne 0 ]]; then
+    if ! magick "$WALLPAPER_PATH" -blur 0x8 "$BLURRED_WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"; then
         log "ERROR: Failed to create blurred wallpaper"
         echo "Error: Failed to create blurred wallpaper"
         return 1
@@ -103,23 +103,43 @@ setwall() {
 
     # reload all services (removed exec to allow script to continue)
     log "Reloading all services..."
-    ~/.local/bin/reload_all 2>&1 | tee -a "$LOG_FILE"
-    log "reload_all completed"
+    if [[ -f "$HOME/.local/bin/reload_all" ]]; then
+        ~/.local/bin/reload_all 2>&1 | tee -a "$LOG_FILE"
+        log "reload_all completed"
+    else
+        log "WARNING: reload_all script not found"
+    fi
 
     log "setwall() finished successfully"
 }
 
-# If script is called directly with an argument
+# If script is called directly with an argument, apply that wallpaper
 if [[ -n "$1" ]]; then
     log "Direct call with argument: $1"
-    setwall "$1"
-    exit $?
+
+    # Expand tilde in path if present
+    WALLPAPER_ARG="${1/#\~/$HOME}"
+
+    log "Expanded path: $WALLPAPER_ARG"
+
+    # Apply the wallpaper
+    setwall "$WALLPAPER_ARG"
+    exit_code=$?
+
+    # Send notification if successful
+    if [[ $exit_code -eq 0 ]]; then
+        if command -v notify-send >/dev/null 2>&1; then
+            notify-send "Wallpaper Changed" "Set to: $(basename "$WALLPAPER_ARG")" -i "$WALLPAPER_PATH"
+            log "Notification sent"
+        fi
+        echo "Wallpaper applied successfully!"
+    fi
+
+    exit $exit_code
 fi
 
+# If no argument provided, show rofi UI
 # Rofi Wallpaper Selector with Direct Image Preview
-WALLPAPER_DIR="$HOME/Pictures/wallpapers/"
-THEME_FILE="$HOME/.config/rofi/wallpaper-selector.rasi"
-
 log "Starting rofi wallpaper selector"
 log "WALLPAPER_DIR: $WALLPAPER_DIR"
 log "THEME_FILE: $THEME_FILE"
@@ -135,18 +155,19 @@ show_wallpapers() {
 
     # Get all image files and add them to options with their path as icon
     local count=0
-    find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" -o -name "*.gif" -o -name "*.bmp" -o -name "*.tiff" \) | sort | while read -r file; do
+    while IFS= read -r file; do
         local name
         name=$(basename "$file" | sed 's/\.[^.]*$//')
         echo -e "$name\0icon\x1f$file" >>"$options_file"
         ((count++))
-    done
+    done < <(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" -o -name "*.gif" -o -name "*.bmp" -o -name "*.tiff" \) | sort)
+
     log "Found $count wallpaper files"
 
     # Show rofi with custom theme
     log "Launching rofi..."
     local selected
-    selected=$(rofi -dmenu -i -p "󰸉  Select Wallpaper" \
+    selected=$(rofi -dmenu -i \
         -theme "$THEME_FILE" <"$options_file")
     local rofi_exit=$?
     log "rofi exited with code: $rofi_exit"
