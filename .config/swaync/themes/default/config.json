@@ -36,13 +36,17 @@
     "play-sound": {
       "exec": "~/.config/swaync/scripts/notify_sound.sh",
       "app-name": ".*",
+      "summary": "^(?!Screenshot captured).*",
       "run-on": "receive"
     }
   },
   "notification-visibility": {
-    "grouped": true
-  },
-
+        "grouped": true,
+        "hide-niri-screenshots": {
+            "state": "ignored",
+            "summary": "Screenshot captured"
+        }
+    },
   "widgets": ["buttons-grid", "dnd", "menubar", "mpris", "notifications", "title"],
 
   "widget-config": {

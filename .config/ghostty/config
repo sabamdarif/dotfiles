@@ -18,6 +18,8 @@ mouse-hide-while-typing = true
 copy-on-select = true
 confirm-close-surface = false
 
+shell-integration = none
+
 # launch with fullscreen mode
 fullscreen = true
 

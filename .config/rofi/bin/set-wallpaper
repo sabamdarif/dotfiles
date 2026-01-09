@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # Configuration
-WALLPAPER_PATH="$HOME/.config/background"
 BLURRED_WALLPAPER_PATH="$HOME/.config/blurred-background"
 LOG_FILE="$HOME/.config/rofi/rofi-wallpaper.log"
 MODE=$(cat "$HOME/.config/matugen/current_mode" 2>/dev/null || echo "dark")
@@ -20,6 +19,12 @@ log() {
 
 log "=== Script started ==="
 
+# Function to check if file is a GIF
+is_gif() {
+    local file="$1"
+    [[ "${file,,}" == *.gif ]]
+}
+
 # Function to set wallpaper and generate colors
 setwall() {
     local wallpaper="$1"
@@ -34,7 +39,7 @@ setwall() {
     log "File exists, proceeding..."
 
     # Check if matugen is installed
-    if [ ! -f "$HOME/.cargo/bin/matugen" ]; then
+    if [ ! -f "$HOME/.local/bin/matugen" ]; then
         log "ERROR: 'matugen' is not installed"
         echo "Error: 'matugen' is not installed"
         return 1
@@ -49,8 +54,19 @@ setwall() {
     fi
     log "ImageMagick found"
 
-    # Delete old wallpapers if they exist
-    [[ -f "$WALLPAPER_PATH" ]] && rm -f "$WALLPAPER_PATH"
+    # Set WALLPAPER_PATH based on file type
+    local WALLPAPER_PATH
+    if is_gif "$wallpaper"; then
+        WALLPAPER_PATH="$HOME/.config/background.gif"
+        log "Detected GIF, using path: $WALLPAPER_PATH"
+    else
+        WALLPAPER_PATH="$HOME/.config/background"
+        log "Using standard path: $WALLPAPER_PATH"
+    fi
+
+    # Delete old wallpapers if they exist (both possible paths)
+    [[ -f "$HOME/.config/background" ]] && rm -f "$HOME/.config/background"
+    [[ -f "$HOME/.config/background.gif" ]] && rm -f "$HOME/.config/background.gif"
     [[ -f "$BLURRED_WALLPAPER_PATH" ]] && rm -f "$BLURRED_WALLPAPER_PATH"
     log "Old wallpapers removed (if existed)"
 
@@ -60,28 +76,66 @@ setwall() {
         echo "Error: Failed to copy wallpaper"
         return 1
     fi
-    log "New wallpaper copied successfully"
+    log "New wallpaper copied successfully to $WALLPAPER_PATH"
 
-    # Set wallpaper with swaybg or swww (choose one)
+    # Set wallpaper with swww or swaybg
     if command -v swww >/dev/null 2>&1; then
         log "Using swww to set wallpaper"
-        swww img "$WALLPAPER_PATH" --resize fit --transition-type center --transition-duration 2 2>&1 | tee -a "$LOG_FILE"
+        if is_gif "$wallpaper"; then
+            log "Setting animated GIF with swww"
+        fi
+        swww img "$WALLPAPER_PATH" --transition-type center --transition-duration 2 2>&1 | tee -a "$LOG_FILE"
     elif command -v swaybg >/dev/null 2>&1; then
         log "Using swaybg to set wallpaper"
-        pkill swaybg
-        swaybg -i "$WALLPAPER_PATH" -m fill &
+        if is_gif "$wallpaper"; then
+            log "WARNING: swaybg does not support animated GIFs. Converting first frame to static image..."
+            # Convert GIF to static PNG for swaybg
+            local static_wallpaper="${WALLPAPER_PATH}.png"
+            magick "${WALLPAPER_PATH}[0]" "$static_wallpaper" 2>&1 | tee -a "$LOG_FILE"
+            pkill swaybg
+            swaybg -i "$static_wallpaper" -m fill &
+        else
+            pkill swaybg
+            swaybg -i "$WALLPAPER_PATH" -m fill &
+        fi
     else
         log "ERROR: Neither swww nor swaybg found"
     fi
 
     # Create blurred version
     log "Creating blurred wallpaper..."
-    if ! magick "$WALLPAPER_PATH" -blur 0x8 "$BLURRED_WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"; then
-        log "ERROR: Failed to create blurred wallpaper"
-        echo "Error: Failed to create blurred wallpaper"
-        return 1
+    if is_gif "$wallpaper"; then
+        log "Extracting first frame from GIF..."
+        # First extract a static image from the GIF
+        local extracted_frame="${WALLPAPER_PATH}.extracted.png"
+        if ! magick "${WALLPAPER_PATH}[0]" "$extracted_frame" 2>&1 | tee -a "$LOG_FILE"; then
+            log "ERROR: Failed to extract frame from GIF"
+            echo "Error: Failed to extract frame from GIF"
+            return 1
+        fi
+        log "Frame extracted successfully: $extracted_frame"
+
+        # Now blur the extracted static image
+        log "Blurring extracted frame..."
+        if ! magick "$extracted_frame" -blur 0x8 "$BLURRED_WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"; then
+            log "ERROR: Failed to create blurred wallpaper"
+            echo "Error: Failed to create blurred wallpaper"
+            rm -f "$extracted_frame"
+            return 1
+        fi
+        log "Blurred wallpaper created successfully from extracted frame"
+
+        # Clean up the temporary extracted frame
+        rm -f "$extracted_frame"
+        log "Cleaned up temporary extracted frame"
+    else
+        if ! magick "$WALLPAPER_PATH" -blur 0x8 "$BLURRED_WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"; then
+            log "ERROR: Failed to create blurred wallpaper"
+            echo "Error: Failed to create blurred wallpaper"
+            return 1
+        fi
+        log "Blurred wallpaper created successfully"
     fi
-    log "Blurred wallpaper created successfully"
 
     # Set blurred wallpaper with swaybg on a different output (if needed)
     # Or you can use it as a lockscreen background, etc.
@@ -98,7 +152,16 @@ setwall() {
 
     # Generate color palettes with matugen
     log "Running matugen..."
-    ~/.cargo/bin/matugen image --mode "$MODE" "$WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"
+    if is_gif "$wallpaper"; then
+        log "Extracting first frame of GIF for color palette generation"
+        # Create temporary static version for matugen
+        local temp_for_matugen="${WALLPAPER_PATH}.matugen.png"
+        magick "${WALLPAPER_PATH}[0]" "$temp_for_matugen" 2>&1 | tee -a "$LOG_FILE"
+        ~/.local/bin/matugen image --mode "$MODE" "$temp_for_matugen" 2>&1 | tee -a "$LOG_FILE"
+        rm -f "$temp_for_matugen"
+    else
+        ~/.local/bin/matugen image --mode "$MODE" "$WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"
+    fi
     log "matugen completed"
 
     # reload all services (removed exec to allow script to continue)
@@ -129,7 +192,15 @@ if [[ -n "$1" ]]; then
     # Send notification if successful
     if [[ $exit_code -eq 0 ]]; then
         if command -v notify-send >/dev/null 2>&1; then
-            notify-send "Wallpaper Changed" "Set to: $(basename "$WALLPAPER_ARG")" -i "$WALLPAPER_PATH"
+            # Determine WALLPAPER_PATH for notification icon
+            if is_gif "$WALLPAPER_ARG"; then
+                WALLPAPER_PATH="$HOME/.config/background.gif"
+                wallpaper_type="Animated Wallpaper (GIF)"
+            else
+                WALLPAPER_PATH="$HOME/.config/background"
+                wallpaper_type="Wallpaper"
+            fi
+            notify-send "$wallpaper_type Changed" "Set to: $(basename "$WALLPAPER_ARG")" -i "$WALLPAPER_PATH"
             log "Notification sent"
         fi
         echo "Wallpaper applied successfully!"
@@ -158,6 +229,10 @@ show_wallpapers() {
     while IFS= read -r file; do
         local name
         name=$(basename "$file" | sed 's/\.[^.]*$//')
+        # Add [GIF] prefix for animated wallpapers
+        if is_gif "$file"; then
+            name="🎬 $name"
+        fi
         echo -e "$name\0icon\x1f$file" >>"$options_file"
         ((count++))
     done < <(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" -o -name "*.gif" -o -name "*.bmp" -o -name "*.tiff" \) | sort)
@@ -180,6 +255,9 @@ show_wallpapers() {
     # Handle selection
     if [ $rofi_exit -eq 0 ] && [ -n "$selected" ]; then
         log "Processing selection: $selected"
+        # Remove the GIF prefix if present
+        selected="${selected#🎬 }"
+
         # Find the full path of the selected wallpaper
         local selected_wallpaper=""
         while IFS= read -r file; do
@@ -194,7 +272,11 @@ show_wallpapers() {
             log "Calling setwall with: $selected_wallpaper"
             setwall "$selected_wallpaper"
             log "Sending notification..."
-            notify-send "Wallpaper Changed" "Set to: $selected" -i "$selected_wallpaper"
+            local wallpaper_type="Wallpaper"
+            if is_gif "$selected_wallpaper"; then
+                wallpaper_type="Animated Wallpaper (GIF)"
+            fi
+            notify-send "$wallpaper_type Changed" "Set to: $selected" -i "$selected_wallpaper"
             log "Notification sent"
         else
             log "ERROR: Could not find full path for selected wallpaper"

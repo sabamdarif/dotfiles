@@ -362,8 +362,18 @@ mvg() {
 
 # Create and go to the directory
 mkdirg() {
-    mkdir -p "$1"
-    cd "$1" || return 1
+    local location
+
+    # If the path contains a slash, extract the directory part
+    if [[ "$1" == */* ]]; then
+        location="$(dirname "$1")"
+    else
+        # Otherwise, use the argument as-is (it's just a directory name)
+        location="$1"
+    fi
+
+    mkdir -p "$location"
+    cd "$location" || return 1
 }
 
 # Quick backup of a file or directory

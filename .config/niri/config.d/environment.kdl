@@ -7,7 +7,7 @@ environment {
   XDG_CURRENT_DESKTOP "niri"
   TERMINAL "ghostty"
   QT_QPA_PLATFORM "wayland"
-  ELECTRON_OZONE_PLATFORM_HINT "auto"
+  ELECTRON_OZONE_PLATFORM_HINT "wayland"  // Changed from "auto"
   QT_QPA_PLATFORMTHEME "qt6ct"
   QT_QPA_PLATFORMTHEME_QT "qt6ct"
 }

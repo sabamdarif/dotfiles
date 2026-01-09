@@ -408,113 +408,15 @@ detect_compositor() {
 }
 
 capture_current_window() {
-    # Create screenshots directory if it doesn't exist
-    mkdir -p ~/Pictures/Screenshots
-
-    local compositor=$(detect_compositor)
-    local filename=~/Pictures/Screenshots/window-$(date +%Y%m%d_%H%M%S).png
-
-    case "$compositor" in
-    hyprland)
-        grimblast copysave active "$filename" 2>/dev/null
-        if [[ -f "$filename" && -s "$filename" ]]; then
-            notify-send -i "$filename" "📸 Screenshot saved" "Window captured"
-        fi
-        ;;
-
-    niri)
-        # Capture window to clipboard
-        niri msg action screenshot-window
-
-        # Save from clipboard to file
-        wl-paste >"$filename"
-
-        if [[ -f "$filename" && -s "$filename" ]]; then
-            notify-send -i "$filename" "📸 Screenshot saved" "Window captured"
-        fi
-        ;;
-
-    sway)
-        # Get focused window from sway
-        local window_info=$(swaymsg -t get_tree | jq -r '.. | select(.focused? == true)')
-
-        if [[ -z "$window_info" ]]; then
-            return 1
-        fi
-
-        # Parse window geometry
-        local x=$(echo "$window_info" | jq -r '.rect.x // 0')
-        local y=$(echo "$window_info" | jq -r '.rect.y // 0')
-        local width=$(echo "$window_info" | jq -r '.rect.width // 0')
-        local height=$(echo "$window_info" | jq -r '.rect.height // 0')
-
-        # Check if we got valid geometry
-        if [[ "$width" -eq 0 || "$height" -eq 0 ]]; then
-            return 1
-        fi
-
-        # Capture the window
-        grim -g "${x},${y} ${width}x${height}" "$filename" 2>/dev/null
-
-        if [[ $? -eq 0 && -f "$filename" && -s "$filename" ]]; then
-            wl-copy <"$filename"
-            notify-send -i "$filename" "📸 Screenshot saved" "Window captured"
-        fi
-        ;;
-
-    *)
-        notify "Error" "Unsupported compositor"
-        return 1
-        ;;
-    esac
+    bash "$HOME"/.config/niri/scripts/screenshot.sh --current-window
 }
 
 capture_select_area() {
-    # Create screenshots directory if it doesn't exist
-    mkdir -p ~/Pictures/Screenshots
-
-    local filename=~/Pictures/Screenshots/area-$(date +%Y%m%d_%H%M%S).png
-
-    # Use slurp to select area, then grim to capture
-    local geometry=$(slurp -b '#00000066' -c '#ffffffff' -w 2 2>/dev/null)
-
-    # Only proceed if user selected an area (didn't cancel)
-    if [[ -n "$geometry" ]]; then
-        grim -g "$geometry" "$filename" 2>/dev/null
-
-        # Only send notification if screenshot was actually saved
-        if [[ -f "$filename" && -s "$filename" ]]; then
-            wl-copy <"$filename"
-            notify-send -i "$filename" "📸 Screenshot saved" "Area captured"
-        fi
-    fi
+    bash "$HOME"/.config/niri/scripts/screenshot.sh --select-area
 }
 
 capture_fullscreen() {
-    # Create screenshots directory if it doesn't exist
-    mkdir -p ~/Pictures/Screenshots
-
-    local compositor=$(detect_compositor)
-    local filename=~/Pictures/Screenshots/fullscreen-$(date +%Y%m%d_%H%M%S).png
-
-    case "$compositor" in
-    hyprland)
-        grimblast copysave screen "$filename" 2>/dev/null
-        if [[ -f "$filename" && -s "$filename" ]]; then
-            notify-send -i "$filename" "📸 Screenshot saved" "Fullscreen captured"
-        fi
-        ;;
-
-    niri | sway | *)
-        # grim works universally on all Wayland compositors
-        grim "$filename" 2>/dev/null
-
-        if [[ -f "$filename" && -s "$filename" ]]; then
-            wl-copy <"$filename"
-            notify-send -i "$filename" "📸 Screenshot saved" "Fullscreen captured"
-        fi
-        ;;
-    esac
+    bash "$HOME"/.config/niri/scripts/screenshot.sh --fullscreen
 }
 
 run_color_picker() {

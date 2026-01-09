@@ -76,3 +76,4 @@
 .var/app/com.github.tchx84.Flatseal
 .config/mango/config.conf.bak
 .local/bin/httpx
+.local/bin/matugen

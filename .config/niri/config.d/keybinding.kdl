@@ -9,7 +9,7 @@ binds {
     Mod+Shift+R hotkey-overlay-title="Reload All (Custom Script)" {spawn "~/.local/bin/reload_all";}
     Mod+V hotkey-overlay-title="Clipboard Monitor" {spawn "~/.config/rofi/bin/clipboard_monitor";}
     Mod+Period hotkey-overlay-title="Emoji Selector" {spawn "~/.config/rofi/bin/emoji_selector";}
-    Mod+W hotkey-overlay-title="Wallpaper Selector" {spawn "~/.config/rofi/bin/rofi-wallpaper";}
+    Mod+W hotkey-overlay-title="Wallpaper Selector" {spawn "~/.config/rofi/bin/set-wallpaper";}
     Mod+Shift+F hotkey-overlay-title="File Search (fd)" {spawn "~/.config/rofi/bin/rofi-fd-search";}
     Mod+Alt+M hotkey-overlay-title="Open YouTube Music AppImage" {
     spawn "env" "DESKTOPINTEGRATION=1" "/home/sabamdarif/AppImages/youtube_music.appimage" "--no-sandbox";
@@ -85,8 +85,9 @@ binds {
     Mod+Shift+Minus { move-workspace-down; }
     Mod+Minus { focus-workspace-down; }
 
-    Mod+Shift+S hotkey-overlay-title="Take screenshot" { spawn "sh" "-c" "file=\"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" && grim \"$file\" && notify-send -i \"$file\" '📸 Screenshot saved'"; }
-    Mod+Alt+Shift+S { screenshot; }
+    Mod+Shift+S hotkey-overlay-title="Take Full screenshot" { spawn "~/.config/niri/scripts/screenshot.sh" "--fullscreen"; }
+    Mod+Alt+Shift+S hotkey-overlay-title="Select Area And Take screenshot" { spawn "~/.config/niri/scripts/screenshot.sh" "--select-area"; }
+    // F12 { spawn "gnome-calculator"; }
 
     XF86AudioPlay { spawn "playerctl" "play-pause"; }
     XF86AudioNext { spawn "playerctl" "next"; }

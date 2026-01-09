@@ -68,8 +68,8 @@ while true; do
 
     # Build tooltip based on offline update status
     if [ "$offline_status" = "pending" ]; then
-        tooltip="⚠️ Offline Update Ready\\nReboot to install updates\\n---\\nDNF: $dnf_updates\\nFlatpak: $flatpak_updates\\nTotal: $total"
-        display_text="$total ⚡"
+        tooltip="DNF: $dnf_updates\\nFlatpak: $flatpak_updates\\nTotal: $total"
+        display_text="$total"
     else
         tooltip="DNF: $dnf_updates\\nFlatpak: $flatpak_updates\\nTotal: $total"
         display_text="$total"

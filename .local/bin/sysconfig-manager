@@ -856,7 +856,7 @@ install_packages() {
     case "$PKG_MANAGER" in
     dnf)
         # shellcheck disable=SC2086
-        sudo dnf install -y $packages
+        sudo dnf install -y --skip-broken $packages
         ;;
     apt)
         # shellcheck disable=SC2086
