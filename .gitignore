@@ -77,3 +77,4 @@
 .config/mango/config.conf.bak
 .local/bin/httpx
 .local/bin/matugen
+.local/bin/cloudflared
