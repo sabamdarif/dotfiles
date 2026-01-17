@@ -193,7 +193,7 @@ zinit ice from"gh-r" lbin"!lazygit" nocompile
 zinit load @jesseduffield/lazygit
 
 # Install SpoofDPI with alias set on load
-zi ice from'gh-r' lbin'!spoofdpi' nocompile atload'alias sfd="spoofdpi -debug"'
+zi ice from'gh-r' lbin'!spoofdpi' nocompile atload'alias sfd="spoofdpi"'
 zi light xvzc/SpoofDPI
 
 # Install Neovim AppImage
