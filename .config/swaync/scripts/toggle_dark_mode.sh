@@ -26,6 +26,6 @@ fi
 
 # Apply the mode
 echo "$NEW_MODE" >"$MODE_FILE"
-~/.cargo/bin/matugen image --mode "$NEW_MODE" "$WALLPAPER_PATH"
+~/.local/bin/matugen image --mode "$NEW_MODE" "$WALLPAPER_PATH"
 ~/.local/bin/reload_all &
 disown

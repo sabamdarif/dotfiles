@@ -1312,6 +1312,7 @@ def interactive_package_select(config_file, list_function, title, installed_only
 
 
 def interactive_remove_from_config(config_file, title):
+    """Interactive removal with package details preview"""
     if shutil.which("fzf") is None:
         print("fzf is not installed. Please install it first.")
         return False
@@ -1323,21 +1324,53 @@ def interactive_remove_from_config(config_file, title):
         return
 
     items_text = "\n".join(current_items)
+    # Determine if we should show package details
+    show_details = config_file == PACKAGES_CONFIG
 
     try:
-        result = subprocess.run(
-            [
-                "fzf",
-                "--multi",
-                f"--prompt={title} (Remove) > ",
-                "--bind=tab:toggle+down",
-                "--header=TAB to select, ENTER to confirm removal",
-            ],
-            input=items_text,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        if show_details and PKG_MANAGER in ["dnf", "apt"]:
+            # Create preview command for package details
+            if PKG_MANAGER == "dnf":
+                preview_cmd = "rpm -qi {} 2>/dev/null || dnf info --quiet --cacheonly {} 2>/dev/null || dnf info --quiet {} 2>/dev/null || echo 'Package info not available'"
+            elif PKG_MANAGER == "apt":
+                preview_cmd = "dpkg -s {} 2>/dev/null || apt-cache show {} 2>/dev/null || echo 'Package info not available'"
+
+            result = subprocess.run(
+                [
+                    "fzf",
+                    "--multi",
+                    f"--prompt={title} (Remove) > ",
+                    f"--preview={preview_cmd}",
+                    "--preview-window=right:60%:wrap",
+                    "--bind=tab:toggle+down",
+                    "--bind=ctrl-/:toggle-preview",
+                    "--header=TAB: select | ENTER: confirm removal | CTRL-/: toggle preview | ↑↓: navigate",
+                    "--height=100%",
+                    "--border=rounded",
+                    "--info=inline",
+                ],
+                input=items_text,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+        else:
+            # Original simple preview for non-package items
+            result = subprocess.run(
+                [
+                    "fzf",
+                    "--multi",
+                    f"--prompt={title} (Remove) > ",
+                    "--preview=echo {}",
+                    "--preview-window=up:1",
+                    "--bind=tab:toggle+down",
+                    "--header=TAB to select, ENTER to confirm removal",
+                ],
+                input=items_text,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
 
         selected = result.stdout.strip()
 
