@@ -17,6 +17,7 @@ SWAY_CONFIG="$HOME/.config/sway/config"
 THEME_MENU_SCRIPT="$HOME/.config/rofi/bin/theme-changer-menu"
 IDLE_TIME_FILE="$HOME/.local/state/idle-time"
 IDLE_SCRIPT="$HOME/.config/niri/scripts/idle.sh"
+DEFAULT_APPS_MENU_SCRIPT="$HOME/.config/rofi/bin/set-default-app-menu"
 
 back_to() {
     local parent_menu="$1"
@@ -229,6 +230,20 @@ show_theme_menu() {
         "$THEME_MENU_SCRIPT"
     else
         notify "Error" "Theme menu script not found at $THEME_MENU_SCRIPT"
+    fi
+
+    back_to show_main_menu
+}
+
+# ============================================================================
+# Default Apps Management
+# ============================================================================
+
+show_default_apps_menu() {
+    if [[ -x "$DEFAULT_APPS_MENU_SCRIPT" ]]; then
+        "$DEFAULT_APPS_MENU_SCRIPT"
+    else
+        notify "Error" "Default apps menu script not found at $DEFAULT_APPS_MENU_SCRIPT"
     fi
 
     back_to show_main_menu
@@ -736,12 +751,13 @@ show_about_menu() {
 # ============================================================================
 
 show_main_menu() {
-    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰠱  Icons\n󰥔  Idle Timeout\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
+    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰏋  Default Apps\n󰠱  Icons\n󰥔  Idle Timeout\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
 
     case "$selection" in
     *Font*) show_font_menu ;;
     *Theme*) show_theme_menu ;;
     *Icons*) show_icon_menu ;;
+    *"Default Apps"*) show_default_apps_menu ;;
     *"Idle Timeout"*) show_idle_menu ;;
     *Capture*) show_capture_menu ;;
     *Reload*) show_update_menu ;;
@@ -760,6 +776,7 @@ go_to_menu() {
     *font*) show_font_menu ;;
     *theme*) show_theme_menu ;;
     *icon*) show_icon_menu ;;
+    *"default"* | *"apps"*) show_default_apps_menu ;;
     *"Idle Timeout"*) show_idle_menu ;;
     *capture*) show_capture_menu ;;
     *refresh*) show_update_menu ;;

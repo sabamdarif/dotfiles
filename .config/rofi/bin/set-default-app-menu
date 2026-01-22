@@ -1,0 +1,855 @@
+#!/bin/bash
+
+# Default Apps Menu
+# Manages default applications for various file types and protocols
+
+menu() {
+    local prompt="$1"
+    local options="$2"
+    local extra="$3"
+    local preselect="$4"
+
+    read -r -a args <<<"$extra"
+
+    if [[ -n "$preselect" ]]; then
+        local index
+        index=$(echo -e "$options" | grep -nxF "$preselect" | cut -d: -f1)
+        if [[ -n "$index" ]]; then
+            args+=("-c" "$index")
+        fi
+    fi
+
+    echo -e "$options" | rofi -dmenu -p "$prompt" -theme ~/.config/rofi/settings-menu.rasi "${args[@]}" 2>/dev/null
+}
+
+notify() {
+    notify-send "$1" "$2"
+}
+
+# ============================================================================
+# Application Discovery Functions
+# ============================================================================
+
+list_image_viewers() {
+    local apps=""
+
+    # Common image viewers
+    local image_apps=(
+        "org.gnome.Loupe:Loupe (GNOME)"
+        "org.gnome.eog:Eye of GNOME"
+        "gwenview:Gwenview (KDE)"
+        "ristretto:Ristretto (XFCE)"
+        "imv:imv"
+        "feh:feh"
+        "sxiv:sxiv"
+        "nsxiv:nsxiv"
+        "nomacs:nomacs"
+        "gthumb:gThumb"
+        "geeqie:Geeqie"
+        "viewnior:Viewnior"
+        "gpicview:GPicView"
+        "mirage:Mirage"
+        "org.kde.okular:Okular"
+        "org.gnome.gThumb:gThumb"
+        "org.xfce.ristretto:Ristretto"
+    )
+
+    # Check system apps
+    for app_entry in "${image_apps[@]}"; do
+        IFS=':' read -r app_id display_name <<<"$app_entry"
+
+        # Check if desktop file exists
+        if [[ -f "/usr/share/applications/${app_id}.desktop" ]] ||
+            [[ -f "$HOME/.local/share/applications/${app_id}.desktop" ]] ||
+            command -v "$app_id" &>/dev/null; then
+            apps+="  $display_name|$app_id\n"
+        fi
+    done
+
+    # Check Flatpak apps
+    if command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r app_id app_name; do
+            if [[ "$app_id" =~ (image|viewer|photo|picture) ]] ||
+                [[ "$app_name" =~ (Image|Viewer|Photo|Picture) ]]; then
+                apps+="󰏖  $app_name (Flatpak)|flatpak:$app_id\n"
+            fi
+        done < <(flatpak list --app --columns=application,name 2>/dev/null)
+    fi
+
+    echo -e "$apps"
+}
+
+list_video_players() {
+    local apps=""
+
+    # Common video players
+    local video_apps=(
+        "mpv:mpv"
+        "vlc:VLC Media Player"
+        "org.videolan.VLC:VLC Media Player"
+        "celluloid:Celluloid"
+        "io.github.celluloid_player.Celluloid:Celluloid"
+        "io.mpv.Mpv:mpv"
+        "totem:GNOME Videos"
+        "org.gnome.Totem:GNOME Videos"
+        "dragon:Dragon Player"
+        "smplayer:SMPlayer"
+        "parole:Parole (XFCE)"
+        "haruna:Haruna"
+        "org.kde.haruna:Haruna"
+        "baka-mplayer:Baka MPlayer"
+        "gnome-mplayer:GNOME MPlayer"
+        "kodi:Kodi"
+    )
+
+    # Check system apps
+    for app_entry in "${video_apps[@]}"; do
+        IFS=':' read -r app_id display_name <<<"$app_entry"
+
+        if [[ -f "/usr/share/applications/${app_id}.desktop" ]] ||
+            [[ -f "$HOME/.local/share/applications/${app_id}.desktop" ]] ||
+            command -v "$app_id" &>/dev/null; then
+            apps+="  $display_name|$app_id\n"
+        fi
+    done
+
+    # Check Flatpak apps
+    if command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r app_id app_name; do
+            if [[ "$app_id" =~ (video|player|media|mpv|vlc) ]] ||
+                [[ "$app_name" =~ (Video|Player|Media|MPV|VLC) ]]; then
+                apps+="󰏖  $app_name (Flatpak)|flatpak:$app_id\n"
+            fi
+        done < <(flatpak list --app --columns=application,name 2>/dev/null)
+    fi
+
+    echo -e "$apps"
+}
+
+list_audio_players() {
+    local apps=""
+
+    # Common audio players
+    local audio_apps=(
+        "rhythmbox:Rhythmbox"
+        "org.gnome.Rhythmbox3:Rhythmbox"
+        "audacious:Audacious"
+        "clementine:Clementine"
+        "strawberry:Strawberry"
+        "elisa:Elisa (KDE)"
+        "org.kde.elisa:Elisa"
+        "deadbeef:DeaDBeeF"
+        "lollypop:Lollypop"
+        "org.gnome.Lollypop:Lollypop"
+        "quodlibet:Quod Libet"
+        "io.github.quodlibet.QuodLibet:Quod Libet"
+        "amarok:Amarok"
+        "banshee:Banshee"
+        "gmusicbrowser:gmusicbrowser"
+        "pragha:Pragha"
+        "io.bassi.Amberol:Amberol"
+        "org.gnome.Music:GNOME Music"
+    )
+
+    # Check system apps
+    for app_entry in "${audio_apps[@]}"; do
+        IFS=':' read -r app_id display_name <<<"$app_entry"
+
+        if [[ -f "/usr/share/applications/${app_id}.desktop" ]] ||
+            [[ -f "$HOME/.local/share/applications/${app_id}.desktop" ]] ||
+            command -v "$app_id" &>/dev/null; then
+            apps+="  $display_name|$app_id\n"
+        fi
+    done
+
+    # Check Flatpak apps
+    if command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r app_id app_name; do
+            if [[ "$app_id" =~ (music|audio|player) ]] ||
+                [[ "$app_name" =~ (Music|Audio|Player) ]]; then
+                apps+="󰏖  $app_name (Flatpak)|flatpak:$app_id\n"
+            fi
+        done < <(flatpak list --app --columns=application,name 2>/dev/null)
+    fi
+
+    echo -e "$apps"
+}
+
+list_web_browsers() {
+    local apps=""
+
+    # Common web browsers
+    local browser_apps=(
+        "firefox:Firefox"
+        "org.mozilla.firefox:Firefox"
+        "google-chrome:Google Chrome"
+        "chromium:Chromium"
+        "brave-browser:Brave"
+        "com.brave.Browser:Brave"
+        "microsoft-edge:Microsoft Edge"
+        "vivaldi:Vivaldi"
+        "opera:Opera"
+        "epiphany:GNOME Web"
+        "org.gnome.Epiphany:GNOME Web"
+        "falkon:Falkon"
+        "org.kde.falkon:Falkon"
+        "qutebrowser:qutebrowser"
+        "org.qutebrowser.qutebrowser:qutebrowser"
+        "librewolf:LibreWolf"
+        "io.gitlab.librewolf-community:LibreWolf"
+        "tor-browser:Tor Browser"
+        "com.github.Eloston.UngoogledChromium:Ungoogled Chromium"
+        "org.mozilla.Thunderbird:Thunderbird"
+        "zen-browser:Zen Browser"
+    )
+
+    # Check system apps
+    for app_entry in "${browser_apps[@]}"; do
+        IFS=':' read -r app_id display_name <<<"$app_entry"
+
+        if [[ -f "/usr/share/applications/${app_id}.desktop" ]] ||
+            [[ -f "$HOME/.local/share/applications/${app_id}.desktop" ]] ||
+            command -v "$app_id" &>/dev/null; then
+            apps+="  $display_name|$app_id\n"
+        fi
+    done
+
+    # Check Flatpak apps
+    if command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r app_id app_name; do
+            if [[ "$app_id" =~ (browser|firefox|chrome|chromium|brave|edge|web) ]] ||
+                [[ "$app_name" =~ (Browser|Firefox|Chrome|Chromium|Brave|Edge|Web) ]]; then
+                apps+="󰏖  $app_name (Flatpak)|flatpak:$app_id\n"
+            fi
+        done < <(flatpak list --app --columns=application,name 2>/dev/null)
+    fi
+
+    echo -e "$apps"
+}
+
+list_file_managers() {
+    local apps=""
+
+    # Common file managers
+    local fm_apps=(
+        "nautilus:Nautilus (GNOME Files)"
+        "org.gnome.Nautilus:Nautilus"
+        "dolphin:Dolphin (KDE)"
+        "org.kde.dolphin:Dolphin"
+        "thunar:Thunar (XFCE)"
+        "org.xfce.thunar:Thunar"
+        "nemo:Nemo (Cinnamon)"
+        "caja:Caja (MATE)"
+        "pcmanfm:PCManFM"
+        "pcmanfm-qt:PCManFM-Qt"
+        "ranger:Ranger (Terminal)"
+        "nnn:nnn (Terminal)"
+        "lf:lf (Terminal)"
+        "vifm:Vifm (Terminal)"
+        "mc:Midnight Commander"
+        "spacefm:SpaceFM"
+        "doublecmd:Double Commander"
+    )
+
+    # Check system apps
+    for app_entry in "${fm_apps[@]}"; do
+        IFS=':' read -r app_id display_name <<<"$app_entry"
+
+        if [[ -f "/usr/share/applications/${app_id}.desktop" ]] ||
+            [[ -f "$HOME/.local/share/applications/${app_id}.desktop" ]] ||
+            command -v "$app_id" &>/dev/null; then
+            apps+="  $display_name|$app_id\n"
+        fi
+    done
+
+    # Check Flatpak apps
+    if command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r app_id app_name; do
+            if [[ "$app_id" =~ (file|manager|nautilus|dolphin|thunar) ]] ||
+                [[ "$app_name" =~ (File|Manager|Files|Nautilus|Dolphin|Thunar) ]]; then
+                apps+="󰏖  $app_name (Flatpak)|flatpak:$app_id\n"
+            fi
+        done < <(flatpak list --app --columns=application,name 2>/dev/null)
+    fi
+
+    echo -e "$apps"
+}
+
+list_text_editors() {
+    local apps=""
+
+    # Common text editors
+    local editor_apps=(
+        "nvim:Neovim (Terminal)"
+        "vim:Vim (Terminal)"
+        "nano:Nano (Terminal)"
+        "gedit:gedit (GNOME Text Editor)"
+        "org.gnome.gedit:gedit"
+        "org.gnome.TextEditor:GNOME Text Editor"
+        "kate:Kate (KDE)"
+        "org.kde.kate:Kate"
+        "kwrite:KWrite"
+        "mousepad:Mousepad (XFCE)"
+        "pluma:Pluma (MATE)"
+        "xed:Xed"
+        "leafpad:Leafpad"
+        "featherpad:FeatherPad"
+        "io.github.featherpad.FeatherPad:FeatherPad"
+        "geany:Geany"
+        "sublime-text:Sublime Text"
+        "code:Visual Studio Code"
+        "com.visualstudio.code:VS Code"
+        "vscodium:VSCodium"
+        "com.vscodium.codium:VSCodium"
+        "atom:Atom"
+        "emacs:Emacs"
+    )
+
+    # Check system apps
+    for app_entry in "${editor_apps[@]}"; do
+        IFS=':' read -r app_id display_name <<<"$app_entry"
+
+        if [[ -f "/usr/share/applications/${app_id}.desktop" ]] ||
+            [[ -f "$HOME/.local/share/applications/${app_id}.desktop" ]] ||
+            command -v "$app_id" &>/dev/null; then
+            apps+="  $display_name|$app_id\n"
+        fi
+    done
+
+    # Check Flatpak apps
+    if command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r app_id app_name; do
+            if [[ "$app_id" =~ (text|editor|code|atom|sublime) ]] ||
+                [[ "$app_name" =~ (Text|Editor|Code|Atom|Sublime) ]]; then
+                apps+="󰏖  $app_name (Flatpak)|flatpak:$app_id\n"
+            fi
+        done < <(flatpak list --app --columns=application,name 2>/dev/null)
+    fi
+
+    echo -e "$apps"
+}
+
+list_terminals() {
+    local apps=""
+
+    # Common terminals
+    local terminal_apps=(
+        "ghostty:Ghostty"
+        "alacritty:Alacritty"
+        "org.gnome.Console:GNOME Console"
+        "org.gnome.Terminal:GNOME Terminal"
+        "konsole:Konsole (KDE)"
+        "org.kde.konsole:Konsole"
+        "xfce4-terminal:XFCE Terminal"
+        "org.xfce.Terminal:XFCE Terminal"
+        "kitty:Kitty"
+        "wezterm:WezTerm"
+        "foot:Foot"
+        "terminator:Terminator"
+        "tilix:Tilix"
+        "com.gexperts.Tilix:Tilix"
+        "urxvt:rxvt-unicode"
+        "xterm:XTerm"
+        "st:st (suckless)"
+        "mate-terminal:MATE Terminal"
+        "lxterminal:LXTerminal"
+        "sakura:Sakura"
+        "cool-retro-term:Cool Retro Term"
+    )
+
+    # Check system apps
+    for app_entry in "${terminal_apps[@]}"; do
+        IFS=':' read -r app_id display_name <<<"$app_entry"
+
+        if [[ -f "/usr/share/applications/${app_id}.desktop" ]] ||
+            [[ -f "$HOME/.local/share/applications/${app_id}.desktop" ]] ||
+            command -v "$app_id" &>/dev/null; then
+            apps+="  $display_name|$app_id\n"
+        fi
+    done
+
+    # Check Flatpak apps
+    if command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r app_id app_name; do
+            if [[ "$app_id" =~ (terminal|console) ]] ||
+                [[ "$app_name" =~ (Terminal|Console) ]]; then
+                apps+="󰏖  $app_name (Flatpak)|flatpak:$app_id\n"
+            fi
+        done < <(flatpak list --app --columns=application,name 2>/dev/null)
+    fi
+
+    echo -e "$apps"
+}
+
+list_pdf_viewers() {
+    local apps=""
+
+    # Common PDF viewers
+    local pdf_apps=(
+        "evince:Evince (GNOME Document Viewer)"
+        "org.gnome.Evince:Evince"
+        "okular:Okular (KDE)"
+        "org.kde.okular:Okular"
+        "atril:Atril (MATE)"
+        "xreader:Xreader"
+        "mupdf:MuPDF"
+        "zathura:Zathura"
+        "org.pwmt.zathura:Zathura"
+        "qpdfview:qpdfview"
+        "foxitreader:Foxit Reader"
+        "calibre:Calibre"
+        "masterpdfeditor:Master PDF Editor"
+        "pdfstudioviewer:PDF Studio Viewer"
+        "chromium:Chromium (Built-in)"
+        "firefox:Firefox (Built-in)"
+    )
+
+    # Check system apps
+    for app_entry in "${pdf_apps[@]}"; do
+        IFS=':' read -r app_id display_name <<<"$app_entry"
+
+        if [[ -f "/usr/share/applications/${app_id}.desktop" ]] ||
+            [[ -f "$HOME/.local/share/applications/${app_id}.desktop" ]] ||
+            command -v "$app_id" &>/dev/null; then
+            apps+="  $display_name|$app_id\n"
+        fi
+    done
+
+    # Check Flatpak apps
+    if command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r app_id app_name; do
+            if [[ "$app_id" =~ (pdf|document|viewer|reader|evince|okular) ]] ||
+                [[ "$app_name" =~ (PDF|Document|Viewer|Reader|Evince|Okular) ]]; then
+                apps+="󰏖  $app_name (Flatpak)|flatpak:$app_id\n"
+            fi
+        done < <(flatpak list --app --columns=application,name 2>/dev/null)
+    fi
+
+    echo -e "$apps"
+}
+
+# ============================================================================
+# Get Current Default Apps
+# ============================================================================
+
+get_current_default() {
+    local mime_type="$1"
+    local current=$(xdg-mime query default "$mime_type" 2>/dev/null)
+
+    if [[ -n "$current" ]]; then
+        # Remove .desktop extension
+        current="${current%.desktop}"
+        echo "$current"
+    else
+        echo ""
+    fi
+}
+
+# ============================================================================
+# Set Default Application
+# ============================================================================
+
+set_default_app() {
+    local app_id="$1"
+    shift
+    local mime_types=("$@")
+
+    # Check if it's a flatpak app
+    if [[ "$app_id" =~ ^flatpak: ]]; then
+        local flatpak_id="${app_id#flatpak:}"
+
+        for mime_type in "${mime_types[@]}"; do
+            # For flatpak apps, we need to use the full app ID with .desktop
+            xdg-mime default "${flatpak_id}.desktop" "$mime_type" 2>/dev/null
+        done
+    else
+        # For regular apps
+        for mime_type in "${mime_types[@]}"; do
+            # Try with .desktop extension first
+            xdg-mime default "${app_id}.desktop" "$mime_type" 2>/dev/null ||
+                xdg-mime default "$app_id" "$mime_type" 2>/dev/null
+        done
+    fi
+
+    # Update mimeapps.list to ensure persistence
+    local mimeapps_file="$HOME/.config/mimeapps.list"
+    mkdir -p "$(dirname "$mimeapps_file")"
+
+    # Ensure [Default Applications] section exists
+    if ! grep -q "^\[Default Applications\]" "$mimeapps_file" 2>/dev/null; then
+        echo "[Default Applications]" >>"$mimeapps_file"
+    fi
+}
+
+# ============================================================================
+# Category-Specific Set Functions
+# ============================================================================
+
+set_image_viewer() {
+    local app_id="$1"
+    local display_name="$2"
+
+    local image_mimes=(
+        "image/jpeg"
+        "image/png"
+        "image/gif"
+        "image/bmp"
+        "image/webp"
+        "image/tiff"
+        "image/svg+xml"
+        "image/x-icon"
+        "image/vnd.microsoft.icon"
+    )
+
+    set_default_app "$app_id" "${image_mimes[@]}"
+    notify "Image Viewer Set" "$display_name is now the default image viewer"
+}
+
+set_video_player() {
+    local app_id="$1"
+    local display_name="$2"
+
+    local video_mimes=(
+        "video/mp4"
+        "video/x-matroska"
+        "video/webm"
+        "video/mpeg"
+        "video/x-msvideo"
+        "video/quicktime"
+        "video/x-flv"
+        "video/3gpp"
+        "video/x-ms-wmv"
+        "video/ogg"
+    )
+
+    set_default_app "$app_id" "${video_mimes[@]}"
+    notify "Video Player Set" "$display_name is now the default video player"
+}
+
+set_audio_player() {
+    local app_id="$1"
+    local display_name="$2"
+
+    local audio_mimes=(
+        "audio/mpeg"
+        "audio/mp4"
+        "audio/x-wav"
+        "audio/flac"
+        "audio/ogg"
+        "audio/x-vorbis+ogg"
+        "audio/x-opus+ogg"
+        "audio/aac"
+        "audio/x-m4a"
+        "audio/x-matroska"
+        "audio/webm"
+    )
+
+    set_default_app "$app_id" "${audio_mimes[@]}"
+    notify "Audio Player Set" "$display_name is now the default audio player"
+}
+
+set_web_browser() {
+    local app_id="$1"
+    local display_name="$2"
+
+    local browser_mimes=(
+        "text/html"
+        "text/xml"
+        "application/xhtml+xml"
+        "x-scheme-handler/http"
+        "x-scheme-handler/https"
+        "x-scheme-handler/ftp"
+    )
+
+    set_default_app "$app_id" "${browser_mimes[@]}"
+
+    # Also set as default browser in environment
+    export BROWSER="$app_id"
+
+    notify "Web Browser Set" "$display_name is now the default web browser"
+}
+
+set_file_manager() {
+    local app_id="$1"
+    local display_name="$2"
+
+    local fm_mimes=(
+        "inode/directory"
+        "x-scheme-handler/file"
+    )
+
+    set_default_app "$app_id" "${fm_mimes[@]}"
+    notify "File Manager Set" "$display_name is now the default file manager"
+}
+
+set_text_editor() {
+    local app_id="$1"
+    local display_name="$2"
+
+    local text_mimes=(
+        "text/plain"
+        "text/x-csrc"
+        "text/x-c++src"
+        "text/x-python"
+        "text/x-shellscript"
+        "application/x-shellscript"
+        "text/x-markdown"
+        "text/x-log"
+    )
+
+    set_default_app "$app_id" "${text_mimes[@]}"
+
+    # Also set EDITOR environment variable for terminal editors
+    if [[ "$app_id" =~ (nvim|vim|nano|emacs) ]]; then
+        export EDITOR="$app_id"
+    fi
+
+    notify "Text Editor Set" "$display_name is now the default text editor"
+}
+
+set_terminal() {
+    local app_id="$1"
+    local display_name="$2"
+
+    # Set environment variable
+    export TERMINAL="$app_id"
+
+    # Create/update terminal config file
+    local term_config="$HOME/.config/default-terminal"
+    echo "$app_id" >"$term_config"
+
+    notify "Terminal Set" "$display_name is now the default terminal"
+}
+
+set_pdf_viewer() {
+    local app_id="$1"
+    local display_name="$2"
+
+    local pdf_mimes=(
+        "application/pdf"
+        "application/x-pdf"
+    )
+
+    set_default_app "$app_id" "${pdf_mimes[@]}"
+    notify "PDF Viewer Set" "$display_name is now the default PDF viewer"
+}
+
+# ============================================================================
+# Menu Display Functions
+# ============================================================================
+
+show_image_viewer_menu() {
+    local apps=$(list_image_viewers)
+
+    if [[ -z "$apps" ]]; then
+        notify "No Image Viewers Found" "Install an image viewer first"
+        return 1
+    fi
+
+    local current=$(get_current_default "image/png")
+    local current_display=""
+    if [[ -n "$current" ]]; then
+        current_display=$(echo -e "$apps" | grep "|$current" | head -1)
+    fi
+
+    local selection=$(menu "  Select Image Viewer" "$apps" "" "$current_display")
+
+    if [[ "$selection" != "CNCLD" && -n "$selection" ]]; then
+        local display_name=$(echo "$selection" | cut -d'|' -f1 | sed 's/^[^ ]* *//')
+        local app_id=$(echo "$selection" | cut -d'|' -f2)
+        set_image_viewer "$app_id" "$display_name"
+    fi
+}
+
+show_video_player_menu() {
+    local apps=$(list_video_players)
+
+    if [[ -z "$apps" ]]; then
+        notify "No Video Players Found" "Install a video player first"
+        return 1
+    fi
+
+    local current=$(get_current_default "video/mp4")
+    local current_display=""
+    if [[ -n "$current" ]]; then
+        current_display=$(echo -e "$apps" | grep "|$current" | head -1)
+    fi
+
+    local selection=$(menu "  Select Video Player" "$apps" "" "$current_display")
+
+    if [[ "$selection" != "CNCLD" && -n "$selection" ]]; then
+        local display_name=$(echo "$selection" | cut -d'|' -f1 | sed 's/^[^ ]* *//')
+        local app_id=$(echo "$selection" | cut -d'|' -f2)
+        set_video_player "$app_id" "$display_name"
+    fi
+}
+
+show_audio_player_menu() {
+    local apps=$(list_audio_players)
+
+    if [[ -z "$apps" ]]; then
+        notify "No Audio Players Found" "Install an audio player first"
+        return 1
+    fi
+
+    local current=$(get_current_default "audio/mpeg")
+    local current_display=""
+    if [[ -n "$current" ]]; then
+        current_display=$(echo -e "$apps" | grep "|$current" | head -1)
+    fi
+
+    local selection=$(menu "  Select Audio Player" "$apps" "" "$current_display")
+
+    if [[ "$selection" != "CNCLD" && -n "$selection" ]]; then
+        local display_name=$(echo "$selection" | cut -d'|' -f1 | sed 's/^[^ ]* *//')
+        local app_id=$(echo "$selection" | cut -d'|' -f2)
+        set_audio_player "$app_id" "$display_name"
+    fi
+}
+
+show_web_browser_menu() {
+    local apps=$(list_web_browsers)
+
+    if [[ -z "$apps" ]]; then
+        notify "No Web Browsers Found" "Install a web browser first"
+        return 1
+    fi
+
+    local current=$(get_current_default "text/html")
+    local current_display=""
+    if [[ -n "$current" ]]; then
+        current_display=$(echo -e "$apps" | grep "|$current" | head -1)
+    fi
+
+    local selection=$(menu "  Select Web Browser" "$apps" "" "$current_display")
+
+    if [[ "$selection" != "CNCLD" && -n "$selection" ]]; then
+        local display_name=$(echo "$selection" | cut -d'|' -f1 | sed 's/^[^ ]* *//')
+        local app_id=$(echo "$selection" | cut -d'|' -f2)
+        set_web_browser "$app_id" "$display_name"
+    fi
+}
+
+show_file_manager_menu() {
+    local apps=$(list_file_managers)
+
+    if [[ -z "$apps" ]]; then
+        notify "No File Managers Found" "Install a file manager first"
+        return 1
+    fi
+
+    local current=$(get_current_default "inode/directory")
+    local current_display=""
+    if [[ -n "$current" ]]; then
+        current_display=$(echo -e "$apps" | grep "|$current" | head -1)
+    fi
+
+    local selection=$(menu "  Select File Manager" "$apps" "" "$current_display")
+
+    if [[ "$selection" != "CNCLD" && -n "$selection" ]]; then
+        local display_name=$(echo "$selection" | cut -d'|' -f1 | sed 's/^[^ ]* *//')
+        local app_id=$(echo "$selection" | cut -d'|' -f2)
+        set_file_manager "$app_id" "$display_name"
+    fi
+}
+
+show_text_editor_menu() {
+    local apps=$(list_text_editors)
+
+    if [[ -z "$apps" ]]; then
+        notify "No Text Editors Found" "Install a text editor first"
+        return 1
+    fi
+
+    local current=$(get_current_default "text/plain")
+    local current_display=""
+    if [[ -n "$current" ]]; then
+        current_display=$(echo -e "$apps" | grep "|$current" | head -1)
+    fi
+
+    local selection=$(menu "  Select Text Editor" "$apps" "" "$current_display")
+
+    if [[ "$selection" != "CNCLD" && -n "$selection" ]]; then
+        local display_name=$(echo "$selection" | cut -d'|' -f1 | sed 's/^[^ ]* *//')
+        local app_id=$(echo "$selection" | cut -d'|' -f2)
+        set_text_editor "$app_id" "$display_name"
+    fi
+}
+
+show_terminal_menu() {
+    local apps=$(list_terminals)
+
+    if [[ -z "$apps" ]]; then
+        notify "No Terminals Found" "Install a terminal emulator first"
+        return 1
+    fi
+
+    # Try to get current from config file
+    local current=""
+    if [[ -f "$HOME/.config/default-terminal" ]]; then
+        current=$(cat "$HOME/.config/default-terminal")
+    fi
+
+    local current_display=""
+    if [[ -n "$current" ]]; then
+        current_display=$(echo -e "$apps" | grep "|$current" | head -1)
+    fi
+
+    local selection=$(menu "  Select Terminal" "$apps" "" "$current_display")
+
+    if [[ "$selection" != "CNCLD" && -n "$selection" ]]; then
+        local display_name=$(echo "$selection" | cut -d'|' -f1 | sed 's/^[^ ]* *//')
+        local app_id=$(echo "$selection" | cut -d'|' -f2)
+        set_terminal "$app_id" "$display_name"
+    fi
+}
+
+show_pdf_viewer_menu() {
+    local apps=$(list_pdf_viewers)
+
+    if [[ -z "$apps" ]]; then
+        notify "No PDF Viewers Found" "Install a PDF viewer first"
+        return 1
+    fi
+
+    local current=$(get_current_default "application/pdf")
+    local current_display=""
+    if [[ -n "$current" ]]; then
+        current_display=$(echo -e "$apps" | grep "|$current" | head -1)
+    fi
+
+    local selection=$(menu "  Select PDF Viewer" "$apps" "" "$current_display")
+
+    if [[ "$selection" != "CNCLD" && -n "$selection" ]]; then
+        local display_name=$(echo "$selection" | cut -d'|' -f1 | sed 's/^[^ ]* *//')
+        local app_id=$(echo "$selection" | cut -d'|' -f2)
+        set_pdf_viewer "$app_id" "$display_name"
+    fi
+}
+
+# ============================================================================
+# Main Default Apps Menu
+# ============================================================================
+
+show_default_apps_menu() {
+    local selection=$(menu "  Default Applications" "  Image Viewer\n  Video Player\n󰎆  Audio Player\n󰖟  Web Browser\n󰉋  File Manager\n󱩼  Text Editor\n  Terminal\n  PDF Viewer")
+
+    case "$selection" in
+    *"Image Viewer"*) show_image_viewer_menu ;;
+    *"Video Player"*) show_video_player_menu ;;
+    *"Audio Player"*) show_audio_player_menu ;;
+    *"Web Browser"*) show_web_browser_menu ;;
+    *"File Manager"*) show_file_manager_menu ;;
+    *"Text Editor"*) show_text_editor_menu ;;
+    *"Terminal"*) show_terminal_menu ;;
+    *"PDF Viewer"*) show_pdf_viewer_menu ;;
+    *) exit 0 ;;
+    esac
+}
+
+# ============================================================================
+# Entry Point
+# ============================================================================
+
+# Run the default apps menu
+show_default_apps_menu
