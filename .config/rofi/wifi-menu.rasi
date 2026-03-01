@@ -1,7 +1,6 @@
 @import "~/.config/rofi/themes/fonts.rasi"
 @import "~/.config/rofi/themes/colors.rasi"
 
-
 * {
     background-color: transparent;
     text-color: @on-surface;
@@ -12,41 +11,37 @@ window {
     location: center;
     anchor: center;
     fullscreen: false;
-    width: 380px;
-    height: 600px;
-    border-radius: 12px;
+    width: 420px;
+    border-radius: 16px;
     background-color: @surface-container;
-    border: 2px;
+    border: 3px;
     border-color: @outline-variant;
 }
 
 mainbox {
     enabled: true;
-    spacing: 0px;
+    spacing: 1px;
     background-color: transparent;
     children: [ "inputbar", "listview" ];
 }
 
 inputbar {
     enabled: true;
-    spacing: 10px;
-    padding: 16px;
+    spacing: 12px;
+    padding: 18px;
     background-color: @surface-container-high;
     text-color: @on-surface;
-    children:   [ "textbox-prompt-colon", "entry" ];
-    border-radius: 12px 12px 0px 0px;
-}
-
-prompt {
-    enabled: false;
+    children: [ "textbox-prompt-colon", "entry" ];
+    border-radius: 16px 16px 0px 0px;
 }
 
 textbox-prompt-colon {
-    enabled:                     true;
-    expand:                      false;
-    str:                         "";
-    background-color:            transparent;
-    text-color:                  @primary;
+    enabled: true;
+    expand: false;
+    str: "󰖩";
+    background-color: transparent;
+    text-color: @primary;
+    vertical-align: 0.5;
 }
 
 entry {
@@ -57,30 +52,31 @@ entry {
     placeholder: "Search networks...";
     placeholder-color: @on-surface-variant;
     expand: true;
+    vertical-align: 0.5;
 }
 
 listview {
     enabled: true;
     columns: 1;
-    lines: 10;
+    lines: 12;
     cycle: true;
     dynamic: true;
     scrollbar: false;
     layout: vertical;
     reverse: false;
-    fixed-height: true;
+    fixed-height: false;
     fixed-columns: true;
-    spacing: 3px;
-    padding: 10px;
+    spacing: 4px;
+    padding: 12px;
     background-color: transparent;
     text-color: @on-surface;
 }
 
 element {
     enabled: true;
-    spacing: 10px;
-    padding: 12px 14px;
-    border-radius: 8px;
+    spacing: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
     background-color: transparent;
     text-color: @on-surface;
     cursor: pointer;
@@ -125,9 +121,16 @@ element-text {
     horizontal-align: 0.0;
 }
 
+scrollbar {
+    handle-width: 4px;
+    handle-color: @outline-variant;
+    border-radius: 4px;
+    background-color: @surface-container-low;
+}
+
 error-message {
-    padding: 16px;
+    padding: 18px;
     background-color: @surface-container;
     text-color: @error;
-    border-radius: 12px;
+    border-radius: 16px;
 }
