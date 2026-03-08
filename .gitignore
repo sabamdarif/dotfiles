@@ -77,3 +77,15 @@
 .local/bin/httpx
 .local/bin/matugen
 .local/bin/cloudflared
+.var/app/io.github.linx_systems.ClamUI
+.var/app/org.kde.kdenlive
+.var/app/org.remmina.Remmina
+.local/bin/alembic
+.local/bin/django-admin
+.local/bin/email_validator
+.local/bin/pylupdate6
+.local/bin/pyuic6
+.local/bin/sqlformat
+.local/bin/switch-gh-account
+.var/app/io.github.seadve.Mousai
+.config/swaync/wlsunset_temp_value
