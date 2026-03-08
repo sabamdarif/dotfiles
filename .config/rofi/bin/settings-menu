@@ -14,9 +14,13 @@ QT_CONFIG="$HOME/.config/qt5ct/qt5ct.conf"
 NIRI_CONFIG="$HOME/.config/niri/config.kdl"
 HYPRLAND_CONFIG="$HOME/.config/hypr/hyprland.conf"
 SWAY_CONFIG="$HOME/.config/sway/config"
-THEME_MENU_SCRIPT="$HOME/.config/rofi/bin/theme-changer-menu"
 IDLE_TIME_FILE="$HOME/.local/state/idle-time"
+WLSUNSET_TEMP_FILE="$HOME/.config/swaync/wlsunset_temp_value"
+NIGHT_LIGHT_SCRIPT="$HOME/.config/swaync/scripts/toggle_night_light.sh"
 IDLE_SCRIPT="$HOME/.config/niri/scripts/idle.sh"
+
+# sub files
+THEME_MENU_SCRIPT="$HOME/.config/rofi/bin/theme-changer-menu"
 DEFAULT_APPS_MENU_SCRIPT="$HOME/.config/rofi/bin/set-default-app-menu"
 
 back_to() {
@@ -406,6 +410,82 @@ show_idle_menu() {
 }
 
 # ============================================================================
+# Night Light Temperature Functions
+# ============================================================================
+
+get_current_night_light_temp() {
+    if [[ -f "$WLSUNSET_TEMP_FILE" ]]; then
+        cat "$WLSUNSET_TEMP_FILE"
+    else
+        echo "4500"
+    fi
+}
+
+set_night_light_temp() {
+    local temp="$1"
+    local state_file="$HOME/.local/state/wlsunset-enabled"
+
+    if [[ -z "$temp" ]]; then
+        notify "Error" "No temperature selected"
+        return 1
+    fi
+
+    # Save temp value
+    mkdir -p "$(dirname "$WLSUNSET_TEMP_FILE")"
+    echo "$temp" > "$WLSUNSET_TEMP_FILE"
+
+    # If night light is active (state file exists), restart with new temp
+    if [[ -f "$state_file" ]]; then
+        pkill -x wlsunset 2>/dev/null
+        # The loop in toggle_night_light.sh will pick up the new temp on next restart
+        # But we need to restart it fresh with the new value — relaunch the loop
+        sleep 0.3
+        (
+            while [[ -f "$state_file" ]]; do
+                wlsunset -T $((temp + 1)) -t "$temp" 2>/dev/null
+                [[ -f "$state_file" ]] && sleep 2
+            done
+        ) &
+        disown
+        notify "Night Light" "Temperature set to ${temp}K"
+    else
+        notify "Night Light" "Temperature saved: ${temp}K (night light is off)"
+    fi
+}
+
+show_night_light_temp_menu() {
+    local current_temp=$(get_current_night_light_temp)
+    local options="2700K  ── Candlelight\n3000K  ── Warm White\n3500K  ── Warm Neutral\n4000K  ── Neutral White\n4500K  ── Cool Neutral\n5000K  ── Daylight\n5500K  ── Bright Daylight\n6000K  ── Cool Daylight\n6500K  ── Standard (Off)"
+
+    # Build preselect string matching current temp
+    local preselect
+    case "$current_temp" in
+        2700) preselect="2700K  ── Candlelight" ;;
+        3000) preselect="3000K  ── Warm White" ;;
+        3500) preselect="3500K  ── Warm Neutral" ;;
+        4000) preselect="4000K  ── Neutral White" ;;
+        4500) preselect="4500K  ── Cool Neutral" ;;
+        5000) preselect="5000K  ── Daylight" ;;
+        5500) preselect="5500K  ── Bright Daylight" ;;
+        6000) preselect="6000K  ── Cool Daylight" ;;
+        6500) preselect="6500K  ── Standard (Off)" ;;
+        *) preselect="" ;;
+    esac
+
+    local selected=$(menu "󰛨  Night Light Temp" "$options" "" "$preselect")
+
+    if [[ "$selected" != "CNCLD" && -n "$selected" ]]; then
+        local temp_value
+        temp_value=$(echo "$selected" | grep -oP '^\d+')
+        if [[ -n "$temp_value" ]]; then
+            set_night_light_temp "$temp_value"
+        fi
+    fi
+
+    back_to show_main_menu
+}
+
+# ============================================================================
 # Capture Management Functions
 # ============================================================================
 
@@ -746,12 +826,13 @@ show_about_menu() {
     back_to show_main_menu
 }
 
+
 # ============================================================================
 # Main Menu
 # ============================================================================
 
 show_main_menu() {
-    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰏋  Default Apps\n󰠱  Icons\n󰥔  Idle Timeout\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
+    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰏋  Default Apps\n󰠱  Icons\n󰥔  Idle Timeout\n󰛨  Night Light Temp\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
 
     case "$selection" in
     *Font*) show_font_menu ;;
@@ -759,6 +840,7 @@ show_main_menu() {
     *Icons*) show_icon_menu ;;
     *"Default Apps"*) show_default_apps_menu ;;
     *"Idle Timeout"*) show_idle_menu ;;
+    *"Night Light"*) show_night_light_temp_menu ;;
     *Capture*) show_capture_menu ;;
     *Reload*) show_update_menu ;;
     *Keybindings*) show_keybindings_menu ;;
@@ -777,7 +859,8 @@ go_to_menu() {
     *theme*) show_theme_menu ;;
     *icon*) show_icon_menu ;;
     *"default"* | *"apps"*) show_default_apps_menu ;;
-    *"Idle Timeout"*) show_idle_menu ;;
+    *"idle"* | *"timeout"*) show_idle_menu ;;
+    *"night"* | *"light"* | *"temp"*) show_night_light_temp_menu ;;
     *capture*) show_capture_menu ;;
     *refresh*) show_update_menu ;;
     *keybind*) show_keybindings_menu ;;
