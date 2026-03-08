@@ -35,6 +35,7 @@ window-rule {
     match app-id="org.kde.kdeconnect"
     match app-id="kdeconnect"
     match app-id="^kdeconnect.*"
+    match app-id="nz.co.mega.megasync"
     open-floating true
 }
 
