@@ -1,0 +1,561 @@
+#!/usr/bin/env bash
+
+ROFI_THEME="$HOME/.config/rofi/bluetooth-menu.rasi"
+LOG_FILE="$HOME/.cache/bluetooth-manager.log"
+SCAN_TIMEOUT=4
+
+log() {
+    local level="$1"
+    shift
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $*" >>"$LOG_FILE"
+}
+
+mkdir -p "$(dirname "$LOG_FILE")"
+
+# ── clear old log on each run for easy reading ──
+echo "" >"$LOG_FILE"
+log "INFO" "==================== Bluetooth Manager Started ===================="
+log "INFO" "BlueZ version: $(bluetoothctl --version 2>&1)"
+log "INFO" "bluetoothctl path: $(which bluetoothctl 2>&1)"
+
+# ── dump raw controller info ──
+log "DEBUG" "--- bluetoothctl show ---"
+bluetoothctl show 2>&1 | while IFS= read -r line; do
+    log "DEBUG" "  show: $line"
+done
+
+log "DEBUG" "--- bluetoothctl list ---"
+bluetoothctl list 2>&1 | while IFS= read -r line; do
+    log "DEBUG" "  list: $line"
+done
+
+if ! command -v bluetoothctl &>/dev/null; then
+    log "ERROR" "bluetoothctl not found"
+    notify-send -a "Bluetooth Manager" -i "dialog-error" "Error" "bluetoothctl not found"
+    exit 1
+fi
+
+# ─── Adapter ────────────────────────────────────────────────
+
+is_bluetooth_enabled() {
+    local show_output
+    show_output=$(bluetoothctl show 2>&1)
+    local exit_code=$?
+    log "DEBUG" "is_bluetooth_enabled: exit_code=$exit_code"
+    log "DEBUG" "is_bluetooth_enabled: raw output:"
+    while IFS= read -r line; do
+        log "DEBUG" "  |$line|"
+    done <<<"$show_output"
+
+    local powered_line
+    powered_line=$(echo "$show_output" | grep -i "powered")
+    log "DEBUG" "is_bluetooth_enabled: powered_line=|$powered_line|"
+
+    if echo "$show_output" | grep -qi "Powered: yes"; then
+        log "DEBUG" "is_bluetooth_enabled: result=YES (enabled)"
+        return 0
+    else
+        log "DEBUG" "is_bluetooth_enabled: result=NO (disabled)"
+        return 1
+    fi
+}
+
+toggle_bluetooth() {
+    if is_bluetooth_enabled; then
+        log "INFO" "Disabling Bluetooth"
+        bluetoothctl power off >/dev/null 2>&1
+        notify-send -a "Bluetooth Manager" -i "bluetooth-disabled" \
+            "Bluetooth Disabled" "Bluetooth has been turned off"
+        echo "false"
+    else
+        log "INFO" "Enabling Bluetooth"
+        notify-send -a "Bluetooth Manager" -i "bluetooth-active" \
+            "Enabling Bluetooth" "Searching for devices..."
+        bluetoothctl power on >/dev/null 2>&1
+        sleep 1
+        notify-send -a "Bluetooth Manager" -i "bluetooth-active" \
+            "Bluetooth Enabled" "Ready to connect"
+        echo "true"
+    fi
+}
+
+# ─── Helpers ────────────────────────────────────────────────
+
+send_notification() {
+    notify-send -a "Bluetooth Manager" -i "bluetooth-active" "$1" "$2"
+}
+
+show_rofi() {
+    local prompt="$1"
+    shift
+    if [[ -f "$ROFI_THEME" ]]; then
+        rofi -dmenu -i -p "$prompt" -markup-rows -theme "$ROFI_THEME" "$@"
+    else
+        rofi -dmenu -i -p "$prompt" -markup-rows "$@"
+    fi
+}
+
+scan_devices() {
+    log "INFO" "Starting scan for $SCAN_TIMEOUT seconds"
+    local scan_output
+    scan_output=$(
+        (
+            echo "scan on"
+            agent on
+            default-agent
+            sleep "$SCAN_TIMEOUT"
+            echo "scan off"
+            echo "quit"
+        ) | bluetoothctl 2>&1
+    )
+    log "DEBUG" "Scan output:"
+    while IFS= read -r line; do
+        log "DEBUG" "  scan: $line"
+    done <<<"$scan_output"
+    log "INFO" "Scan complete"
+}
+
+# ─── Device queries ─────────────────────────────────────────
+
+get_device_icon() {
+    local mac="$1"
+    local icon_type
+    icon_type=$(bluetoothctl info "$mac" 2>/dev/null | grep "Icon:" | awk '{print $2}')
+
+    case "$icon_type" in
+    audio-headphones | audio-headset) echo "󰋋" ;;
+    audio-card | audio-speakers) echo "󰓃" ;;
+    input-keyboard) echo "󰌌" ;;
+    input-mouse) echo "󰍽" ;;
+    input-gaming) echo "󰊗" ;;
+    input-tablet) echo "󰓶" ;;
+    phone) echo "󰏲" ;;
+    computer) echo "󰍹" ;;
+    camera*) echo "󰄀" ;;
+    printer) echo "󰐪" ;;
+    *) echo "󰂯" ;;
+    esac
+}
+
+is_device_connected() {
+    bluetoothctl info "$1" 2>/dev/null | grep -q "Connected: yes"
+}
+
+is_device_paired() {
+    bluetoothctl info "$1" 2>/dev/null | grep -q "Paired: yes"
+}
+
+is_device_trusted() {
+    bluetoothctl info "$1" 2>/dev/null | grep -q "Trusted: yes"
+}
+
+get_device_battery() {
+    local mac="$1"
+    local battery
+    battery=$(bluetoothctl info "$mac" 2>/dev/null |
+        grep "Battery Percentage" |
+        grep -oP '0x[0-9a-fA-F]+' | head -1)
+    if [[ -n "$battery" ]]; then
+        printf "%d" "$battery" 2>/dev/null
+    else
+        echo ""
+    fi
+}
+
+get_paired_devices() {
+    local output
+    output=$(bluetoothctl devices Paired 2>&1)
+    log "DEBUG" "get_paired_devices raw:"
+    while IFS= read -r line; do
+        log "DEBUG" "  paired: |$line|"
+    done <<<"$output"
+    echo "$output" | grep "^Device " | sed 's/^Device //'
+}
+
+get_all_devices() {
+    local output
+    output=$(bluetoothctl devices 2>&1)
+    log "DEBUG" "get_all_devices raw:"
+    while IFS= read -r line; do
+        log "DEBUG" "  all: |$line|"
+    done <<<"$output"
+    echo "$output" | grep "^Device " | sed 's/^Device //'
+}
+
+# ─── Actions ────────────────────────────────────────────────
+
+connect_device() {
+    local mac="$1"
+    local name="$2"
+
+    log "INFO" "Connecting to: $name ($mac)"
+    send_notification "Connecting..." "Attempting to connect to $name"
+
+    if ! is_device_trusted "$mac"; then
+        log "INFO" "Trusting $name"
+        bluetoothctl trust "$mac" >/dev/null 2>&1
+    fi
+
+    if ! is_device_paired "$mac"; then
+        log "INFO" "Pairing with $name"
+        local pair_output
+        pair_output=$(bluetoothctl pair "$mac" 2>&1)
+        if [[ $? -ne 0 ]]; then
+            log "ERROR" "Pairing failed: $pair_output"
+            send_notification "Pairing Failed" "Could not pair with $name"
+            return 1
+        fi
+        sleep 2
+    fi
+
+    local output
+    output=$(bluetoothctl connect "$mac" 2>&1)
+    log "DEBUG" "connect output: $output"
+
+    if echo "$output" | grep -q "Connection successful"; then
+        log "INFO" "Connected to $name"
+        send_notification "Connected" "Connected to $name"
+        return 0
+    else
+        log "ERROR" "Connection failed: $output"
+        send_notification "Connection Failed" "Could not connect to $name"
+        return 1
+    fi
+}
+
+disconnect_device() {
+    local mac="$1"
+    local name="$2"
+
+    log "INFO" "Disconnecting: $name ($mac)"
+
+    local output
+    output=$(bluetoothctl disconnect "$mac" 2>&1)
+    log "DEBUG" "disconnect output: $output"
+
+    if echo "$output" | grep -q "Successful"; then
+        log "INFO" "Disconnected from $name"
+        send_notification "Disconnected" "Disconnected from $name"
+        return 0
+    else
+        log "ERROR" "Disconnect failed: $output"
+        send_notification "Disconnect Failed" "Could not disconnect from $name"
+        return 1
+    fi
+}
+
+remove_device() {
+    local mac="$1"
+    local name="$2"
+
+    log "INFO" "Removing: $name ($mac)"
+
+    if bluetoothctl remove "$mac" >/dev/null 2>&1; then
+        log "INFO" "Removed $name"
+        send_notification "Removed" "Forgot device $name"
+        return 0
+    fi
+    log "ERROR" "Failed to remove: $name"
+    return 1
+}
+
+# ─── Submenus ───────────────────────────────────────────────
+
+device_action_menu() {
+    local mac="$1"
+    local name="$2"
+    local connected="$3"
+
+    local opts=""
+    if [[ "$connected" == "true" ]]; then
+        opts="  Disconnect\n"
+    else
+        opts="  Connect\n"
+    fi
+
+    local trusted="false"
+    is_device_trusted "$mac" && trusted="true"
+
+    if [[ "$trusted" == "true" ]]; then
+        opts="${opts}  Untrust\n"
+    else
+        opts="${opts}  Trust\n"
+    fi
+
+    opts="${opts}  Remove Device\n"
+    opts="${opts}󰌑 Back"
+
+    local sel
+    sel=$(printf '%b' "$opts" | show_rofi "$name")
+
+    [[ -z "$sel" ]] && return
+
+    log "INFO" "Device action selection: $sel"
+
+    case "$sel" in
+    *"Connect"*)
+        connect_device "$mac" "$name"
+        ;;
+    *"Disconnect"*)
+        disconnect_device "$mac" "$name"
+        ;;
+    *"Untrust"*)
+        bluetoothctl untrust "$mac" >/dev/null 2>&1
+        send_notification "Untrusted" "$name is no longer trusted"
+        ;;
+    *"Trust"*)
+        bluetoothctl trust "$mac" >/dev/null 2>&1
+        send_notification "Trusted" "$name is now trusted"
+        ;;
+    *"Remove"*)
+        local confirm
+        confirm=$(printf '%b' "✓ Yes, remove\n✗ Cancel" | show_rofi "Remove $name?")
+        [[ "$confirm" == *"Yes"* ]] && remove_device "$mac" "$name"
+        ;;
+    *"Back"*)
+        main_menu
+        return
+        ;;
+    esac
+}
+
+manage_paired_devices() {
+    local paired
+    paired=$(get_paired_devices)
+    log "DEBUG" "manage_paired_devices: paired=|$paired|"
+
+    if [[ -z "$paired" ]]; then
+        send_notification "No Devices" "No paired devices found"
+        main_menu
+        return
+    fi
+
+    local menu=""
+    declare -a device_entries=()
+
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local mac="${line%% *}"
+        local name="${line#* }"
+        [[ -z "$mac" || "$mac" == "$name" ]] && continue
+
+        local icon
+        icon=$(get_device_icon "$mac")
+        local status=""
+
+        is_device_connected "$mac" && status=" ✓"
+
+        local display="${icon}  ${name}${status}"
+        device_entries+=("${mac}|${name}|${display}")
+        menu="${menu}${display}\n"
+    done <<<"$paired"
+
+    menu="${menu}󰌑 Back"
+
+    local sel
+    sel=$(printf '%b' "$menu" | show_rofi "Paired")
+
+    [[ -z "$sel" ]] && return
+
+    if [[ "$sel" == *"Back"* ]]; then
+        main_menu
+        return
+    fi
+
+    for entry in "${device_entries[@]}"; do
+        IFS='|' read -r d_mac d_name d_display <<<"$entry"
+        if [[ "$d_display" == "$sel" ]]; then
+            local connected="false"
+            is_device_connected "$d_mac" && connected="true"
+            device_action_menu "$d_mac" "$d_name" "$connected"
+            manage_paired_devices
+            return
+        fi
+    done
+}
+
+# ─── Main ───────────────────────────────────────────────────
+
+main_menu() {
+    log "INFO" "========== Opening main menu =========="
+
+    log "DEBUG" "Checking if bluetooth is enabled..."
+    if ! is_bluetooth_enabled; then
+        log "INFO" "Bluetooth appears DISABLED — showing enable prompt"
+        local sel
+        sel=$(echo "󰂯 Enable Bluetooth" | show_rofi "Bluetooth Off")
+
+        if [[ "$sel" == *"Enable"* ]]; then
+            toggle_bluetooth >/dev/null
+            sleep 1
+            main_menu
+        fi
+        return
+    fi
+
+    log "INFO" "Bluetooth is ENABLED — proceeding to scan"
+
+    # synchronous scan
+    scan_devices
+
+    log "DEBUG" "Gathering paired devices..."
+    local paired_raw
+    paired_raw=$(get_paired_devices)
+    log "DEBUG" "Paired devices result: |$paired_raw|"
+
+    declare -A paired_set
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local mac="${line%% *}"
+        paired_set[$mac]=1
+        log "DEBUG" "Paired set: $mac"
+    done <<<"$paired_raw"
+
+    log "DEBUG" "Gathering all devices..."
+    local all_devices
+    all_devices=$(get_all_devices)
+    log "DEBUG" "All devices result: |$all_devices|"
+
+    declare -A seen
+    declare -a device_data=()
+
+    # ── connected devices first ──
+    log "DEBUG" "--- Processing connected devices ---"
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local mac="${line%% *}"
+        local name="${line#* }"
+        [[ -z "$mac" || "$mac" == "$name" ]] && continue
+        [[ -n "${seen[$mac]}" ]] && continue
+
+        log "DEBUG" "Checking connected: $mac $name"
+        if is_device_connected "$mac"; then
+            seen[$mac]=1
+            local icon
+            icon=$(get_device_icon "$mac")
+
+            local bat
+            bat=$(get_device_battery "$mac")
+            local bat_str=""
+            [[ -n "$bat" ]] && bat_str="  ${bat}%"
+
+            local display="✓ ${icon}  ${name}${bat_str}"
+            device_data+=("${mac}|${name}|true|true|${display}")
+            log "DEBUG" "  CONNECTED: $display"
+        fi
+    done <<<"$all_devices"
+
+    # ── paired but not connected ──
+    log "DEBUG" "--- Processing paired devices ---"
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local mac="${line%% *}"
+        local name="${line#* }"
+        [[ -z "$mac" || "$mac" == "$name" ]] && continue
+        [[ -n "${seen[$mac]}" ]] && continue
+        seen[$mac]=1
+
+        local icon
+        icon=$(get_device_icon "$mac")
+        local display="★ ${icon}  ${name}"
+        device_data+=("${mac}|${name}|false|true|${display}")
+        log "DEBUG" "  PAIRED: $display"
+    done <<<"$paired_raw"
+
+    # ── discovered but not paired ──
+    log "DEBUG" "--- Processing discovered devices ---"
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local mac="${line%% *}"
+        local name="${line#* }"
+        [[ -z "$mac" || "$mac" == "$name" ]] && continue
+        [[ -n "${seen[$mac]}" ]] && continue
+        [[ "$name" =~ ^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$ ]] && continue
+        seen[$mac]=1
+
+        local icon
+        icon=$(get_device_icon "$mac")
+        local display="${icon}  ${name}"
+        device_data+=("${mac}|${name}|false|false|${display}")
+        log "DEBUG" "  DISCOVERED: $display"
+    done <<<"$all_devices"
+
+    log "DEBUG" "Total devices in menu: ${#device_data[@]}"
+
+    # ── build menu (no trailing \n) ──
+    local menu=""
+    menu="  Paired Devices\n"
+    menu="${menu}  Rescan\n"
+    menu="${menu}󰂲 Disable Bluetooth"
+
+    for entry in "${device_data[@]}"; do
+        local display="${entry##*|}"
+        menu="${menu}\n${display}"
+    done
+
+    log "DEBUG" "Final menu:"
+    printf '%b' "$menu" | while IFS= read -r line; do
+        log "DEBUG" "  menu: |$line|"
+    done
+
+    local sel
+    sel=$(printf '%b' "$menu" | show_rofi "Bluetooth")
+
+    [[ -z "$sel" ]] && {
+        log "INFO" "No selection made"
+        return
+    }
+
+    log "INFO" "Selection: |$sel|"
+
+    case "$sel" in
+    *"Paired Devices"*)
+        manage_paired_devices
+        ;;
+    *"Rescan"*)
+        send_notification "Scanning" "Searching for nearby devices..."
+        main_menu
+        ;;
+    *"Disable Bluetooth"*)
+        toggle_bluetooth >/dev/null
+        ;;
+    *)
+        for entry in "${device_data[@]}"; do
+            IFS='|' read -r d_mac d_name d_conn d_paired d_display <<<"$entry"
+
+            if [[ "$d_display" == "$sel" ]]; then
+                log "INFO" "Device: $d_name ($d_mac) connected=$d_conn paired=$d_paired"
+
+                if [[ "$d_conn" == "true" ]]; then
+                    device_action_menu "$d_mac" "$d_name" "true"
+                    main_menu
+                else
+                    connect_device "$d_mac" "$d_name"
+                fi
+                break
+            fi
+        done
+        ;;
+    esac
+}
+
+# ─── CLI entry point ────────────────────────────────────────
+
+case "${1:-}" in
+--toggle) toggle_bluetooth ;;
+--status) is_bluetooth_enabled && echo "true" || echo "false" ;;
+--enable)
+    bluetoothctl power on >/dev/null 2>&1
+    send_notification "Bluetooth Enabled" "Bluetooth turned on"
+    ;;
+--disable)
+    bluetoothctl power off >/dev/null 2>&1
+    send_notification "Bluetooth Disabled" "Bluetooth turned off"
+    ;;
+--help | -h)
+    echo "Usage: $0 [--toggle|--status|--enable|--disable]"
+    ;;
+*) main_menu ;;
+esac
+
+log "INFO" "==================== Bluetooth Manager Exited ===================="
