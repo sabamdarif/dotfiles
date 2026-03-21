@@ -8,10 +8,11 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-VERSION = "1.1"
+VERSION = "1.2"
 
 CONFIG_DIR = Path.home() / ".config" / "sysconfig"
-PACKAGES_CONFIG = CONFIG_DIR / "packages.conf"
+
+# Config paths that don't depend on distro
 FLATPAKS_CONFIG = CONFIG_DIR / "flatpaks.conf"
 EXTENSIONS_CONFIG = CONFIG_DIR / "gnome-extensions.conf"
 REPOS_CONFIG = CONFIG_DIR / "repos.conf"
@@ -25,7 +26,7 @@ CONTAINERS_CONFIG = CONFIG_DIR / "containers.conf"
 CUSTOM_COMMANDS_CONFIG = CONFIG_DIR / "custom-commands.sh"
 DCONF_BACKUP = CONFIG_DIR / "dconf-settings.ini"
 
-# fetch whch distro i am using
+# fetch which distro i am using
 os_release_path = Path("/") / "etc" / "os-release"
 if os_release_path.exists():
     os_release = subprocess.run(
@@ -38,17 +39,67 @@ else:
     print(f"[ERROR]: {os_release_path} doesn't exists")
     sys.exit(1)
 
-# set which packahe manager to use
+# set which package manager to use
 PKG_MANAGERS = {
     "fedora": "dnf",
     "ubuntu": "apt",
     "debian": "apt",
+    "arch": "pacman",
+    "manjaro": "pacman",
+    "endeavouros": "pacman",
+    "garuda": "pacman",
+    "artix": "pacman",
+    "arcolinux": "pacman",
+    "cachyos": "pacman",
+}
+
+# map distro IDs to family names for distro-specific config files
+DISTRO_FAMILIES = {
+    "fedora": "fedora",
+    "ubuntu": "ubuntu",
+    "debian": "debian",
+    "arch": "arch",
+    "manjaro": "arch",
+    "endeavouros": "arch",
+    "garuda": "arch",
+    "artix": "arch",
+    "arcolinux": "arch",
+    "cachyos": "arch",
 }
 
 PKG_MANAGER = PKG_MANAGERS.get(DISTRO, "unknown")
+DISTRO_FAMILY = DISTRO_FAMILIES.get(DISTRO, DISTRO)
 
+# fallback: check ID_LIKE from os-release
 if PKG_MANAGER == "unknown":
-    sys.exit(f"Unsupported distro: {DISTRO}")
+    id_like_result = subprocess.run(
+        ["bash", "-c", "source /etc/os-release && echo $ID_LIKE"],
+        capture_output=True,
+        text=True,
+    )
+    id_like = id_like_result.stdout.strip()
+    for like_id in id_like.split():
+        if like_id in PKG_MANAGERS:
+            PKG_MANAGER = PKG_MANAGERS[like_id]
+            DISTRO_FAMILY = DISTRO_FAMILIES.get(like_id, like_id)
+            break
+
+# fallback: detect by checking which binary exists
+if PKG_MANAGER == "unknown":
+    if shutil.which("pacman"):
+        PKG_MANAGER = "pacman"
+        DISTRO_FAMILY = "arch"
+    elif shutil.which("dnf"):
+        PKG_MANAGER = "dnf"
+        DISTRO_FAMILY = "fedora"
+    elif shutil.which("apt"):
+        PKG_MANAGER = "apt"
+        DISTRO_FAMILY = "debian"
+    else:
+        sys.exit(f"Unsupported distro: {DISTRO}")
+
+# distro-specific packages config
+PACKAGES_CONFIG = CONFIG_DIR / f"{DISTRO_FAMILY}-packages.conf"
 
 # fetch which desktop environment i am using
 desktop = os.environ.get("XDG_CURRENT_DESKTOP")
@@ -62,13 +113,15 @@ DESKTOP = desktop.lower()
 def init_config():
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     config_files = {
-        PACKAGES_CONFIG: """# System packages to install (one per line)
+        PACKAGES_CONFIG: f"""# System packages to install via {PKG_MANAGER} (one per line)
+# Config file: {PACKAGES_CONFIG.name}
+# Distro family: {DISTRO_FAMILY}
 # Lines starting with # are comments
 # Example:
 # vim
 # git
 # htop
-            """,
+""",
         FLATPAKS_CONFIG: """# Flatpak applications to install (one per line)
 # Use full application ID
 # Example:
@@ -121,7 +174,7 @@ def init_config():
 #   port:PORT/PROTOCOL
 #   zone:ZONE_NAME
 #
-# For ufw (Ubuntu/Debian):
+# For ufw (Ubuntu/Debian/Arch):
 #   allow:PORT/PROTOCOL
 #   deny:PORT/PROTOCOL
 #   rule:RULE_TEXT
@@ -222,6 +275,7 @@ def init_config():
         CUSTOM_COMMANDS_CONFIG.chmod(0o755)
 
     print(f"Configuration initialized at {CONFIG_DIR}")
+    print(f"Packages config: {PACKAGES_CONFIG.name} (distro family: {DISTRO_FAMILY})")
 
 
 def read_config(config_file):
@@ -248,7 +302,7 @@ def read_config(config_file):
 
 def list_installed_packages():
     try:
-        if PKG_MANAGER == "dnf":  # Fixed: was PKG_MANAGERS
+        if PKG_MANAGER == "dnf":
             result = subprocess.run(
                 ["rpm", "-qa", "--queryformat", "%{NAME}\n"],
                 capture_output=True,
@@ -258,9 +312,19 @@ def list_installed_packages():
             packages = result.stdout.strip().split("\n")
             packages = sorted(set(pkg for pkg in packages if pkg))
             return packages
-        elif PKG_MANAGER == "apt":  # Fixed: was PKG_MANAGERS
+        elif PKG_MANAGER == "apt":
             result = subprocess.run(
                 ["dpkg-query", "-W", "-f=${Package}\n"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            packages = result.stdout.strip().split("\n")
+            packages = sorted(set(pkg for pkg in packages if pkg))
+            return packages
+        elif PKG_MANAGER == "pacman":
+            result = subprocess.run(
+                ["pacman", "-Qq"],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -313,8 +377,8 @@ def list_installed_extensions():
 
 
 def list_enabled_repos():
-    if DISTRO != "fedora":
-        print("Repository backup only supported on Fedora", file=sys.stderr)
+    if DISTRO_FAMILY not in ["fedora"]:
+        print("Repository backup only supported on Fedora currently", file=sys.stderr)
         return []
 
     repos = []
@@ -526,7 +590,6 @@ def backup_firewall():
                 temp_file.write(f"zone:{default_zone}\n")
 
             except Exception:
-                # If there's any error, use "public" as default
                 temp_file.write("zone:public\n")
 
             try:
@@ -537,18 +600,15 @@ def backup_firewall():
                     check=False,
                 )
                 if result.returncode == 0:
-                    # Split the output by spaces to get individual services
                     services = result.stdout.strip().split()
-                    # Write each service on its own line
                     for svc in services:
-                        if svc:  # Only write non-empty services
+                        if svc:
                             temp_file.write(f"service:{svc}\n")
             except Exception as e:
                 print(
                     f"Warning: Could not list firewall services: {e}", file=sys.stderr
                 )
 
-            # List all ports in the firewall
             try:
                 result = subprocess.run(
                     ["firewall-cmd", "--list-ports"],
@@ -576,10 +636,7 @@ def backup_firewall():
                 )
                 if result.returncode == 0:
                     for line in result.stdout.split("\n"):
-                        # Example: "[ 1] 22/tcp    ALLOW IN    Anywhere"
                         if line.strip().startswith("["):
-                            # Remove the number part [1], [2], etc.
-                            # Find the ] bracket and take everything after it
                             if "]" in line:
                                 rule = line.split("]", 1)[1].strip()
                                 if rule:
@@ -587,18 +644,24 @@ def backup_firewall():
             except Exception as e:
                 print(f"Warning: Could not get ufw status: {e}", file=sys.stderr)
 
+        elif shutil.which("iptables") is not None:
+            temp_file.write("# Detected: iptables (manual configuration required)\n")
+            temp_file.write("# Note: iptables rules are not automatically backed up\n")
+            temp_file.write(
+                "# Use 'iptables-save' to export and 'iptables-restore' to import\n"
+            )
+
         else:
-            # No supported firewall found
             temp_file.write("# No supported firewall found\n")
 
     shutil.move(temp_file_path, FIREWALL_CONFIG)
-    print("[INFO]: Firewall config backed up to {FIREWALL_CONFIG}")
+    print(f"[INFO]: Firewall config backed up to {FIREWALL_CONFIG}")
 
 
 def backup_repos():
-    if DISTRO != "fedora":
-        print("[ERROR]: Repository backup only supported on Fedora")
-        sys.exit(1)
+    if DISTRO_FAMILY != "fedora":
+        print("[INFO]: Repository backup only supported on Fedora currently")
+        return
 
     print("[INFO]: Backing up repository configuration...")
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_repos:
@@ -624,16 +687,10 @@ def backup_repos():
 
 
 def install_repo(repo_line):
-    # Split the line into type and identifier
-    # Example: "copr:phracek/PyCharm" becomes type="copr", id="phracek/PyCharm"
-    # In bash this is done with: ${repo_line%%:*} and ${repo_line#*:}
     if ":" not in repo_line:
         print(f"  Invalid repository format: {repo_line}")
         return
 
-    # Split at the first colon
-    # split(':', 1) means "split only at the first colon"
-    # This handles cases where the identifier might contain colons
     repo_type, repo_id = repo_line.split(":", 1)
 
     if repo_type == "copr":
@@ -701,8 +758,8 @@ def install_repo(repo_line):
 
 
 def install_repos():
-    if DISTRO != "fedora":
-        print("Repository installation only supported on Fedora")
+    if DISTRO_FAMILY != "fedora":
+        print("Repository installation only supported on Fedora currently")
         return
 
     repos = read_config(REPOS_CONFIG)
@@ -720,7 +777,6 @@ def install_repos():
 def configure_services():
     services = read_config(SERVICES_CONFIG)
 
-    # Check if there are any services to configure
     if not services:
         print("[INFO]: No services to configure")
         return
@@ -728,14 +784,8 @@ def configure_services():
     print("[INFO]: Configuring services...")
 
     for service_line in services:
-        # Parse the service configuration
-        # Format: SERVICE_NAME:TYPE:STATE
-        # Example: "docker.service:system:enabled"
-
-        # Split by colon - in bash this is: IFS=: read -r service_name service_type service_state
         parts = service_line.split(":")
 
-        # Make sure we have exactly 3 parts (name, type, state)
         if len(parts) != 3:
             print(f"  Skipping invalid service line: {service_line}")
             continue
@@ -1165,6 +1215,9 @@ def system_update():
                 subprocess.run(["sudo", "apt", "update"], check=True)
                 subprocess.run(["sudo", "apt", "upgrade", "-y"], check=True)
 
+            case "pacman":
+                subprocess.run(["sudo", "pacman", "-Syu", "--noconfirm"], check=True)
+
             case _:
                 print("[ERROR]: Unsupported package manager for updates")
                 return False
@@ -1177,21 +1230,28 @@ def system_update():
         return False
 
 
+def _get_preview_cmd(installed_only=True):
+    """Return the appropriate preview command for the current package manager"""
+    if PKG_MANAGER == "dnf":
+        if installed_only:
+            return "rpm -qi {} 2>/dev/null || echo 'Package info not available'"
+        else:
+            return "rpm -qi {} 2>/dev/null || dnf info --quiet --cacheonly {} 2>/dev/null || dnf info --quiet {} 2>/dev/null || echo 'Package info not available'"
+    elif PKG_MANAGER == "apt":
+        if installed_only:
+            return "dpkg -s {} 2>/dev/null || echo 'Package info not available'"
+        else:
+            return "dpkg -s {} 2>/dev/null || apt-cache show {} 2>/dev/null || echo 'Package info not available'"
+    elif PKG_MANAGER == "pacman":
+        if installed_only:
+            return "pacman -Qi {} 2>/dev/null || echo 'Package info not available'"
+        else:
+            return "pacman -Qi {} 2>/dev/null || pacman -Si {} 2>/dev/null || echo 'Package info not available'"
+    return "echo {}"
+
+
 def interactive_package_select(config_file, list_function, title, installed_only=True):
-    """Interactive package selection with detailed preview panel
-
-    Args:
-        config_file: Configuration file to add packages to
-        list_function: Function that returns list of packages
-        title: Title for the selection prompt
-        installed_only: If True, only show installed packages (fast)
-                       If False, show all available packages (slower)
-
-    For system packages:
-    - List installed: Uses direct SQLite query (fastest)
-    - List available: Uses dnf list/apt-cache (slower, queries repos)
-    - Details: Smart detection - uses rpm/dpkg for installed, dnf/apt for available
-    """
+    """Interactive package selection with detailed preview panel"""
     if shutil.which("fzf") is None:
         print("fzf is not installed. Please install it first.")
         return False
@@ -1203,7 +1263,6 @@ def interactive_package_select(config_file, list_function, title, installed_only
     start_time = time.time()
 
     try:
-        # Call the function to get the list
         all_items = list_function()
 
         elapsed = time.time() - start_time
@@ -1231,30 +1290,11 @@ def interactive_package_select(config_file, list_function, title, installed_only
 
     filtered_text = "\n".join(filtered_items)
 
-    # Determine if we should show package details
-    # Only show details for system packages, not for flatpaks, extensions, etc.
     show_details = config_file == PACKAGES_CONFIG
 
     try:
-        if show_details and PKG_MANAGER in ["dnf", "apt"]:
-            # Create a wrapper script that intelligently queries package info
-            # Tries installed packages first (fast), then repositories if needed
-            if PKG_MANAGER == "dnf":
-                if installed_only:
-                    preview_cmd = (
-                        "rpm -qi {} 2>/dev/null || echo 'Package info not available'"
-                    )
-                else:
-                    # Try installed first, then repo
-                    preview_cmd = "rpm -qi {} 2>/dev/null || dnf info --quiet --cacheonly {} 2>/dev/null || dnf info --quiet {} 2>/dev/null || echo 'Package info not available'"
-            elif PKG_MANAGER == "apt":
-                if installed_only:
-                    preview_cmd = (
-                        "dpkg -s {} 2>/dev/null || echo 'Package info not available'"
-                    )
-                else:
-                    # Try installed first, then repo
-                    preview_cmd = "dpkg -s {} 2>/dev/null || apt-cache show {} 2>/dev/null || echo 'Package info not available'"
+        if show_details and PKG_MANAGER in ["dnf", "apt", "pacman"]:
+            preview_cmd = _get_preview_cmd(installed_only)
 
             result = subprocess.run(
                 [
@@ -1276,7 +1316,6 @@ def interactive_package_select(config_file, list_function, title, installed_only
                 check=True,
             )
         else:
-            # Original simple preview for non-package items
             result = subprocess.run(
                 [
                     "fzf",
@@ -1324,16 +1363,11 @@ def interactive_remove_from_config(config_file, title):
         return
 
     items_text = "\n".join(current_items)
-    # Determine if we should show package details
     show_details = config_file == PACKAGES_CONFIG
 
     try:
-        if show_details and PKG_MANAGER in ["dnf", "apt"]:
-            # Create preview command for package details
-            if PKG_MANAGER == "dnf":
-                preview_cmd = "rpm -qi {} 2>/dev/null || dnf info --quiet --cacheonly {} 2>/dev/null || dnf info --quiet {} 2>/dev/null || echo 'Package info not available'"
-            elif PKG_MANAGER == "apt":
-                preview_cmd = "dpkg -s {} 2>/dev/null || apt-cache show {} 2>/dev/null || echo 'Package info not available'"
+        if show_details and PKG_MANAGER in ["dnf", "apt", "pacman"]:
+            preview_cmd = _get_preview_cmd(installed_only=False)
 
             result = subprocess.run(
                 [
@@ -1355,7 +1389,6 @@ def interactive_remove_from_config(config_file, title):
                 check=True,
             )
         else:
-            # Original simple preview for non-package items
             result = subprocess.run(
                 [
                     "fzf",
@@ -1410,7 +1443,7 @@ def list_available_packages():
             result = subprocess.Popen(
                 ["dnf", "list", "--available", "-y"],
                 stdout=subprocess.PIPE,
-                stderr=sys.stderr,  # Show dnf's progress to user
+                stderr=sys.stderr,
                 text=True,
             )
 
@@ -1422,10 +1455,9 @@ def list_available_packages():
                 lines = stdout.strip().split("\n")
 
                 for line in lines:
-                    # Format: "package-name.arch version repo"
                     parts = line.split()
                     if parts and not line.startswith("Available") and "." in parts[0]:
-                        pkg_name = parts[0].rsplit(".", 1)[0]  # Remove .arch
+                        pkg_name = parts[0].rsplit(".", 1)[0]
                         packages.append(pkg_name)
 
                 unique_packages = sorted(set(packages))
@@ -1437,14 +1469,34 @@ def list_available_packages():
             print("[INFO]: This may take a moment...\n")
 
             result = subprocess.Popen(
-                ["apt-cache", "pkgnames", "-y"],
+                ["apt-cache", "pkgnames"],
                 stdout=subprocess.PIPE,
                 stderr=sys.stderr,
                 text=True,
             )
 
+            stdout, _ = result.communicate()
+
             if result.returncode == 0:
-                packages = result.stdout.strip().split("\n")
+                packages = stdout.strip().split("\n")
+                unique_packages = sorted(set(pkg for pkg in packages if pkg))
+                print(f"[INFO]: Found {len(unique_packages)} unique packages\n")
+                return unique_packages
+
+        elif PKG_MANAGER == "pacman":
+            print("[INFO]: Loading available packages from repositories...")
+
+            result = subprocess.Popen(
+                ["pacman", "-Slq"],
+                stdout=subprocess.PIPE,
+                stderr=sys.stderr,
+                text=True,
+            )
+
+            stdout, _ = result.communicate()
+
+            if result.returncode == 0:
+                packages = stdout.strip().split("\n")
                 unique_packages = sorted(set(pkg for pkg in packages if pkg))
                 print(f"[INFO]: Found {len(unique_packages)} unique packages\n")
                 return unique_packages
@@ -1456,14 +1508,7 @@ def list_available_packages():
 
 
 def search_install_and_add(config_file, list_function, title, pkg_manager_install_func):
-    """Search, install, and add packages to config in one go
-
-    Args:
-        config_file: Configuration file to add packages to
-        list_function: Function that returns list of available packages
-        title: Title for the selection prompt
-        pkg_manager_install_func: Function to install the packages
-    """
+    """Search, install, and add packages to config in one go"""
     if shutil.which("fzf") is None:
         print("fzf is not installed. Please install it first.")
         return False
@@ -1485,7 +1530,7 @@ def search_install_and_add(config_file, list_function, title, pkg_manager_instal
     current_items_set = set(current_items)
     filtered_items = [item for item in all_items if item not in current_items_set]
 
-    print(f"Filtering out already configured packages...", file=sys.stderr)
+    print("Filtering out already configured packages...", file=sys.stderr)
     print(
         f"Available for installation: {len(filtered_items)} packages", file=sys.stderr
     )
@@ -1496,15 +1541,11 @@ def search_install_and_add(config_file, list_function, title, pkg_manager_instal
 
     items_text = "\n".join(filtered_items)
 
-    # Show package details for system packages
     show_details = config_file == PACKAGES_CONFIG
 
     try:
-        if show_details and PKG_MANAGER in ["dnf", "apt"]:
-            if PKG_MANAGER == "dnf":
-                preview_cmd = "rpm -qi {} 2>/dev/null || dnf info --quiet --cacheonly {} 2>/dev/null || dnf info --quiet {} 2>/dev/null || echo 'Package info not available'"
-            elif PKG_MANAGER == "apt":
-                preview_cmd = "dpkg -s {} 2>/dev/null || apt-cache show {} 2>/dev/null || echo 'Package info not available'"
+        if show_details and PKG_MANAGER in ["dnf", "apt", "pacman"]:
+            preview_cmd = _get_preview_cmd(installed_only=False)
 
             result = subprocess.run(
                 [
@@ -1551,7 +1592,6 @@ def search_install_and_add(config_file, list_function, title, pkg_manager_instal
         print(f"Installing {len(selected_packages)} package(s)...")
         print(f"{'=' * 60}\n")
 
-        # Install packages
         successfully_installed = []
         failed_packages = []
 
@@ -1568,14 +1608,12 @@ def search_install_and_add(config_file, list_function, title, pkg_manager_instal
                 failed_packages.append(pkg)
                 print(f"  ✗ {pkg} failed: {e}\n")
 
-        # Summary
         print(f"{'=' * 60}")
-        print(f"Installation Summary:")
+        print("Installation Summary:")
         print(f"  ✓ Successfully installed: {len(successfully_installed)}")
         print(f"  ✗ Failed: {len(failed_packages)}")
         print(f"{'=' * 60}\n")
 
-        # Add successfully installed packages to config
         if successfully_installed:
             with open(config_file, "a") as f:
                 for pkg in successfully_installed:
@@ -1617,6 +1655,11 @@ def install_single_package(package_name):
                 ["sudo", "apt", "install", "-y", package_name],
                 check=False,
             )
+        elif PKG_MANAGER == "pacman":
+            result = subprocess.run(
+                ["sudo", "pacman", "-S", "--noconfirm", "--needed", package_name],
+                check=False,
+            )
         else:
             return False
 
@@ -1653,7 +1696,7 @@ def install_packages():
         print("No packages to install")
         return
 
-    print("Installing system packages...")
+    print(f"Installing system packages via {PKG_MANAGER}...")
 
     try:
         match PKG_MANAGER:
@@ -1665,6 +1708,12 @@ def install_packages():
 
             case "apt":
                 subprocess.run(["sudo", "apt", "install", "-y"] + packages, check=True)
+
+            case "pacman":
+                subprocess.run(
+                    ["sudo", "pacman", "-S", "--noconfirm", "--needed"] + packages,
+                    check=True,
+                )
 
             case _:
                 print("Unsupported package manager")
@@ -1775,11 +1824,12 @@ def sync_config():
         with open(config_file, "w") as f:
             f.write(f"# Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"# {section_name}\n")
+            f.write(f"# Distro: {DISTRO} (family: {DISTRO_FAMILY})\n")
             f.write("\n")
             for item in items:
                 f.write(f"{item}\n")
 
-    print("Updating packages configuration...")
+    print(f"Updating packages configuration ({PACKAGES_CONFIG.name})...")
     packages = list_installed_packages()
     write_config_with_header(PACKAGES_CONFIG, packages, "System packages")
 
@@ -1793,7 +1843,7 @@ def sync_config():
     if extensions:
         write_config_with_header(EXTENSIONS_CONFIG, extensions, "GNOME extensions")
 
-    if DISTRO == "fedora":
+    if DISTRO_FAMILY == "fedora":
         backup_repos()
 
     print("Updating services configuration...")
@@ -1831,6 +1881,9 @@ def sync_config():
 def restore_system():
     print("=========================================")
     print("Starting Full System Restoration")
+    print(f"Distro: {DISTRO} (family: {DISTRO_FAMILY})")
+    print(f"Package manager: {PKG_MANAGER}")
+    print(f"Packages config: {PACKAGES_CONFIG.name}")
     print("=========================================")
     print()
 
@@ -1869,7 +1922,7 @@ def restore_system():
     install_python_packages()
     print()
 
-    if DISTRO == "fedora":
+    if DISTRO_FAMILY == "fedora":
         print("[8/14] Adding Repositories")
         print("---------------------------------")
         install_repos()
@@ -1932,15 +1985,17 @@ def show_status():
     print("============================")
     print(f"Config directory: {CONFIG_DIR}")
     print(f"Distribution: {DISTRO}")
+    print(f"Distro family: {DISTRO_FAMILY}")
     print(f"Package manager: {PKG_MANAGER}")
     print(f"Desktop environment: {DESKTOP}")
+    print(f"Packages config: {PACKAGES_CONFIG.name}")
     print()
 
     print("Configuration Files:")
-    print(f"  Packages: {len(read_config(PACKAGES_CONFIG))}")
+    print(f"  Packages ({PACKAGES_CONFIG.name}): {len(read_config(PACKAGES_CONFIG))}")
     print(f"  Flatpaks: {len(read_config(FLATPAKS_CONFIG))}")
     print(f"  Extensions: {len(read_config(EXTENSIONS_CONFIG))}")
-    if DISTRO == "fedora":
+    if DISTRO_FAMILY == "fedora":
         print(f"  Repositories: {len(read_config(REPOS_CONFIG))}")
     print(f"  Services: {len(read_config(SERVICES_CONFIG))}")
     print(f"  Firewall rules: {len(read_config(FIREWALL_CONFIG))}")
@@ -2007,7 +2062,7 @@ def interactive_menu():
         "Exit",
     ]
 
-    if DISTRO != "fedora":
+    if DISTRO_FAMILY != "fedora":
         menu_items = [item for item in menu_items if "(Fedora)" not in item]
 
     menu_text = "\n".join(menu_items)
@@ -2156,6 +2211,20 @@ COMMANDS:
     help        Show this help message
     (no args)   Show interactive fzf menu (recommended)
 
+SUPPORTED DISTROS:
+    Fedora          (dnf)
+    Ubuntu/Debian   (apt)
+    Arch Linux      (pacman) - includes Manjaro, EndeavourOS, Garuda, etc.
+
+DISTRO-SPECIFIC PACKAGES:
+    Package configs are named per distro family:
+      fedora-packages.conf    Fedora systems
+      ubuntu-packages.conf    Ubuntu systems
+      debian-packages.conf    Debian systems
+      arch-packages.conf      Arch-based systems
+
+    Current: {PACKAGES_CONFIG.name} (detected: {DISTRO}, family: {DISTRO_FAMILY})
+
 INTERACTIVE MENU:
     The main way to use this tool is through the interactive fzf menu.
     Simply run: sysconfig-manager
@@ -2176,7 +2245,7 @@ RESTORE ORDER (Full System Restore):
     5.  Install Cargo packages
     6.  Install Node packages
     7.  Install Python packages
-    8.  Add Copr/third-party repositories (Fedora)
+    8.  Add Copr/third-party repositories (Fedora only)
     9.  Install GNOME extensions (if GNOME desktop)
     10. Configure systemd services
     11. Configure firewall rules
@@ -2188,23 +2257,23 @@ CONFIGURATION FILES:
     Config directory: {CONFIG_DIR}
 
     Core:
-      packages.conf         System packages (dnf/apt)
-      flatpaks.conf         Flatpak applications
-      gnome-extensions.conf GNOME extensions
-      repos.conf            Repositories (Fedora)
-      custom-commands.sh    Custom setup script
-      dconf-settings.ini    Desktop settings backup
+      {PACKAGES_CONFIG.name:<25s} System packages ({PKG_MANAGER})
+      flatpaks.conf             Flatpak applications
+      gnome-extensions.conf     GNOME extensions
+      repos.conf                Repositories (Fedora)
+      custom-commands.sh        Custom setup script
+      dconf-settings.ini        Desktop settings backup
 
     Services & Security:
-      services.conf         Systemd services
-      firewall.conf         Firewall rules
-      groups.conf           User groups
+      services.conf             Systemd services
+      firewall.conf             Firewall rules
+      groups.conf               User groups
 
     Development:
-      python-packages.conf  Python packages (pip)
-      node-packages.conf    Node packages (npm)
-      cargo-packages.conf   Rust packages (cargo)
-      containers.conf       Docker/Podman setup
+      python-packages.conf      Python packages (pip)
+      node-packages.conf        Node packages (npm)
+      cargo-packages.conf       Rust packages (cargo)
+      containers.conf           Docker/Podman setup
 
 TYPICAL WORKFLOW:
     # First time setup on current system
