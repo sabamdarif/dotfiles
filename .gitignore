@@ -89,3 +89,10 @@
 .local/bin/switch-gh-account
 .var/app/io.github.seadve.Mousai
 .config/swaync/wlsunset_temp_value
+.local/bin/bandit
+.local/bin/bandit-baseline
+.local/bin/bandit-config-generator
+.local/bin/lsimg
+.local/bin/nltk
+.local/bin/safety
+.local/bin/typer

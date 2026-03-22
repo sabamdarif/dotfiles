@@ -201,7 +201,7 @@ zi light xvzc/SpoofDPI
 # zi light neovim/neovim
 
 # Install ripgrep with alias set on load
-zi ice from'gh-r' lbin'!**/rg' nocompile atload'alias grep="rg"'
+zi ice from'gh-r' lbin'!**/rg' nocompile
 zi light BurntSushi/ripgrep
 
 # Install zoxide with initialization
