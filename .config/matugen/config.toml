@@ -35,6 +35,17 @@ post_hook = 'gsettings set org.gnome.desktop.interface color-scheme "prefer-dark
 input_path = '~/.config/matugen/templates/gtk-colors.css'
 output_path = '~/.config/gtk-4.0/colors.css'
 
+# Gtk4 apps - light entry point (imports colors.css)
+[templates.gtk4-css]
+input_path = '~/.config/matugen/templates/gtk-main.css'
+output_path = '~/.config/gtk-4.0/gtk.css'
+
+# Gtk4 apps - dark entry point (imports colors.css, applied with prefer-dark)
+[templates.gtk4-dark]
+input_path = '~/.config/matugen/templates/gtk-dark-main.css'
+output_path = '~/.config/gtk-4.0/gtk-dark.css'
+post_hook = 'gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"'
+
 # swaywm
 # [templates.sway]
 # input_path = '~/.config/matugen/templates/sway-colors.conf'
