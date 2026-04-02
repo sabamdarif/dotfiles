@@ -8,7 +8,7 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-VERSION = "1.2"
+VERSION = "1.3"
 
 CONFIG_DIR = Path.home() / ".config" / "sysconfig"
 
@@ -110,6 +110,109 @@ if not desktop:
 DESKTOP = desktop.lower()
 
 
+# ---------------------------------------------------------------------------
+# paru (AUR helper) support for Arch-based distros
+# ---------------------------------------------------------------------------
+
+
+def _paru_available():
+    """Return True if paru is installed."""
+    return shutil.which("paru") is not None
+
+
+def install_paru():
+    """
+    Install the paru AUR helper on Arch-based systems.
+
+    Steps:
+      1. Install build dependencies (git, base-devel) via pacman.
+      2. Clone the paru PKGBUILD from the AUR into a temp directory.
+      3. Build and install with makepkg.
+
+    Returns True on success, False on failure.
+    """
+    if _paru_available():
+        print("[INFO]: paru is already installed")
+        return True
+
+    if DISTRO_FAMILY != "arch":
+        print("[ERROR]: paru is only available on Arch-based distros")
+        return False
+
+    print("[INFO]: paru not found – installing paru AUR helper...")
+
+    # 1. Ensure build dependencies are present
+    print("[INFO]: Installing build dependencies (git, base-devel)...")
+    try:
+        subprocess.run(
+            ["sudo", "pacman", "-S", "--needed", "--noconfirm", "git", "base-devel"],
+            check=True,
+        )
+    except subprocess.CalledProcessError:
+        print("[ERROR]: Failed to install paru build dependencies")
+        return False
+
+    # 2. Clone + build paru in a temporary directory
+    with tempfile.TemporaryDirectory() as tmpdir:
+        clone_dir = Path(tmpdir) / "paru"
+        try:
+            print("[INFO]: Cloning paru from AUR...")
+            subprocess.run(
+                ["git", "clone", "https://aur.archlinux.org/paru.git", str(clone_dir)],
+                check=True,
+            )
+
+            print("[INFO]: Building and installing paru (this may take a moment)...")
+            # makepkg must NOT be run as root; if the script is run with sudo,
+            # we attempt to drop back to the real user via SUDO_USER.
+            build_env = os.environ.copy()
+            sudo_user = os.environ.get("SUDO_USER")
+            if os.geteuid() == 0 and sudo_user:
+                # run makepkg as the original non-root user
+                subprocess.run(
+                    ["sudo", "-u", sudo_user, "makepkg", "-si", "--noconfirm"],
+                    cwd=str(clone_dir),
+                    env=build_env,
+                    check=True,
+                )
+            else:
+                subprocess.run(
+                    ["makepkg", "-si", "--noconfirm"],
+                    cwd=str(clone_dir),
+                    check=True,
+                )
+
+            print("[INFO]: paru installed successfully")
+            return True
+
+        except subprocess.CalledProcessError as e:
+            print(f"[ERROR]: Failed to install paru: {e}")
+            return False
+
+
+def _ensure_paru():
+    """
+    On Arch-based systems, ensure paru is available before any package
+    operation that needs AUR support.  Returns True when ready.
+    """
+    if DISTRO_FAMILY != "arch":
+        return True  # not applicable
+    if _paru_available():
+        return True
+    print("[INFO]: paru is required for AUR support – attempting installation...")
+    return install_paru()
+
+
+# ---------------------------------------------------------------------------
+# Helper that picks the right front-end for Arch operations
+# ---------------------------------------------------------------------------
+
+
+def _arch_cmd():
+    """Return 'paru' if available, else 'pacman'."""
+    return "paru" if _paru_available() else "pacman"
+
+
 def init_config():
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     config_files = {
@@ -117,6 +220,7 @@ def init_config():
 # Config file: {PACKAGES_CONFIG.name}
 # Distro family: {DISTRO_FAMILY}
 # Lines starting with # are comments
+# On Arch-based systems, AUR packages are supported (paru is used)
 # Example:
 # vim
 # git
@@ -276,6 +380,13 @@ def init_config():
 
     print(f"Configuration initialized at {CONFIG_DIR}")
     print(f"Packages config: {PACKAGES_CONFIG.name} (distro family: {DISTRO_FAMILY})")
+    if DISTRO_FAMILY == "arch":
+        paru_status = (
+            "installed ✓"
+            if _paru_available()
+            else "not installed (will be installed automatically)"
+        )
+        print(f"AUR helper (paru): {paru_status}")
 
 
 def read_config(config_file):
@@ -323,8 +434,10 @@ def list_installed_packages():
             packages = sorted(set(pkg for pkg in packages if pkg))
             return packages
         elif PKG_MANAGER == "pacman":
+            # Use paru if available so AUR packages are included in the listing
+            cmd = [_arch_cmd(), "-Qq"] if _paru_available() else ["pacman", "-Qq"]
             result = subprocess.run(
-                ["pacman", "-Qq"],
+                cmd,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -1216,7 +1329,13 @@ def system_update():
                 subprocess.run(["sudo", "apt", "upgrade", "-y"], check=True)
 
             case "pacman":
-                subprocess.run(["sudo", "pacman", "-Syu", "--noconfirm"], check=True)
+                # Prefer paru so AUR packages are updated too.
+                if _paru_available():
+                    subprocess.run(["paru", "-Syu", "--noconfirm"], check=True)
+                else:
+                    subprocess.run(
+                        ["sudo", "pacman", "-Syu", "--noconfirm"], check=True
+                    )
 
             case _:
                 print("[ERROR]: Unsupported package manager for updates")
@@ -1231,7 +1350,7 @@ def system_update():
 
 
 def _get_preview_cmd(installed_only=True):
-    """Return the appropriate preview command for the current package manager"""
+    """Return the appropriate preview command for the current package manager."""
     if PKG_MANAGER == "dnf":
         if installed_only:
             return "rpm -qi {} 2>/dev/null || echo 'Package info not available'"
@@ -1243,15 +1362,21 @@ def _get_preview_cmd(installed_only=True):
         else:
             return "dpkg -s {} 2>/dev/null || apt-cache show {} 2>/dev/null || echo 'Package info not available'"
     elif PKG_MANAGER == "pacman":
-        if installed_only:
-            return "pacman -Qi {} 2>/dev/null || echo 'Package info not available'"
+        if _paru_available():
+            if installed_only:
+                return "paru -Qi {} 2>/dev/null || echo 'Package info not available'"
+            else:
+                return "paru -Qi {} 2>/dev/null || paru -Si {} 2>/dev/null || echo 'Package info not available'"
         else:
-            return "pacman -Qi {} 2>/dev/null || pacman -Si {} 2>/dev/null || echo 'Package info not available'"
+            if installed_only:
+                return "pacman -Qi {} 2>/dev/null || echo 'Package info not available'"
+            else:
+                return "pacman -Qi {} 2>/dev/null || pacman -Si {} 2>/dev/null || echo 'Package info not available'"
     return "echo {}"
 
 
 def interactive_package_select(config_file, list_function, title, installed_only=True):
-    """Interactive package selection with detailed preview panel"""
+    """Interactive package selection with detailed preview panel."""
     if shutil.which("fzf") is None:
         print("fzf is not installed. Please install it first.")
         return False
@@ -1351,7 +1476,7 @@ def interactive_package_select(config_file, list_function, title, installed_only
 
 
 def interactive_remove_from_config(config_file, title):
-    """Interactive removal with package details preview"""
+    """Interactive removal with package details preview."""
     if shutil.which("fzf") is None:
         print("fzf is not installed. Please install it first.")
         return False
@@ -1435,7 +1560,10 @@ def interactive_remove_from_config(config_file, title):
 
 
 def list_available_packages():
-    """List all available packages from repositories (not just installed)"""
+    """
+    List all available packages from repositories (not just installed).
+    On Arch-based systems, paru is used so that AUR packages are included.
+    """
     try:
         if PKG_MANAGER == "dnf":
             print("[INFO]: Loading available packages from repositories...")
@@ -1484,22 +1612,62 @@ def list_available_packages():
                 return unique_packages
 
         elif PKG_MANAGER == "pacman":
-            print("[INFO]: Loading available packages from repositories...")
+            # Use paru to list both official repo packages and AUR packages.
+            # paru -Slq lists all official repo packages (same as pacman -Slq).
+            # paru -Pc (or the AUR search) can list AUR, but the full AUR list
+            # is enormous (~85k packages).  We list official repos first and
+            # optionally append AUR names via `paru -Slq aur` when paru is
+            # available, keeping UX fast enough for the fzf selector.
+            if _paru_available():
+                print(
+                    "[INFO]: Loading available packages (official repos + AUR) via paru..."
+                )
+                print("[INFO]: This may take a moment...\n")
 
-            result = subprocess.Popen(
-                ["pacman", "-Slq"],
-                stdout=subprocess.PIPE,
-                stderr=sys.stderr,
-                text=True,
-            )
+                # Official repos
+                official_result = subprocess.Popen(
+                    ["paru", "-Slq"],
+                    stdout=subprocess.PIPE,
+                    stderr=sys.stderr,
+                    text=True,
+                )
+                official_stdout, _ = official_result.communicate()
 
-            stdout, _ = result.communicate()
+                packages = []
+                if official_result.returncode == 0:
+                    packages = [p for p in official_stdout.strip().split("\n") if p]
 
-            if result.returncode == 0:
-                packages = stdout.strip().split("\n")
-                unique_packages = sorted(set(pkg for pkg in packages if pkg))
+                aur_result = subprocess.Popen(
+                    ["paru", "-Slq", "aur"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                )
+                aur_stdout, _ = aur_result.communicate()
+                if aur_result.returncode == 0:
+                    aur_pkgs = [p for p in aur_stdout.strip().split("\n") if p]
+                    packages.extend(aur_pkgs)
+
+                unique_packages = sorted(set(packages))
                 print(f"[INFO]: Found {len(unique_packages)} unique packages\n")
                 return unique_packages
+            else:
+                print("[INFO]: Loading available packages from repositories...")
+
+                result = subprocess.Popen(
+                    ["pacman", "-Slq"],
+                    stdout=subprocess.PIPE,
+                    stderr=sys.stderr,
+                    text=True,
+                )
+
+                stdout, _ = result.communicate()
+
+                if result.returncode == 0:
+                    packages = stdout.strip().split("\n")
+                    unique_packages = sorted(set(pkg for pkg in packages if pkg))
+                    print(f"[INFO]: Found {len(unique_packages)} unique packages\n")
+                    return unique_packages
 
         return []
     except Exception as e:
@@ -1508,7 +1676,7 @@ def list_available_packages():
 
 
 def search_install_and_add(config_file, list_function, title, pkg_manager_install_func):
-    """Search, install, and add packages to config in one go"""
+    """Search, install, and add packages to config in one go."""
     if shutil.which("fzf") is None:
         print("fzf is not installed. Please install it first.")
         return False
@@ -1643,7 +1811,10 @@ def search_install_and_add(config_file, list_function, title, pkg_manager_instal
 
 
 def install_single_package(package_name):
-    """Install a single system package with live output"""
+    """
+    Install a single system package with live output.
+    On Arch-based systems paru is used so that AUR packages are supported.
+    """
     try:
         if PKG_MANAGER == "dnf":
             result = subprocess.run(
@@ -1656,10 +1827,16 @@ def install_single_package(package_name):
                 check=False,
             )
         elif PKG_MANAGER == "pacman":
-            result = subprocess.run(
-                ["sudo", "pacman", "-S", "--noconfirm", "--needed", package_name],
-                check=False,
-            )
+            if _paru_available():
+                result = subprocess.run(
+                    ["paru", "-S", "--noconfirm", "--needed", package_name],
+                    check=False,
+                )
+            else:
+                result = subprocess.run(
+                    ["sudo", "pacman", "-S", "--noconfirm", "--needed", package_name],
+                    check=False,
+                )
         else:
             return False
 
@@ -1710,10 +1887,18 @@ def install_packages():
                 subprocess.run(["sudo", "apt", "install", "-y"] + packages, check=True)
 
             case "pacman":
-                subprocess.run(
-                    ["sudo", "pacman", "-S", "--noconfirm", "--needed"] + packages,
-                    check=True,
-                )
+                # Use paru so that AUR packages in the config install correctly.
+                # paru does not require sudo; it handles privilege escalation itself.
+                if _paru_available():
+                    subprocess.run(
+                        ["paru", "-S", "--noconfirm", "--needed"] + packages,
+                        check=True,
+                    )
+                else:
+                    subprocess.run(
+                        ["sudo", "pacman", "-S", "--noconfirm", "--needed"] + packages,
+                        check=True,
+                    )
 
             case _:
                 print("Unsupported package manager")
@@ -1887,84 +2072,98 @@ def restore_system():
     print("=========================================")
     print()
 
-    print("[1/14] System Update & Upgrade")
+    # On Arch-based systems ensure paru is ready before anything else so that
+    # all subsequent steps can transparently install AUR packages.
+    if DISTRO_FAMILY == "arch":
+        print("[0/15] Installing paru AUR helper (Arch)")
+        print("---------------------------------")
+        if not _ensure_paru():
+            print("[WARNING]: Could not install paru – AUR packages will be skipped")
+        else:
+            print("[INFO]: paru is ready ✓")
+        print()
+
+    print("[1/15] System Update & Upgrade")
     print("---------------------------------")
     system_update()
     print()
 
-    print("[2/14] Custom Commands")
+    print("[2/15] Custom Commands")
     print("---------------------------------")
     run_custom_commands()
     print()
 
-    print("[3/14] Installing System Packages")
+    print("[3/15] Installing System Packages")
     print("---------------------------------")
     install_packages()
     print()
 
-    print("[4/14] Installing Flatpaks")
+    print("[4/15] Installing Flatpaks")
     print("---------------------------------")
     install_flatpaks()
     print()
 
-    print("[5/14] Installing Cargo Packages")
+    print("[5/15] Installing Cargo Packages")
     print("---------------------------------")
     install_cargo_packages()
     print()
 
-    print("[6/14] Installing Node Packages")
+    print("[6/15] Installing Node Packages")
     print("---------------------------------")
     install_node_packages()
     print()
 
-    print("[7/14] Installing Python Packages")
+    print("[7/15] Installing Python Packages")
     print("---------------------------------")
     install_python_packages()
     print()
 
     if DISTRO_FAMILY == "fedora":
-        print("[8/14] Adding Repositories")
+        print("[8/15] Adding Repositories")
         print("---------------------------------")
         install_repos()
         print()
     else:
-        print("[8/14] Repositories (Skipped - Not Fedora)")
+        print("[8/15] Repositories (Skipped - Not Fedora)")
         print("---------------------------------")
         print()
 
     if "gnome" in DESKTOP:
-        print("[9/14] Installing GNOME Extensions")
+        print("[9/15] Installing GNOME Extensions")
         print("---------------------------------")
         install_extensions()
         print()
     else:
-        print("[9/14] GNOME Extensions (Skipped - Not GNOME Desktop)")
+        print("[9/15] GNOME Extensions (Skipped - Not GNOME Desktop)")
         print("---------------------------------")
         print()
 
-    print("[10/14] Configuring Services")
+    print("[10/15] Configuring Services")
     print("---------------------------------")
     configure_services()
     print()
 
-    print("[11/14] Configuring Firewall")
+    print("[11/15] Configuring Firewall")
     print("---------------------------------")
     configure_firewall()
     print()
 
-    print("[12/14] Configuring User Groups")
+    print("[12/15] Configuring User Groups")
     print("---------------------------------")
     configure_groups()
     print()
 
-    print("[13/14] Setting up Containers")
+    print("[13/15] Setting up Containers")
     print("---------------------------------")
     setup_containers()
     print()
 
-    print("[14/14] Restoring dconf Settings")
+    print("[14/15] Restoring dconf Settings")
     print("---------------------------------")
     restore_dconf()
+    print()
+
+    print("[15/15] Done")
     print()
 
     print("=========================================")
@@ -1980,7 +2179,7 @@ def restore_system():
 
 
 def show_status():
-    """Display current configuration status"""
+    """Display current configuration status."""
     print("System Configuration Status")
     print("============================")
     print(f"Config directory: {CONFIG_DIR}")
@@ -1989,6 +2188,9 @@ def show_status():
     print(f"Package manager: {PKG_MANAGER}")
     print(f"Desktop environment: {DESKTOP}")
     print(f"Packages config: {PACKAGES_CONFIG.name}")
+    if DISTRO_FAMILY == "arch":
+        paru_status = "installed ✓" if _paru_available() else "not installed"
+        print(f"AUR helper (paru): {paru_status}")
     print()
 
     print("Configuration Files:")
@@ -2017,6 +2219,7 @@ def interactive_menu():
 
     menu_items = [
         "Initialize configuration",
+        "Install paru AUR helper (Arch)",
         "Add packages to config",
         "Add flatpaks to config",
         "Add GNOME extensions to config",
@@ -2065,6 +2268,9 @@ def interactive_menu():
     if DISTRO_FAMILY != "fedora":
         menu_items = [item for item in menu_items if "(Fedora)" not in item]
 
+    if DISTRO_FAMILY != "arch":
+        menu_items = [item for item in menu_items if "(Arch)" not in item]
+
     menu_text = "\n".join(menu_items)
 
     try:
@@ -2082,6 +2288,8 @@ def interactive_menu():
     match choice:
         case "Initialize configuration":
             init_config()
+        case "Install paru AUR helper (Arch)":
+            install_paru()
         case "Add packages to config":
             interactive_package_select(
                 PACKAGES_CONFIG, list_installed_packages, "Select packages to add"
@@ -2205,23 +2413,35 @@ USAGE:
     sysconfig-manager [COMMAND]
 
 COMMANDS:
-    init        Initialize configuration directory
-    restore     Restore entire system from config (full restoration)
-    version     Show version information
-    help        Show this help message
-    (no args)   Show interactive fzf menu (recommended)
+    init            Initialize configuration directory
+    restore         Restore entire system from config (full restoration)
+    install-paru    Install paru AUR helper (Arch-based distros only)
+    version         Show version information
+    help            Show this help message
+    (no args)       Show interactive fzf menu (recommended)
 
 SUPPORTED DISTROS:
     Fedora          (dnf)
     Ubuntu/Debian   (apt)
-    Arch Linux      (pacman) - includes Manjaro, EndeavourOS, Garuda, etc.
+    Arch Linux      (pacman + paru for AUR) - includes Manjaro, EndeavourOS,
+                    Garuda, Artix, ArcoLinux, CachyOS, etc.
+
+AUR SUPPORT (Arch-based distros):
+    paru is used as the AUR helper on Arch-based systems.
+    - If paru is not installed it will be built automatically from the AUR
+      before any package operations during a full restore.
+    - You can also install paru manually at any time:
+        sysconfig-manager install-paru
+    - AUR package names can be listed in {PACKAGES_CONFIG.name} alongside
+      official repo packages – paru handles both transparently.
+    - System updates via `paru -Syu` keep both official and AUR packages current.
 
 DISTRO-SPECIFIC PACKAGES:
     Package configs are named per distro family:
       fedora-packages.conf    Fedora systems
       ubuntu-packages.conf    Ubuntu systems
       debian-packages.conf    Debian systems
-      arch-packages.conf      Arch-based systems
+      arch-packages.conf      Arch-based systems (official + AUR packages)
 
     Current: {PACKAGES_CONFIG.name} (detected: {DISTRO}, family: {DISTRO_FAMILY})
 
@@ -2238,9 +2458,10 @@ INTERACTIVE MENU:
       - Install and configure individual components
 
 RESTORE ORDER (Full System Restore):
+    0.  Install paru AUR helper (Arch-based only)
     1.  System update & upgrade
     2.  Execute custom commands
-    3.  Install system packages
+    3.  Install system packages (official + AUR via paru on Arch)
     4.  Install flatpaks
     5.  Install Cargo packages
     6.  Install Node packages
@@ -2257,7 +2478,7 @@ CONFIGURATION FILES:
     Config directory: {CONFIG_DIR}
 
     Core:
-      {PACKAGES_CONFIG.name:<25s} System packages ({PKG_MANAGER})
+      {PACKAGES_CONFIG.name:<25s} System packages ({PKG_MANAGER}{" + paru/AUR" if DISTRO_FAMILY == "arch" else ""})
       flatpaks.conf             Flatpak applications
       gnome-extensions.conf     GNOME extensions
       repos.conf                Repositories (Fedora)
@@ -2280,7 +2501,7 @@ TYPICAL WORKFLOW:
     sysconfig-manager init
     sysconfig-manager              # Use interactive menu to sync
 
-    # On a fresh system (restore everything)
+    # On a fresh Arch system (restore everything, paru auto-installed)
     sysconfig-manager restore
 
     # Daily usage (interactive menu)
@@ -2321,6 +2542,12 @@ def main():
             init_config()
         case "restore":
             restore_system()
+        case "install-paru":
+            if DISTRO_FAMILY != "arch":
+                print("[ERROR]: paru is only available on Arch-based distros")
+                sys.exit(1)
+            success = install_paru()
+            sys.exit(0 if success else 1)
         case "help" | "-help" | "--help" | "-h":
             show_help()
         case "version" | "--version":
@@ -2331,11 +2558,12 @@ def main():
             print(f"Unknown command: {command}")
             print()
             print("Available commands:")
-            print("  sysconfig-manager          - Interactive menu (default)")
-            print("  sysconfig-manager init     - Initialize configuration")
-            print("  sysconfig-manager restore  - Full system restore")
-            print("  sysconfig-manager version  - Show version")
-            print("  sysconfig-manager help     - Show help")
+            print("  sysconfig-manager              - Interactive menu (default)")
+            print("  sysconfig-manager init         - Initialize configuration")
+            print("  sysconfig-manager restore      - Full system restore")
+            print("  sysconfig-manager install-paru - Install paru AUR helper (Arch)")
+            print("  sysconfig-manager version      - Show version")
+            print("  sysconfig-manager help         - Show help")
             sys.exit(1)
 
 
