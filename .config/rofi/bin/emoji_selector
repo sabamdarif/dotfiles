@@ -1,3 +1,7 @@
 #!/bin/bash
 
-rofimoji --action copy --hidden-descriptions --selector-args "-theme ~/.config/rofi/rofimoji-grid.rasi"
+if command -v rofimoji &>/dev/null; then
+    rofimoji --action copy --hidden-descriptions --selector-args "-theme ~/.config/rofi/rofimoji-grid.rasi"
+else
+    rofi -modi emoji -show emoji -kb-secondary-copy "" -kb-custom-1 Ctrl+c
+fi
