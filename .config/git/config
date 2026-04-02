@@ -1,10 +1,10 @@
 [user]
     name = Md Arif
     email = 111168803+sabamdarif@users.noreply.github.com
-    signingkey = 60546CCF1568F24E
+	signingkey = 60546CCF1568F24E
 
 [commit]
-    gpgSign = true
+	gpgsign = true
 
 [core]
     compression = 9  # trade cpu for network
@@ -48,3 +48,5 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
+[gpg]
+	program = gpg
