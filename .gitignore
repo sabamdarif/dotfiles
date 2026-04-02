@@ -96,3 +96,11 @@
 .local/bin/nltk
 .local/bin/safety
 .local/bin/typer
+/.local/bin/watchfiles
+/.local/bin/code-review-graph
+/.local/bin/fastmcp
+/.local/bin/jsonschema
+/.local/bin/mcp
+/.local/bin/claude
+/.local/bin/uvicorn
+/.local/bin/watchmedo

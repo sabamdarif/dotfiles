@@ -806,3 +806,29 @@ iso2sd() {
         sudo eject $2
     fi
 }
+
+# Update last N commits date to now
+git-now() {
+    if [ $# -ne 1 ]; then
+        echo "Usage: git-now <number_of_commits>"
+        echo "Example: git-now 4"
+    else
+        git filter-branch -f --env-filter \
+            'export GIT_AUTHOR_DATE="$(date)" GIT_COMMITTER_DATE="$(date)"' \
+            HEAD~${1}..HEAD
+    fi
+}
+
+# Clone repo and auto-sync submodules if present
+gc() {
+    if [ $# -ne 1 ]; then
+        echo "Usage: gc <repo-url>"
+        echo "Example: gc https://github.com/user/repo.git"
+    else
+        git clone "$1"
+        local repo_dir=$(basename "$1" .git)
+        if [ -f "$repo_dir/.gitmodules" ]; then
+            git -C "$repo_dir" submodule update --init --recursive
+        fi
+    fi
+}

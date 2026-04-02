@@ -25,7 +25,8 @@ alias diff="delta --side-by-side --diff-so-fancy"
 alias f="find . | grep "
 alias c="clear"
 alias g="git"
-alias gc="git clone"
+alias uvr="uv run"
+# alias gc="git clone" # Use the gc function
 alias gd='git diff --output-indicator-new=" " --output-indicator-old=" "'
 alias gca='git commit --amend'
 alias gcan='git commit --amend --no-edit'
