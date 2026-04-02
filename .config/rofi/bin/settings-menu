@@ -16,12 +16,12 @@ HYPRLAND_CONFIG="$HOME/.config/hypr/hyprland.conf"
 SWAY_CONFIG="$HOME/.config/sway/config"
 IDLE_TIME_FILE="$HOME/.local/state/idle-time"
 WLSUNSET_TEMP_FILE="$HOME/.config/swaync/wlsunset_temp_value"
-NIGHT_LIGHT_SCRIPT="$HOME/.config/swaync/scripts/toggle_night_light.sh"
 IDLE_SCRIPT="$HOME/.config/niri/scripts/idle.sh"
 
 # sub files
 THEME_MENU_SCRIPT="$HOME/.config/rofi/bin/theme-changer-menu"
 DEFAULT_APPS_MENU_SCRIPT="$HOME/.config/rofi/bin/set-default-app-menu"
+DNS_MENU_SCRIPT="$HOME/.config/rofi/bin/dns-changer-menu"
 
 back_to() {
     local parent_menu="$1"
@@ -254,6 +254,20 @@ show_default_apps_menu() {
 }
 
 # ============================================================================
+# DNS Management
+# ============================================================================
+
+show_dns_menu() {
+    if [[ -x "$DNS_MENU_SCRIPT" ]]; then
+        "$DNS_MENU_SCRIPT"
+    else
+        notify "Error" "DNS menu script not found at $DNS_MENU_SCRIPT"
+    fi
+
+    back_to show_main_menu
+}
+
+# ============================================================================
 # Icon Management Functions
 # ============================================================================
 
@@ -432,7 +446,7 @@ set_night_light_temp() {
 
     # Save temp value
     mkdir -p "$(dirname "$WLSUNSET_TEMP_FILE")"
-    echo "$temp" > "$WLSUNSET_TEMP_FILE"
+    echo "$temp" >"$WLSUNSET_TEMP_FILE"
 
     # If night light is active (state file exists), restart with new temp
     if [[ -f "$state_file" ]]; then
@@ -460,16 +474,16 @@ show_night_light_temp_menu() {
     # Build preselect string matching current temp
     local preselect
     case "$current_temp" in
-        2700) preselect="2700K  ── Candlelight" ;;
-        3000) preselect="3000K  ── Warm White" ;;
-        3500) preselect="3500K  ── Warm Neutral" ;;
-        4000) preselect="4000K  ── Neutral White" ;;
-        4500) preselect="4500K  ── Cool Neutral" ;;
-        5000) preselect="5000K  ── Daylight" ;;
-        5500) preselect="5500K  ── Bright Daylight" ;;
-        6000) preselect="6000K  ── Cool Daylight" ;;
-        6500) preselect="6500K  ── Standard (Off)" ;;
-        *) preselect="" ;;
+    2700) preselect="2700K  ── Candlelight" ;;
+    3000) preselect="3000K  ── Warm White" ;;
+    3500) preselect="3500K  ── Warm Neutral" ;;
+    4000) preselect="4000K  ── Neutral White" ;;
+    4500) preselect="4500K  ── Cool Neutral" ;;
+    5000) preselect="5000K  ── Daylight" ;;
+    5500) preselect="5500K  ── Bright Daylight" ;;
+    6000) preselect="6000K  ── Cool Daylight" ;;
+    6500) preselect="6500K  ── Standard (Off)" ;;
+    *) preselect="" ;;
     esac
 
     local selected=$(menu "󰛨  Night Light Temp" "$options" "" "$preselect")
@@ -826,19 +840,19 @@ show_about_menu() {
     back_to show_main_menu
 }
 
-
 # ============================================================================
 # Main Menu
 # ============================================================================
 
 show_main_menu() {
-    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰏋  Default Apps\n󰠱  Icons\n󰥔  Idle Timeout\n󰛨  Night Light Temp\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
+    local selection=$(menu "  Settings" "  Font\n󰸌  Theme\n󰏋  Default Apps\n󰠱  Icons\n󰇖  DNS\n󰥔  Idle Timeout\n󰛨  Night Light Temp\n  Capture\n  Reload\n󰌌  Keybindings\n  About")
 
     case "$selection" in
     *Font*) show_font_menu ;;
     *Theme*) show_theme_menu ;;
     *Icons*) show_icon_menu ;;
     *"Default Apps"*) show_default_apps_menu ;;
+    *DNS*) show_dns_menu ;;
     *"Idle Timeout"*) show_idle_menu ;;
     *"Night Light"*) show_night_light_temp_menu ;;
     *Capture*) show_capture_menu ;;
@@ -859,6 +873,7 @@ go_to_menu() {
     *theme*) show_theme_menu ;;
     *icon*) show_icon_menu ;;
     *"default"* | *"apps"*) show_default_apps_menu ;;
+    *dns*) show_dns_menu ;;
     *"idle"* | *"timeout"*) show_idle_menu ;;
     *"night"* | *"light"* | *"temp"*) show_night_light_temp_menu ;;
     *capture*) show_capture_menu ;;

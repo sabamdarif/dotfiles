@@ -1,0 +1,502 @@
+#!/usr/bin/env bash
+# ─── dns-changer-menu ─────────────────────────────────────────────────────────
+# Rofi DNS changer script, designed as a sub-menu of the settings menu.
+# Place at: ~/.config/rofi/bin/dns-changer-menu
+
+set -euo pipefail
+
+# ─── Blocky / state paths ────────────────────────────────────────────────────
+BLOCKY_CONFIG="/etc/blocky/config.yml"
+BLOCKY_SERVICE="blocky.service"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dns-changer"
+mkdir -p "$STATE_DIR"
+
+# ─── UI helpers (mirror the main settings-menu conventions) ───────────────────
+
+menu() {
+    local prompt="$1"
+    local options="$2"
+    local extra="${3:-}"
+    local preselect="${4:-}"
+
+    read -r -a args <<<"$extra"
+
+    if [[ -n "$preselect" ]]; then
+        local index
+        index=$(echo -e "$options" | grep -nxF "$preselect" | cut -d: -f1)
+        if [[ -n "$index" ]]; then
+            args+=("-c" "$index")
+        fi
+    fi
+
+    echo -e "$options" | rofi -dmenu -p "$prompt" \
+        -theme ~/.config/rofi/settings-menu.rasi \
+        "${args[@]}" 2>/dev/null
+}
+
+menu_input() {
+    local prompt="$1"
+    local default="${2:-}"
+    echo "$default" | rofi -dmenu -p "$prompt" \
+        -theme ~/.config/rofi/settings-menu.rasi \
+        -lines 0 2>/dev/null
+}
+
+menu_confirm() {
+    local answer
+    answer=$(printf 'Yes\nNo' | rofi -dmenu -i -p "$1" \
+        -theme ~/.config/rofi/settings-menu.rasi \
+        -no-custom 2>/dev/null)
+    [[ "$answer" == "Yes" ]]
+}
+
+notify() {
+    notify-send "$1" "$2" --icon=network-server
+}
+
+# ─── DNS Server Definitions ──────────────────────────────────────────────────
+# Fields: Name | IPv4 | IPv6 | DoT hostname | DoH URL | Region | Homepage
+
+DNS_SERVERS=(
+    "Cloudflare|1.1.1.1,1.0.0.1|2606:4700:4700::1111,2606:4700:4700::1001|cloudflare-dns.com|https://cloudflare-dns.com/dns-query|Global|https://1.1.1.1"
+    "Google|8.8.8.8,8.8.4.4|2001:4860:4860::8888,2001:4860:4860::8844|dns.google|https://dns.google/dns-query|Global|https://developers.google.com/speed/public-dns"
+    "Quad9|9.9.9.9,149.112.112.112|2620:fe::fe,2620:fe::9|dns.quad9.net|https://dns.quad9.net/dns-query|Global|https://quad9.net"
+    "Quad9 (unfiltered)|9.9.9.10,149.112.112.10|2620:fe::10,2620:fe::fe:10|dns10.quad9.net|https://dns10.quad9.net/dns-query|Global|https://quad9.net"
+    "OpenDNS|208.67.222.222,208.67.220.220|2620:119:35::35,2620:119:53::53|dns.opendns.com|https://doh.opendns.com/dns-query|Global|https://www.opendns.com"
+    "AdGuard|94.140.14.14,94.140.15.15|2a10:50c0::ad1:ff,2a10:50c0::ad2:ff|dns.adguard-dns.com|https://dns.adguard-dns.com/dns-query|Global|https://adguard-dns.io"
+    "AdGuard (unfiltered)|94.140.14.140,94.140.14.141|2a10:50c0::1:ff,2a10:50c0::2:ff|dns-unfiltered.adguard.com|https://unfiltered.adguard-dns.com/dns-query|Global|https://adguard-dns.io"
+    "Mullvad|194.242.2.2|2a07:e340::2|dns.mullvad.net|https://dns.mullvad.net/dns-query|Global|https://mullvad.net"
+    "Mullvad (ad-block)|194.242.2.3|2a07:e340::3|adblock.dns.mullvad.net|https://adblock.dns.mullvad.net/dns-query|Global|https://mullvad.net"
+    "NextDNS|45.90.28.0,45.90.30.0|2a07:a8c0::,2a07:a8c1::||https://dns.nextdns.io|Global|https://nextdns.io"
+    "Control D|76.76.2.0,76.76.10.0|2606:1a40::,2606:1a40:1::||https://freedns.controld.com/p0|Global|https://controld.com/free-dns"
+    "DNS.SB|185.222.222.222,45.11.45.11|2a09::,2a11::||https://doh.dns.sb/dns-query|Global|https://dns.sb"
+)
+
+# ─── Field accessors ─────────────────────────────────────────────────────────
+
+field() { echo "$1" | cut -d'|' -f"$(($2 + 1))"; }
+f_name() { field "$1" 0; }
+f_ipv4() { field "$1" 1; }
+f_ipv6() { field "$1" 2; }
+f_dot() { field "$1" 3; }
+f_doh() { field "$1" 4; }
+f_region() { field "$1" 5; }
+f_homepage() { field "$1" 6; }
+
+server_names() {
+    for e in "${DNS_SERVERS[@]}"; do f_name "$e"; done
+}
+
+find_entry() {
+    for e in "${DNS_SERVERS[@]}"; do
+        [[ "$(f_name "$e")" == "$1" ]] && {
+            echo "$e"
+            return 0
+        }
+    done
+    return 1
+}
+
+# ─── NetworkManager helpers ──────────────────────────────────────────────────
+
+nm_connections() {
+    nmcli -t -f NAME connection show | sort -u
+}
+
+nm_active() {
+    nmcli -t -f NAME connection show --active | head -n1
+}
+
+nm_dns() {
+    local conn="$1"
+    local ipv4 ipv6
+    ipv4=$(nmcli -g ipv4.dns connection show "$conn" 2>/dev/null | tr ' ' ',')
+    ipv6=$(nmcli -g ipv6.dns connection show "$conn" 2>/dev/null | tr ' ' ',')
+    echo "${ipv4}|${ipv6}"
+}
+
+nm_dot_enabled() {
+    local val
+    val=$(nmcli -g connection.dns-over-tls connection show "$1" 2>/dev/null || true)
+    [[ "$val" == "3" || "$val" == "yes" ]]
+}
+
+blocky_active() {
+    systemctl is-active "$BLOCKY_SERVICE" &>/dev/null
+}
+
+# Identify which preset (if any) matches the current connection DNS
+current_server_label() {
+    local conn="$1"
+    local cur cur_v4 cur_v6
+    cur=$(nm_dns "$conn")
+    cur_v4=$(echo "$cur" | cut -d'|' -f1)
+    cur_v6=$(echo "$cur" | cut -d'|' -f2)
+
+    # DoH via blocky?
+    if blocky_active && [[ "$cur_v4" == *"127.0.0.1"* ]]; then
+        if [[ -f "$BLOCKY_CONFIG" ]]; then
+            local doh_url
+            doh_url=$(grep -oP 'https://[^\s"]+' "$BLOCKY_CONFIG" 2>/dev/null | head -1)
+            if [[ -n "$doh_url" ]]; then
+                for e in "${DNS_SERVERS[@]}"; do
+                    [[ "$(f_doh "$e")" == "$doh_url" ]] && {
+                        echo "$(f_name "$e") [DoH]"
+                        return
+                    }
+                done
+                echo "Custom [DoH]"
+                return
+            fi
+        fi
+    fi
+
+    # Match preset by IP
+    for e in "${DNS_SERVERS[@]}"; do
+        local ev4 ev6
+        ev4=$(f_ipv4 "$e")
+        ev6=$(f_ipv6 "$e")
+        if [[ -n "$cur_v4" && "$cur_v4" == "$ev4" ]] ||
+            [[ -n "$cur_v6" && "$cur_v6" == "$ev6" ]]; then
+            local label
+            label=$(f_name "$e")
+            nm_dot_enabled "$conn" && label+=" [DoT]"
+            echo "$label"
+            return
+        fi
+    done
+
+    [[ -n "$cur_v4" || -n "$cur_v6" ]] && {
+        echo "Custom ($cur_v4)"
+        return
+    }
+    echo "Not configured"
+}
+
+# ─── Apply functions ─────────────────────────────────────────────────────────
+
+apply_plain() {
+    local conn="$1" ipv4="$2" ipv6="$3"
+
+    stop_blocky_if_active
+
+    nmcli connection modify "$conn" ipv4.ignore-auto-dns yes 2>/dev/null || true
+    nmcli connection modify "$conn" ipv6.ignore-auto-dns yes 2>/dev/null || true
+    [[ -n "$ipv4" ]] && nmcli connection modify "$conn" ipv4.dns "${ipv4//,/ }" ||
+        nmcli connection modify "$conn" ipv4.dns "" 2>/dev/null || true
+    [[ -n "$ipv6" ]] && nmcli connection modify "$conn" ipv6.dns "${ipv6//,/ }" ||
+        nmcli connection modify "$conn" ipv6.dns "" 2>/dev/null || true
+    nmcli connection modify "$conn" connection.dns-over-tls 0 2>/dev/null || true
+    nmcli connection up "$conn" &>/dev/null || true
+}
+
+apply_dot() {
+    local conn="$1" ipv4="$2" ipv6="$3" hostname="$4"
+
+    stop_blocky_if_active
+
+    nmcli connection modify "$conn" ipv4.ignore-auto-dns yes 2>/dev/null || true
+    nmcli connection modify "$conn" ipv6.ignore-auto-dns yes 2>/dev/null || true
+    [[ -n "$ipv4" ]] && nmcli connection modify "$conn" ipv4.dns "${ipv4//,/ }"
+    [[ -n "$ipv6" ]] && nmcli connection modify "$conn" ipv6.dns "${ipv6//,/ }"
+    nmcli connection modify "$conn" connection.dns-over-tls 3 2>/dev/null || true
+    nmcli connection up "$conn" &>/dev/null || true
+}
+
+apply_doh() {
+    local conn="$1" doh_url="$2" boot_v4="$3" boot_v6="$4"
+    # $5 (bootstrap DoT hostname) accepted but not used in blocky config
+
+    sudo mkdir -p "$(dirname "$BLOCKY_CONFIG")"
+
+    {
+        echo "upstream:"
+        echo "  default:"
+        echo "    - ${doh_url}"
+        echo "bootstrap:"
+        echo "  dns:"
+        local IFS=','
+        for ip in $boot_v4; do [[ -n "$ip" ]] && echo "    - ${ip}"; done
+        for ip in $boot_v6; do [[ -n "$ip" ]] && echo "    - ${ip}"; done
+        echo "ports:"
+        echo "  dns: 53"
+        echo "  http: 4000"
+        echo "log:"
+        echo "  level: warn"
+    } | sudo tee "$BLOCKY_CONFIG" >/dev/null
+
+    nmcli connection modify "$conn" ipv4.ignore-auto-dns yes
+    nmcli connection modify "$conn" ipv6.ignore-auto-dns yes
+    nmcli connection modify "$conn" ipv4.dns "127.0.0.1"
+    nmcli connection modify "$conn" ipv6.dns "::1"
+    nmcli connection modify "$conn" connection.dns-over-tls 0 2>/dev/null || true
+
+    sudo systemctl enable --now "$BLOCKY_SERVICE" 2>/dev/null || {
+        notify "Error" "Failed to start blocky. Is it installed?"
+        return 1
+    }
+
+    nmcli connection up "$conn" &>/dev/null || true
+}
+
+stop_blocky_if_active() {
+    if blocky_active; then
+        sudo systemctl stop "$BLOCKY_SERVICE" 2>/dev/null || true
+        sudo systemctl disable "$BLOCKY_SERVICE" 2>/dev/null || true
+    fi
+}
+
+reset_dns() {
+    local conn="$1"
+    stop_blocky_if_active
+    nmcli connection modify "$conn" ipv4.dns "" 2>/dev/null || true
+    nmcli connection modify "$conn" ipv6.dns "" 2>/dev/null || true
+    nmcli connection modify "$conn" ipv4.ignore-auto-dns no 2>/dev/null || true
+    nmcli connection modify "$conn" ipv6.ignore-auto-dns no 2>/dev/null || true
+    nmcli connection modify "$conn" connection.dns-over-tls 0 2>/dev/null || true
+    nmcli connection up "$conn" &>/dev/null || true
+}
+
+# ─── Latency helpers ─────────────────────────────────────────────────────────
+
+measure_latency() {
+    local ip
+    ip=$(echo "$1" | cut -d',' -f1)
+    timeout 5 bash -c \
+        "s=\$(date +%s%N); dig @${ip} example.com +short +time=2 +tries=1 &>/dev/null; e=\$(date +%s%N); echo \$(( (e-s)/1000000 ))" \
+        2>/dev/null || echo "---"
+}
+
+# ─── Encryption mode picker ──────────────────────────────────────────────────
+
+pick_mode() {
+    local entry="$1"
+    local dot_host doh_url
+    dot_host=$(f_dot "$entry")
+    doh_url=$(f_doh "$entry")
+
+    local opts="󰌾  Plain DNS"
+    [[ -n "$dot_host" ]] && opts+="\n󰯄  DNS over TLS (DoT)"
+    [[ -n "$doh_url" ]] && opts+="\n󰒃  DNS over HTTPS (DoH)"
+
+    # Only one option → skip prompt
+    local count
+    count=$(echo -e "$opts" | wc -l)
+    if [[ "$count" -eq 1 ]]; then
+        echo "plain"
+        return
+    fi
+
+    local chosen
+    chosen=$(menu "󰌾  Encryption" "$opts") || return 1
+
+    case "$chosen" in
+    *DoT*) echo "dot" ;;
+    *DoH*) echo "doh" ;;
+    *) echo "plain" ;;
+    esac
+}
+
+# ─── Sub-menus ────────────────────────────────────────────────────────────────
+
+pick_connection() {
+    local connections active display=()
+    mapfile -t connections < <(nm_connections)
+
+    if [[ ${#connections[@]} -eq 0 ]]; then
+        notify "Error" "No NetworkManager connections found."
+        exit 1
+    fi
+
+    active=$(nm_active)
+
+    for c in "${connections[@]}"; do
+        if [[ "$c" == "$active" ]]; then
+            display+=("● $c (active)")
+        else
+            display+=("  $c")
+        fi
+    done
+
+    local chosen
+    chosen=$(menu "󰛳  Select Connection" "$(printf '%s\n' "${display[@]}")") || return 1
+
+    # Strip decorations using parameter expansion (multi-byte safe)
+    chosen="${chosen% (active)}"
+    chosen="${chosen#● }"
+    chosen="${chosen#  }"
+
+    echo "$chosen"
+}
+
+do_select_server() {
+    local conn="$1"
+
+    local names
+    mapfile -t names < <(server_names)
+
+    local chosen
+    chosen=$(menu "󰇖  Select DNS Server" "$(printf '%s\n' "${names[@]}")") || return 1
+
+    local entry
+    entry=$(find_entry "$chosen") || return 1
+
+    local mode
+    mode=$(pick_mode "$entry") || return 1
+
+    local ipv4 ipv6 dot_host doh_url
+    ipv4=$(f_ipv4 "$entry")
+    ipv6=$(f_ipv6 "$entry")
+    dot_host=$(f_dot "$entry")
+    doh_url=$(f_doh "$entry")
+
+    case "$mode" in
+    plain)
+        apply_plain "$conn" "$ipv4" "$ipv6"
+        notify "DNS Applied" "$chosen (Plain) on '$conn'"
+        ;;
+    dot)
+        apply_dot "$conn" "$ipv4" "$ipv6" "$dot_host"
+        notify "DNS Applied" "$chosen (DoT) on '$conn'"
+        ;;
+    doh)
+        apply_doh "$conn" "$doh_url" "$ipv4" "$ipv6" "$dot_host"
+        notify "DNS Applied" "$chosen (DoH) on '$conn'"
+        ;;
+    esac
+}
+
+do_test_latency() {
+    local results=""
+    for e in "${DNS_SERVERS[@]}"; do
+        local name ipv4 ms
+        name=$(f_name "$e")
+        ipv4=$(f_ipv4 "$e")
+        [[ -z "$ipv4" ]] && continue
+        ms=$(measure_latency "$ipv4")
+        printf -v line "%-6s  %s" "${ms}ms" "$name"
+        results+="${line}\n"
+    done
+
+    printf '%b' "$results" | sed '/^$/d' | sort -t'm' -k1 -n |
+        rofi -dmenu -p "⚡  Latency Results" \
+            -theme ~/.config/rofi/settings-menu.rasi \
+            -no-custom 2>/dev/null || true
+}
+
+do_best_server() {
+    local conn="$1"
+
+    notify "DNS" "Testing all servers…"
+
+    local best_name="" best_ms=999999
+    for e in "${DNS_SERVERS[@]}"; do
+        local name ipv4 ms
+        name=$(f_name "$e")
+        ipv4=$(f_ipv4 "$e")
+        [[ -z "$ipv4" ]] && continue
+        ms=$(measure_latency "$ipv4")
+        if [[ "$ms" != "---" && "$ms" -lt "$best_ms" ]]; then
+            best_ms=$ms
+            best_name=$name
+        fi
+    done
+
+    if [[ -z "$best_name" ]]; then
+        notify "DNS" "All servers timed out."
+        return 1
+    fi
+
+    if menu_confirm "Best: $best_name (${best_ms}ms). Apply?"; then
+        local entry
+        entry=$(find_entry "$best_name") || return 1
+
+        local mode
+        mode=$(pick_mode "$entry") || return 1
+
+        local ipv4 ipv6 dot_host doh_url
+        ipv4=$(f_ipv4 "$entry")
+        ipv6=$(f_ipv6 "$entry")
+        dot_host=$(f_dot "$entry")
+        doh_url=$(f_doh "$entry")
+
+        case "$mode" in
+        plain) apply_plain "$conn" "$ipv4" "$ipv6" ;;
+        dot) apply_dot "$conn" "$ipv4" "$ipv6" "$dot_host" ;;
+        doh) apply_doh "$conn" "$doh_url" "$ipv4" "$ipv6" "$dot_host" ;;
+        esac
+
+        notify "DNS Applied" "$best_name (${best_ms}ms) on '$conn'"
+    fi
+}
+
+do_show_config() {
+    local conn="$1"
+    local cur label dot_state blocky_state cur_v4 cur_v6
+
+    cur=$(nm_dns "$conn")
+    cur_v4=$(echo "$cur" | cut -d'|' -f1)
+    cur_v6=$(echo "$cur" | cut -d'|' -f2)
+    label=$(current_server_label "$conn")
+
+    dot_state="disabled"
+    nm_dot_enabled "$conn" && dot_state="enabled"
+    blocky_state="inactive"
+    blocky_active && blocky_state="active"
+
+    local info
+    info="Connection    $conn
+Server        $label
+IPv4          ${cur_v4:-none}
+IPv6          ${cur_v6:-none}
+DoT           $dot_state
+Blocky (DoH)  $blocky_state"
+
+    echo "$info" | rofi -dmenu -p "  Current DNS" \
+        -theme ~/.config/rofi/settings-menu.rasi \
+        -no-custom 2>/dev/null || true
+}
+
+do_reset() {
+    local conn="$1"
+    if menu_confirm "Reset DNS for '$conn' to defaults?"; then
+        reset_dns "$conn"
+        notify "DNS Reset" "Defaults restored on '$conn'"
+    fi
+}
+
+# ─── Main loop ────────────────────────────────────────────────────────────────
+
+main() {
+    # Check dependencies
+    for cmd in nmcli dig; do
+        if ! command -v "$cmd" &>/dev/null; then
+            notify "Error" "'$cmd' is required but not installed."
+            exit 1
+        fi
+    done
+
+    # Pick connection first
+    local conn
+    conn=$(pick_connection) || exit 0
+
+    while true; do
+        local label
+        label=$(current_server_label "$conn")
+
+        local selection
+        selection=$(menu "󰇖  DNS  ─  $label" \
+            "󰇖  Select DNS Server\n󰓅  Test Latency\n󰁨  Auto-select Best\n  Show Current Config\n󰌾  Reset to Default\n󰛳  Change Connection") || exit 0
+
+        case "$selection" in
+        *"Select DNS"*) do_select_server "$conn" ;;
+        *"Latency"*) do_test_latency ;;
+        *"Best"*) do_best_server "$conn" ;;
+        *"Current"*) do_show_config "$conn" ;;
+        *"Reset"*) do_reset "$conn" ;;
+        *"Change"*) conn=$(pick_connection) || exit 0 ;;
+        esac
+    done
+}
+
+main

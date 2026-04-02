@@ -3,7 +3,8 @@
 # Configuration
 BLURRED_WALLPAPER_PATH="$HOME/.config/blurred-background"
 LOG_FILE="$HOME/.config/rofi/rofi-wallpaper.log"
-MODE=$(cat "$HOME/.config/matugen/current_mode" 2>/dev/null || echo "dark")
+MODE=$(cat "$HOME/.config/matugen/current_mode" 2>/dev/null | tr -d '[:space:]')
+MODE="${MODE:-dark}" # default to dark if file missing or empty
 WALLPAPER_DIR="$HOME/Pictures/wallpapers/"
 THEME_FILE="$HOME/.config/rofi/wallpaper-selector.rasi"
 
@@ -18,6 +19,18 @@ log() {
 }
 
 log "=== Script started ==="
+
+# Resolve matugen binary: prefer system PATH, fall back to ~/.local/bin
+if command -v matugen >/dev/null 2>&1; then
+    MATUGEN_BIN="$(command -v matugen)"
+    log "Found matugen in PATH: $MATUGEN_BIN"
+elif [[ -f "$HOME/.local/bin/matugen" ]]; then
+    MATUGEN_BIN="$HOME/.local/bin/matugen"
+    log "Found matugen in ~/.local/bin: $MATUGEN_BIN"
+else
+    MATUGEN_BIN=""
+    log "WARNING: matugen not found in PATH or ~/.local/bin"
+fi
 
 # Function to check if file is a GIF
 is_gif() {
@@ -38,13 +51,13 @@ setwall() {
     fi
     log "File exists, proceeding..."
 
-    # Check if matugen is installed
-    if [ ! -f "$HOME/.local/bin/matugen" ]; then
-        log "ERROR: 'matugen' is not installed"
+    # Check if matugen is available
+    if [[ -z "$MATUGEN_BIN" ]]; then
+        log "ERROR: 'matugen' is not installed (checked PATH and ~/.local/bin)"
         echo "Error: 'matugen' is not installed"
         return 1
     fi
-    log "matugen found"
+    log "matugen found at: $MATUGEN_BIN"
 
     # Check if ImageMagick is installed
     if ! command -v magick >/dev/null 2>&1; then
@@ -54,20 +67,15 @@ setwall() {
     fi
     log "ImageMagick found"
 
-    # Set WALLPAPER_PATH based on file type
-    local WALLPAPER_PATH
-    if is_gif "$wallpaper"; then
-        WALLPAPER_PATH="$HOME/.config/background.gif"
-        log "Detected GIF, using path: $WALLPAPER_PATH"
-    else
-        WALLPAPER_PATH="$HOME/.config/background"
-        log "Using standard path: $WALLPAPER_PATH"
-    fi
+    # Set WALLPAPER_PATH based on file type, preserving extension so tools
+    # (swaybg, matugen) can determine the image format without magic-byte sniffing.
+    local ext="${wallpaper##*.}"
+    ext="${ext,,}" # lowercase
+    local WALLPAPER_PATH="$HOME/.config/background.${ext}"
+    log "Using path with extension: $WALLPAPER_PATH"
 
-    # Delete old wallpapers if they exist (both possible paths)
-    [[ -f "$HOME/.config/background" ]] && rm -f "$HOME/.config/background"
-    [[ -f "$HOME/.config/background.gif" ]] && rm -f "$HOME/.config/background.gif"
-    [[ -f "$BLURRED_WALLPAPER_PATH" ]] && rm -f "$BLURRED_WALLPAPER_PATH"
+    # Delete any previous background files (any extension) and the blurred copy
+    rm -f "$HOME"/.config/background.* "$BLURRED_WALLPAPER_PATH"
     log "Old wallpapers removed (if existed)"
 
     # Copy new wallpaper
@@ -151,16 +159,29 @@ setwall() {
     fi
 
     # Generate color palettes with matugen
-    log "Running matugen..."
+    log "Running matugen ($MATUGEN_BIN)..."
+
+    # matugen checks isatty() internally; wrap it in a pseudo-TTY via 'script'
+    # so it doesn't fail with "IO error: not a terminal".
+    # script -q suppresses typescript header, -e propagates exit code.
+    run_matugen() {
+        local img="$1"
+        if command -v script >/dev/null 2>&1; then
+            script -qec "$MATUGEN_BIN image --mode $MODE --source-color-index 0 $(printf '%q' "$img")" /dev/null >>"$LOG_FILE" 2>&1
+        else
+            # Fallback: try running directly (may fail on some matugen builds)
+            "$MATUGEN_BIN" image --mode "$MODE" --source-color-index 0 "$img" >>"$LOG_FILE" 2>&1
+        fi
+    }
+
     if is_gif "$wallpaper"; then
         log "Extracting first frame of GIF for color palette generation"
-        # Create temporary static version for matugen
         local temp_for_matugen="${WALLPAPER_PATH}.matugen.png"
-        magick "${WALLPAPER_PATH}[0]" "$temp_for_matugen" 2>&1 | tee -a "$LOG_FILE"
-        ~/.local/bin/matugen image --mode "$MODE" "$temp_for_matugen" 2>&1 | tee -a "$LOG_FILE"
+        magick "${WALLPAPER_PATH}[0]" "$temp_for_matugen" >>"$LOG_FILE" 2>&1
+        run_matugen "$temp_for_matugen"
         rm -f "$temp_for_matugen"
     else
-        ~/.local/bin/matugen image --mode "$MODE" "$WALLPAPER_PATH" 2>&1 | tee -a "$LOG_FILE"
+        run_matugen "$WALLPAPER_PATH"
     fi
     log "matugen completed"
 
@@ -192,14 +213,12 @@ if [[ -n "$1" ]]; then
     # Send notification if successful
     if [[ $exit_code -eq 0 ]]; then
         if command -v notify-send >/dev/null 2>&1; then
-            # Determine WALLPAPER_PATH for notification icon
-            if is_gif "$WALLPAPER_ARG"; then
-                WALLPAPER_PATH="$HOME/.config/background.gif"
-                wallpaper_type="Animated Wallpaper (GIF)"
-            else
-                WALLPAPER_PATH="$HOME/.config/background"
-                wallpaper_type="Wallpaper"
-            fi
+            # Derive the copied-wallpaper path (with extension) for the icon
+            notif_ext="${WALLPAPER_ARG##*.}"
+            notif_ext="${notif_ext,,}"
+            WALLPAPER_PATH="$HOME/.config/background.${notif_ext}"
+            wallpaper_type="Wallpaper"
+            is_gif "$WALLPAPER_ARG" && wallpaper_type="Animated Wallpaper (GIF)"
             notify-send "$wallpaper_type Changed" "Set to: $(basename "$WALLPAPER_ARG")" -i "$WALLPAPER_PATH"
             log "Notification sent"
         fi
