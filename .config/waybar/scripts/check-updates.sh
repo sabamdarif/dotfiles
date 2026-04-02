@@ -1,90 +1,118 @@
 #!/bin/bash
+# check-updates.sh — Waybar update checker (dnf / pacman / apt)
 
-CACHE_FILE="$HOME/.cache/total-update"
 TOOLTIP_FILE="$HOME/.cache/total-update-tooltip"
-OFFLINE_STATUS_FILE="$HOME/.cache/offline-update-status"
+mkdir -p "$(dirname "$TOOLTIP_FILE")"
 
-rm -rf "$CACHE_FILE" "$TOOLTIP_FILE" "$OFFLINE_STATUS_FILE"
-mkdir -p "$(dirname "$CACHE_FILE")"
+# ── Detection ──────────────────────────────────────────────────────────────────
 
-# Function to check if offline update is pending
-check_offline_update() {
-    if [ -L "/system-update" ] || dnf offline-upgrade status &>/dev/null; then
-        echo "pending"
+detect_pkg_manager() {
+    if command -v dnf &>/dev/null; then
+        echo "dnf"
+    elif command -v pacman &>/dev/null; then
+        echo "pacman"
+    elif command -v apt &>/dev/null; then
+        echo "apt"
     else
-        echo "none"
+        echo "unknown"
     fi
 }
 
-# Function to download and prepare offline update
-prepare_offline_update() {
-    notify-send "System Updates" "Downloading updates for offline installation..." -u normal
-
-    if sudo dnf offline-upgrade download 2>&1 | tee /tmp/dnf-offline-download.log; then
-        notify-send "System Updates" "Updates ready! Reboot to install." -u normal
-        echo "ready" >"$OFFLINE_STATUS_FILE"
-        return 0
+detect_aur_helper() {
+    if command -v paru &>/dev/null; then
+        echo "paru"
+    elif command -v yay &>/dev/null; then
+        echo "yay"
     else
-        notify-send "System Updates" "Failed to prepare updates. Check logs." -u critical
-        echo "failed" >"$OFFLINE_STATUS_FILE"
-        return 1
+        echo ""
     fi
 }
 
-# Function to apply offline update with reboot
-apply_offline_update() {
-    notify-send "System Updates" "Rebooting to install updates..." -u normal
-    sleep 2
-    sudo dnf offline-upgrade reboot
+# ── Counters ───────────────────────────────────────────────────────────────────
+
+count_dnf() {
+    dnf check-update --quiet 2>/dev/null | grep -c "^[a-zA-Z0-9]" || echo 0
 }
 
-# Handle click action (passed as argument)
-if [ "$1" = "prepare" ]; then
-    prepare_offline_update
-    exit 0
-elif [ "$1" = "apply" ]; then
-    apply_offline_update
-    exit 0
-elif [ "$1" = "cancel" ]; then
-    sudo dnf offline-upgrade clean
-    echo "none" >"$OFFLINE_STATUS_FILE"
-    notify-send "System Updates" "Offline update cancelled." -u normal
-    exit 0
-fi
+count_pacman() {
+    checkupdates 2>/dev/null | wc -l || pacman -Qu 2>/dev/null | wc -l || echo 0
+}
 
-# Main monitoring loop
+count_aur() {
+    local helper="$1"
+    [[ -z "$helper" ]] && {
+        echo 0
+        return
+    }
+    "$helper" -Qua 2>/dev/null | wc -l || echo 0
+}
+
+count_apt() {
+    apt-get -s upgrade 2>/dev/null | grep -c "^Inst " || echo 0
+}
+
+count_flatpak() {
+    command -v flatpak &>/dev/null || {
+        echo 0
+        return
+    }
+    flatpak remote-ls --updates 2>/dev/null | wc -l || echo 0
+}
+
+# ── DNF offline status ─────────────────────────────────────────────────────────
+
+dnf_offline_status() {
+    { [ -L "/system-update" ] || dnf offline-upgrade status &>/dev/null; } &&
+        echo "pending" || echo "none"
+}
+
+# ── Main loop ──────────────────────────────────────────────────────────────────
+
+PKG_MGR=$(detect_pkg_manager)
+AUR_HELPER=""
+[[ "$PKG_MGR" == "pacman" ]] && AUR_HELPER=$(detect_aur_helper)
+
 while true; do
-    # Check offline update status
-    offline_status=$(check_offline_update)
+    aur=0
+    css_class="$PKG_MGR"
 
-    # Count DNF updates
-    dnf_updates=$(dnf check-update 2>/dev/null | grep -c "^[a-zA-Z0-9]")
+    case "$PKG_MGR" in
+    dnf)
+        native=$(($(count_dnf)))
+        offline=$(dnf_offline_status)
+        [[ "$offline" == "pending" ]] && css_class="pending"
+        tooltip="DNF: ${native}"
+        [[ "$offline" == "pending" ]] && tooltip="${tooltip}\\n⚙ Offline update pending"
+        ;;
+    pacman)
+        native=$(($(count_pacman)))
+        aur=$(($(count_aur "$AUR_HELPER")))
+        tooltip="Pacman: ${native}"
+        [[ -n "$AUR_HELPER" ]] && tooltip="${tooltip}\\nAUR (${AUR_HELPER}): ${aur}"
+        ;;
+    apt)
+        native=$(($(count_apt)))
+        tooltip="APT: ${native}"
+        ;;
+    *)
+        native=0
+        tooltip="No supported package manager found"
+        ;;
+    esac
 
-    # Count Flatpak updates
-    flatpak_updates=$(flatpak remote-ls --updates 2>/dev/null | wc -l)
+    flatpak=$(($(count_flatpak)))
+    command -v flatpak &>/dev/null && tooltip="${tooltip}\\nFlatpak: ${flatpak}"
 
-    # Total
-    total=$((dnf_updates + flatpak_updates))
+    total=$((native + aur + flatpak))
+    tooltip="${tooltip}\\nTotal: ${total}"
 
-    # Build tooltip based on offline update status
-    if [ "$offline_status" = "pending" ]; then
-        tooltip="DNF: $dnf_updates\\nFlatpak: $flatpak_updates\\nTotal: $total"
-        display_text="$total"
+    if [[ "$total" -gt 0 ]]; then
+        printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' \
+            "$total" "$tooltip" "$css_class" >"$TOOLTIP_FILE"
     else
-        tooltip="DNF: $dnf_updates\\nFlatpak: $flatpak_updates\\nTotal: $total"
-        display_text="$total"
+        printf '{"text":"","tooltip":"No updates available","class":"none"}\n' \
+            >"$TOOLTIP_FILE"
     fi
 
-    # Write count
-    echo "$total" >"$CACHE_FILE"
-
-    # Write valid JSON with proper escaping
-    printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' \
-        "$display_text" "$tooltip" "$offline_status" >"$TOOLTIP_FILE"
-
-    # Store offline status
-    echo "$offline_status" >"$OFFLINE_STATUS_FILE"
-
-    # Check every 5 minutes (300 seconds)
     sleep 300
 done

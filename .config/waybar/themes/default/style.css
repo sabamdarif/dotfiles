@@ -6,31 +6,31 @@
  * -------------------------------------------------------------------------- */
 
 * {
-    border: none;
-    border-radius: 0;
-    font-size: 15px;
-    font-weight: 600;
-    min-height: 20px;
+  border: none;
+  border-radius: 0;
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 20px;
 }
 
 window#waybar {
-    /* background-color: alpha(@background, 0.95); */
-    /* border: 0px solid @foreground; */
-    border-radius: 24px;
-    margin-top: 15px;
-    /* box-shadow: 0 2px 8px alpha(@shadow, 0.15); */
+  background-color: alpha(@background, 0.95);
+  /* border: 0px solid @foreground; */
+  border-radius: 24px;
+  margin-top: 15px;
+  /* box-shadow: 0 2px 8px alpha(@shadow, 0.15); */
 }
 
 tooltip {
-    background: @surface_container_high;
-    border-radius: 12px;
-    border: 1px solid @outline_variant;
-    color: @on_surface;
-    padding: 10px 14px;
+  background: @surface_container_high;
+  border-radius: 12px;
+  border: 1px solid @outline_variant;
+  color: @on_surface;
+  padding: 10px 14px;
 }
 
 tooltip label {
-    color: @on_surface;
+  color: @on_surface;
 }
 
 /* -----------------------------------------------------------------------------
@@ -38,65 +38,65 @@ tooltip label {
  * -------------------------------------------------------------------------- */
 
 #custom-launcher {
-    background-color: @primary;
-    color: @on_primary;
-    border-radius: 24px;
-    padding: 3px 12px;
-    margin: 4px;
-    font-size: 16px;
-    box-shadow: 0 2px 6px alpha(@primary, 0.3);
+  background-color: @primary;
+  color: @on_primary;
+  border-radius: 24px;
+  padding: 3px 12px;
+  margin: 4px;
+  font-size: 16px;
+  box-shadow: 0 2px 6px alpha(@primary, 0.3);
 }
 
 #custom-launcher:hover {
-    background-color: alpha(@primary, 0.85);
-    color: @on_primary;
-    box-shadow: 0 4px 12px alpha(@primary, 0.4);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: alpha(@primary, 0.85);
+  color: @on_primary;
+  box-shadow: 0 4px 12px alpha(@primary, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* -----------------------------------------------------------------------------
  * Workspaces - Standalone (HIGH CONTRAST)
  * -------------------------------------------------------------------------- */
 #workspaces {
-    background-color: @surface_container_highest;
-    margin: 4px 4px;
-    border-radius: 24px;
-    padding: 2px 5px;
-    border: 1px solid @outline_variant;
+  background-color: @surface_container_highest;
+  margin: 4px 4px;
+  border-radius: 24px;
+  padding: 2px 5px;
+  border: 1px solid @outline_variant;
 }
 
 #workspaces button {
-    margin: 5px 3px;
-    border-radius: 50%;
-    border: 0px;
-    color: @on_surface_variant;
-    background-color: @outline_variant;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 20px;
-    min-height: 10px;
-    padding: 0px;
+  margin: 5px 3px;
+  border-radius: 50%;
+  border: 0px;
+  color: @on_surface_variant;
+  background-color: @outline_variant;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 20px;
+  min-height: 10px;
+  padding: 0px;
 }
 
 #workspaces button label {
-    font-size: 0;
+  font-size: 0;
 }
 
 #workspaces button.focused,
 #workspaces button.active {
-    background: @primary;
-    color: @on_primary;
-    box-shadow: 0 2px 4px alpha(@primary, 0.3);
+  background: @primary;
+  color: @on_primary;
+  box-shadow: 0 2px 4px alpha(@primary, 0.3);
 }
 
 #workspaces button.focused {
-    border-radius: 10px;
-    min-width: 36px;
+  border-radius: 10px;
+  min-width: 36px;
 }
 
 #workspaces button.urgent {
-    background: @error;
-    color: @on_error;
-    box-shadow: 0 2px 4px alpha(@error, 0.3);
+  background: @error;
+  color: @on_error;
+  box-shadow: 0 2px 4px alpha(@error, 0.3);
 }
 
 /* -----------------------------------------------------------------------------
@@ -104,30 +104,30 @@ tooltip label {
  * -------------------------------------------------------------------------- */
 
 #network.speed {
-    background-color: @secondary_container;
-    color: @on_secondary_container;
-    padding: 4px 14px;
-    margin: 5px 2px;
-    border-radius: 24px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @secondary_container;
+  color: @on_secondary_container;
+  padding: 4px 14px;
+  margin: 5px 2px;
+  border-radius: 24px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 #cpu {
-    background-color: @tertiary_container;
-    color: @on_tertiary_container;
-    padding: 4px 14px;
-    margin: 5px 2px;
-    border-radius: 24px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @tertiary_container;
+  color: @on_tertiary_container;
+  padding: 4px 14px;
+  margin: 5px 2px;
+  border-radius: 24px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 #memory {
-    background-color: @primary_container;
-    color: @on_primary_container;
-    padding: 4px 14px;
-    margin: 5px 2px;
-    border-radius: 24px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @primary_container;
+  color: @on_primary_container;
+  padding: 4px 14px;
+  margin: 5px 2px;
+  border-radius: 24px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 /* -----------------------------------------------------------------------------
@@ -135,19 +135,19 @@ tooltip label {
  * -------------------------------------------------------------------------- */
 
 #clock {
-    background-color: @surface_container_highest;
-    color: @on_surface;
-    border-radius: 24px;
-    padding: 4px 14px;
-    margin: 6px 3px;
-    border: 1px solid @outline_variant;
-    font-weight: 700;
+  background-color: @surface_container_highest;
+  color: @on_surface;
+  border-radius: 24px;
+  padding: 4px 14px;
+  margin: 6px 3px;
+  border: 1px solid @outline_variant;
+  font-weight: 700;
 }
 
 #clock:hover {
-    background-color: @surface_container_high;
-    border: 1px solid @outline;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: @surface_container_high;
+  border: 1px solid @outline;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* -----------------------------------------------------------------------------
@@ -155,32 +155,32 @@ tooltip label {
  * -------------------------------------------------------------------------- */
 
 #custom-mic-camera-usage {
-    background-color: @error;
-    color: @on_error;
-    border-radius: 24px;
-    padding: 4px 14px;
-    margin: 6px 3px;
-    box-shadow: 0 2px 4px alpha(@error, 0.3);
+  background-color: @error;
+  color: @on_error;
+  border-radius: 24px;
+  padding: 4px 14px;
+  margin: 6px 3px;
+  box-shadow: 0 2px 4px alpha(@error, 0.3);
 }
 
 #custom-power-profile,
 #power-profiles-daemon,
 #custom-updates {
-    background-color: @tertiary_container;
-    color: @on_tertiary_container;
-    border-radius: 24px;
-    padding: 4px 14px;
-    margin: 6px 3px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @tertiary_container;
+  color: @on_tertiary_container;
+  border-radius: 24px;
+  padding: 4px 14px;
+  margin: 6px 3px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 #custom-bt-battery {
-    background-color: @secondary_container;
-    color: @on_secondary_container;
-    border-radius: 24px;
-    padding: 4px 14px;
-    margin: 6px 3px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @secondary_container;
+  color: @on_secondary_container;
+  border-radius: 24px;
+  padding: 4px 14px;
+  margin: 6px 3px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 /* -----------------------------------------------------------------------------
@@ -188,105 +188,105 @@ tooltip label {
  * -------------------------------------------------------------------------- */
 
 #tray {
-    background-color: @surface_container_highest;
-    color: @on_surface;
-    padding: 4px 10px;
-    padding-left: 14px;
-    margin: 5px 2px;
-    border-radius: 24px;
-    border: 1px solid @outline_variant;
+  background-color: @surface_container_highest;
+  color: @on_surface;
+  padding: 4px 10px;
+  padding-left: 14px;
+  margin: 5px 2px;
+  border-radius: 24px;
+  border: 1px solid @outline_variant;
 }
 
-#tray>.passive {
-    -gtk-icon-effect: dim;
+#tray > .passive {
+  -gtk-icon-effect: dim;
 }
 
-#tray>.needs-attention {
-    -gtk-icon-effect: highlight;
-    color: @error;
+#tray > .needs-attention {
+  -gtk-icon-effect: highlight;
+  color: @error;
 }
 
 #tray:hover {
-    background-color: @surface_container_high;
-    border: 1px solid @outline;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: @surface_container_high;
+  border: 1px solid @outline;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #pulseaudio,
 #wireplumber {
-    background-color: @primary_container;
-    color: @on_primary_container;
-    padding: 4px 14px;
-    margin: 5px 2px;
-    border-radius: 24px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @primary_container;
+  color: @on_primary_container;
+  padding: 4px 14px;
+  margin: 5px 2px;
+  border-radius: 24px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 #pulseaudio.muted,
 #wireplumber.muted {
-    background-color: @surface_container_high;
-    color: @outline;
-    border: 1px solid @outline;
+  background-color: @surface_container_high;
+  color: @outline;
+  border: 1px solid @outline;
 }
 
 #network.info,
 #network {
-    background-color: @secondary_container;
-    color: @on_secondary_container;
-    padding: 4px 14px;
-    margin: 5px 2px;
-    border-radius: 24px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @secondary_container;
+  color: @on_secondary_container;
+  padding: 4px 14px;
+  margin: 5px 2px;
+  border-radius: 24px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 #network.disconnected {
-    background-color: @error;
-    color: @on_error;
-    border: 1px solid alpha(@error, 0.3);
+  background-color: @error;
+  color: @on_error;
+  border: 1px solid alpha(@error, 0.3);
 }
 
 #battery {
-    background-color: @tertiary_container;
-    color: @on_tertiary_container;
-    padding: 4px 14px;
-    margin: 5px 2px;
-    border-radius: 24px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @tertiary_container;
+  color: @on_tertiary_container;
+  padding: 4px 14px;
+  margin: 5px 2px;
+  border-radius: 24px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 #battery.charging,
 #battery.plugged {
-    background-color: @primary_container;
-    color: @primary;
-    border: 1px solid alpha(@primary, 0.3);
+  background-color: @primary_container;
+  color: @primary;
+  border: 1px solid alpha(@primary, 0.3);
 }
 
 #battery.warning:not(.charging) {
-    background-color: @tertiary_container;
-    color: @tertiary;
-    border: 1px solid alpha(@tertiary, 0.3);
+  background-color: @tertiary_container;
+  color: @tertiary;
+  border: 1px solid alpha(@tertiary, 0.3);
 }
 
 #battery.critical:not(.charging) {
-    background: @error;
-    color: @on_error;
-    border: 1px solid alpha(@error, 0.5);
-    animation: blink 0.5s ease-in-out infinite;
+  background: @error;
+  color: @on_error;
+  border: 1px solid alpha(@error, 0.5);
+  animation: blink 0.5s ease-in-out infinite;
 }
 
 #custom-notification {
-    background-color: @secondary_container;
-    color: @on_secondary_container;
-    margin: 4px;
-    padding: 3px 12px;
-    border-radius: 24px;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background-color: @secondary_container;
+  color: @on_secondary_container;
+  margin: 4px;
+  padding: 3px 12px;
+  border-radius: 24px;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 @keyframes blink {
-    50% {
-        opacity: 0.6;
-    }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 /* -----------------------------------------------------------------------------
@@ -294,11 +294,11 @@ tooltip label {
  * -------------------------------------------------------------------------- */
 
 window#waybar.bottom {
-    background: alpha(@background, 0.5);
-    color: @on_background;
-    border-radius: 24px;
-    margin-bottom: 8px;
-    box-shadow: 0 -2px 8px alpha(@shadow, 0.15);
+  background: alpha(@background, 0.5);
+  color: @on_background;
+  border-radius: 24px;
+  margin-bottom: 8px;
+  box-shadow: 0 -2px 8px alpha(@shadow, 0.15);
 }
 
 /* -----------------------------------------------------------------------------
@@ -306,21 +306,21 @@ window#waybar.bottom {
  * -------------------------------------------------------------------------- */
 
 #custom-os_button {
-    font-size: 28px;
-    padding: 8px 16px;
-    margin: 4px;
-    background: @primary;
-    color: @on_primary;
-    border-radius: 20px;
-    transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
-    min-height: 40px;
-    box-shadow: 0 2px 6px alpha(@primary, 0.3);
+  font-size: 28px;
+  padding: 8px 16px;
+  margin: 4px;
+  background: @primary;
+  color: @on_primary;
+  border-radius: 20px;
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+  min-height: 40px;
+  box-shadow: 0 2px 6px alpha(@primary, 0.3);
 }
 
 #custom-os_button:hover {
-    background: alpha(@primary, 0.85);
-    color: @on_primary;
-    box-shadow: 0 4px 12px alpha(@primary, 0.4);
+  background: alpha(@primary, 0.85);
+  color: @on_primary;
+  box-shadow: 0 4px 12px alpha(@primary, 0.4);
 }
 
 /* -----------------------------------------------------------------------------
@@ -328,45 +328,45 @@ window#waybar.bottom {
  * -------------------------------------------------------------------------- */
 
 #taskbar {
-    background: transparent;
+  background: transparent;
 }
 
 #taskbar button {
-    padding: 8px 12px;
-    margin: 4px;
-    background: @surface_container_highest;
-    color: @on_surface;
-    border-radius: 16px;
-    border: 1px solid @outline_variant;
-    transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
-    min-height: 40px;
+  padding: 8px 12px;
+  margin: 4px;
+  background: @surface_container_highest;
+  color: @on_surface;
+  border-radius: 16px;
+  border: 1px solid @outline_variant;
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+  min-height: 40px;
 }
 
 #taskbar button:hover {
-    background: @surface_container_high;
-    border: 1px solid @outline;
+  background: @surface_container_high;
+  border: 1px solid @outline;
 }
 
 #taskbar button.active {
-    background: @secondary_container;
-    color: @on_secondary_container;
-    border: 1px solid alpha(@outline_variant, 0.5);
+  background: @secondary_container;
+  color: @on_secondary_container;
+  border: 1px solid alpha(@outline_variant, 0.5);
 }
 
 #taskbar button.urgent {
-    background: @error;
-    color: @on_error;
-    border: 1px solid alpha(@error, 0.5);
-    animation-name: blink;
-    animation-duration: 0.5s;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
+  background: @error;
+  color: @on_error;
+  border: 1px solid alpha(@error, 0.5);
+  animation-name: blink;
+  animation-duration: 0.5s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
 }
 
 @keyframes blink {
-    to {
-        background-color: alpha(@error, 0.8);
-        color: @on_error;
-    }
+  to {
+    background-color: alpha(@error, 0.8);
+    color: @on_error;
+  }
 }

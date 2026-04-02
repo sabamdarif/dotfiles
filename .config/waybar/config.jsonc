@@ -1,256 +1,258 @@
 [
-    {
-        "layer": "top",
-        "position": "top",
-        "height": 35,
-        "margin": "0 0 0 0",
-        "spacing": 2,
-        "modules-left": [
-            "custom/launcher",
-            "niri/workspaces",
-            "memory",
-            "cpu",
-            "network#speed"
-        ],
-        "modules-center": ["custom/updates", "custom/mic-camera-usage", "clock", "custom/power-profile"],
-        "modules-right": [
-            // "privacy",
-            "tray",
-            "pulseaudio",
-            "network#info",
-            "group/group-battery",
-            "custom/notification"
-        ],
-        "niri/workspaces": {
-            "disable-scroll": true,
-            "all-outputs": true,
-            "on-click": "activate",
-            "smooth-scrolling-threshold": 3.0,
-            "format-window-separator": "",
-            "warp-on-scroll": false,
-            "format": "{icon}",
-            "format-icons": {
-                "urgent": " ",
-                "focused": " ",
-                "default": " "
-            },
-        },
-        "tray": {
-            // "icon-size": 14,
-            "spacing": 5
-        },
-        "privacy": {
-            "icon-spacing": 0,
-            "icon-size": 12,
-            "transition-duration": 250,
-            "modules": [
-                {
-                    "type": "screenshare",
-                    "tooltip": true,
-                    "tooltip-icon-size": 12
-                },
-                // {
-                //   "type": "audio-out",
-                //   "tooltip": true,
-                //   "tooltip-icon-size": 12
-                // },
-                {
-                    "type": "audio-in",
-                    "tooltip": true,
-                    "tooltip-icon-size": 12
-                }
-            ],
-            "ignore-monitor": false,
-            "expand": false
-        },
-        "custom/mic-camera-usage": {
-            "return-type": "json",
-            "exec": "~/.config/waybar/scripts/mic_and_camera_usage.sh",
-            // "restart-interval": 5,
-            // "interval": 2,
-            "hide-empty-text": true
-        },
-        "clock": {
-            "format": " {:%a %d %b | 󰥔 %I:%M %p}", //12 hour format
-            "tooltip-format": "<tt><small>{calendar}</small></tt>",
-            "interval": 1,
-            // "on-click": "gnome-calendar",
-            "calendar": {
-                "mode": "month",
-                // "mode-mon-col": 3,
-                // "weeks-pos": "left",
-                "on-scroll": 1,
-                "format": {
-                    "months": "<span color='#eed49f'><b>{}</b></span>",
-                    "days": "<span color='#cad3f5'><b>{}</b></span>",
-                    "weeks": "<span color='#8aadf4'><b>W{}</b></span>",
-                    "weekdays": "<span color='#8bd5ca'><b>{}</b></span>",
-                    "today": "<span color='#ed8796'><b><u>{}</u></b></span>"
-                }
-            },
-            "actions": {
-                "on-click-right": "mode",
-                "on-click-forward": "tz_up",
-                "on-click-backward": "tz_down",
-                "on-scroll-up": "shift_down",
-                "on-scroll-down": "shift_up"
-            },
-            "smooth-scrolling-threshold": 3.0,
-            "on-click-middle": "gnome-calendar"
-        },
-        "power-profiles-daemon": {
-            "format": "{icon}",
-            "tooltip": true,
-            "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
-            "format-icons": {
-                "default": "",
-                "performance": "󰓅",
-                "balanced": "",
-                "power-saver": "󰌪"
-            }
-        },
-        "custom/power-profile": {
-            "format": "{}",
-            "return-type": "json",
-            "interval": 3,
-            "exec": "~/.config/waybar/scripts/power_profile.sh status",
-            "on-click": "~/.config/waybar/scripts/power_profile.sh toggle",
-            "tooltip": true
-        },
-        "cpu": {
-            "format": " {usage: >3}%",
-            "on-click": "gnome-system-monitor"
-        },
-        "memory": {
-            "format": " {: >3}%",
-            "on-click": "gnome-system-monitor"
-        },
-        "temperature": {
-            "thermal-zone": 4,
-            // "hwmon-path": "/sys/class/hwmon/hwmon1/temp1_input",
-            "critical-threshold": 80,
-            // "format-critical": "{temperatureC}°C ",
-            "format": "  {temperatureC}°C"
-        },
-        // Harddisc space used
-        "disk": {
-            // "interval": 30,
-            "format": " {percentage_used}% ",
-            "path": "/"
-            //"on-click": "ghostty -e htop"
-        },
-        "group/group-battery":
+  {
+    "layer": "top",
+    "position": "top",
+    "height": 35,
+    "margin": "0 0 0 0",
+    "spacing": 2,
+    "modules-left": [
+      "custom/launcher",
+      "niri/workspaces",
+      "memory",
+      "cpu",
+      "network#speed",
+    ],
+    "modules-center": [
+      "custom/updates",
+      "custom/mic-camera-usage",
+      "clock",
+      "custom/power-profile",
+    ],
+    "modules-right": [
+      // "privacy",
+      "tray",
+      "pulseaudio",
+      "network#info",
+      "group/group-battery",
+      "custom/notification",
+    ],
+    "niri/workspaces": {
+      "disable-scroll": true,
+      "all-outputs": true,
+      "on-click": "activate",
+      "smooth-scrolling-threshold": 3.0,
+      "format-window-separator": "",
+      "warp-on-scroll": false,
+      "format": "{icon}",
+      "format-icons": {
+        "urgent": " ",
+        "focused": " ",
+        "default": " ",
+      },
+    },
+    "tray": {
+      // "icon-size": 14,
+      "spacing": 5,
+    },
+    "privacy": {
+      "icon-spacing": 0,
+      "icon-size": 12,
+      "transition-duration": 250,
+      "modules": [
         {
-            "orientation": "inherit",
-            "drawer":
-            {
-                "transition-duration": 500,
-                "children-class": "battery-items",
-                "transition-left-to-right": false
-            },
-            "modules": [
-                "battery",
-                "custom/bt-battery"
-            ]
+          "type": "screenshare",
+          "tooltip": true,
+          "tooltip-icon-size": 12,
         },
-        "battery": {
-            "interval": 2, // Poll every 2 seconds
-            "states": {
-                "good": 95,
-                "warning": 30,
-                "critical": 15
-            },
-            "format": "{icon} {capacity}%",
-            "format-charging": "{icon} {capacity}%",
-            "format-plugged": "  {capacity}%",
-            "format-alt": "{icon}  {time}",
-            // "format-good": "", // An empty format will hide the module
-            // "format-full": "",
-            "format-icons": {
-                "charging": ["󰢜", "󰂇", "󰢝", "󰢝", "󰂉", "󰂅"],
-                "default": ["󰁺", "󰁼", "󰁾", "󰁾", "󰂀", "󰁹"]
-            }
+        // {
+        //   "type": "audio-out",
+        //   "tooltip": true,
+        //   "tooltip-icon-size": 12
+        // },
+        {
+          "type": "audio-in",
+          "tooltip": true,
+          "tooltip-icon-size": 12,
         },
-        "custom/bt-battery": {
-            "exec": "~/.config/waybar/scripts/bt-battery.sh",
-            "interval": 3,
-            "format": "{}",
-            "tooltip": true,
-            "tooltip-format": "Bluetooth battery"
+      ],
+      "ignore-monitor": false,
+      "expand": false,
+    },
+    "custom/mic-camera-usage": {
+      "return-type": "json",
+      "exec": "~/.config/waybar/scripts/mic_and_camera_usage.sh",
+      // "restart-interval": 5,
+      // "interval": 2,
+      "hide-empty-text": true,
+    },
+    "clock": {
+      "format": " {:%a %d %b | 󰥔 %I:%M %p}", //12 hour format
+      "tooltip-format": "<tt><small>{calendar}</small></tt>",
+      "interval": 1,
+      // "on-click": "gnome-calendar",
+      "calendar": {
+        "mode": "month",
+        // "mode-mon-col": 3,
+        // "weeks-pos": "left",
+        "on-scroll": 1,
+        "format": {
+          "months": "<span color='#eed49f'><b>{}</b></span>",
+          "days": "<span color='#cad3f5'><b>{}</b></span>",
+          "weeks": "<span color='#8aadf4'><b>W{}</b></span>",
+          "weekdays": "<span color='#8bd5ca'><b>{}</b></span>",
+          "today": "<span color='#ed8796'><b><u>{}</u></b></span>",
         },
-        "network#info": {
-            "interface": "wlp2s0", // (Optional) To force the use of this interface
-            "format": "⚠  Disabled",
-            "format-wifi": "  {essid}",
-            // "format-ethernet": " {ifname}: {ipaddr}/{cidr}",
-            "format-ethernet": "  Wired",
-            "format-disconnected": "⚠  Disconnected",
-            "tooltip-format": " {ifname} via {gwaddri}",
-            "tooltip-format-wifi": "   {essid} ({signalStrength}%)",
-            "tooltip-format-ethernet": "  {ifname} ({ipaddr}/{cidr})",
-            "tooltip-format-disconnected": "⚠  Disconnected",
-            // "on-click": "ghostty -e nmtui"
-            "on-click": "~/.config/swaync/scripts/toggle_wifi.sh"
-        },
-        "network#speed": {
-            "interface": "wlp2s0",
-            "interval": 1,
-            "format": " {bandwidthDownBits}  {bandwidthUpBits}",
-            "format-disconnected": "⚠",
-            "tooltip": false
-        },
-        "pulseaudio": {
-            // "scroll-step": 5,
-            "format": "{icon} {volume: >3}%",
-            "format-bluetooth": "{volume}% {icon}",
-            "format-bluetooth-muted": "{icon} {format_source}",
-            "format-muted": "󰝟 muted",
-            "format-icons": {
-                "headphones": "",
-                "handsfree": "",
-                "headset": "",
-                "phone": "",
-                "portable": "",
-                "car": "",
-                "default": ["", ""]
-            },
-            "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
-            "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
-            "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
-        },
+      },
+      "actions": {
+        "on-click-right": "mode",
+        "on-click-forward": "tz_up",
+        "on-click-backward": "tz_down",
+        "on-scroll-up": "shift_down",
+        "on-scroll-down": "shift_up",
+      },
+      "smooth-scrolling-threshold": 3.0,
+      "on-click-middle": "gnome-calendar",
+    },
+    "power-profiles-daemon": {
+      "format": "{icon}",
+      "tooltip": true,
+      "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+      "format-icons": {
+        "default": "",
+        "performance": "󰓅",
+        "balanced": "",
+        "power-saver": "󰌪",
+      },
+    },
+    "custom/power-profile": {
+      "format": "{}",
+      "return-type": "json",
+      "interval": 3,
+      "exec": "~/.config/waybar/scripts/power_profile.sh status",
+      "on-click": "~/.config/waybar/scripts/power_profile.sh toggle",
+      "tooltip": true,
+    },
+    "cpu": {
+      "format": " {usage: >3}%",
+      "on-click": "gnome-system-monitor",
+    },
+    "memory": {
+      "format": " {: >3}%",
+      "on-click": "gnome-system-monitor",
+    },
+    "temperature": {
+      "thermal-zone": 4,
+      // "hwmon-path": "/sys/class/hwmon/hwmon1/temp1_input",
+      "critical-threshold": 80,
+      // "format-critical": "{temperatureC}°C ",
+      "format": "  {temperatureC}°C",
+    },
+    // Harddisc space used
+    "disk": {
+      // "interval": 30,
+      "format": " {percentage_used}% ",
+      "path": "/",
+      //"on-click": "ghostty -e htop"
+    },
+    "group/group-battery": {
+      "orientation": "inherit",
+      "drawer": {
+        "transition-duration": 500,
+        "children-class": "battery-items",
+        "transition-left-to-right": false,
+      },
+      "modules": ["battery", "custom/bt-battery"],
+    },
+    "battery": {
+      "interval": 2, // Poll every 2 seconds
+      "states": {
+        "good": 95,
+        "warning": 30,
+        "critical": 15,
+      },
+      "format": "{icon} {capacity}%",
+      "format-charging": "{icon} {capacity}%",
+      "format-plugged": "  {capacity}%",
+      "format-alt": "{icon}  {time}",
+      // "format-good": "", // An empty format will hide the module
+      // "format-full": "",
+      "format-icons": {
+        "charging": ["󰢜", "󰂇", "󰢝", "󰢝", "󰂉", "󰂅"],
+        "default": ["󰁺", "󰁼", "󰁾", "󰁾", "󰂀", "󰁹"],
+      },
+    },
+    "custom/bt-battery": {
+      "exec": "~/.config/waybar/scripts/bt-battery.sh",
+      "interval": 3,
+      "format": "{}",
+      "tooltip": true,
+      "tooltip-format": "Bluetooth battery",
+    },
+    "network#info": {
+      // "interface": "wlp2s0", // (Optional) To force the use of this interface
+      "format": "⚠  Disabled",
+      "format-wifi": "  {essid}",
+      // "format-ethernet": " {ifname}: {ipaddr}/{cidr}",
+      "format-ethernet": "  Wired",
+      "format-disconnected": "⚠  Disconnected",
+      "tooltip-format": " {ifname} via {gwaddri}",
+      "tooltip-format-wifi": "   {essid} ({signalStrength}%)",
+      "tooltip-format-ethernet": "  {ifname} ({ipaddr}/{cidr})",
+      "tooltip-format-disconnected": "⚠  Disconnected",
+      // "on-click": "ghostty -e nmtui"
+      "on-click": "~/.config/swaync/scripts/toggle_wifi.sh",
+    },
+    "network#speed": {
+      // "interface": "wlp2s0",
+      "interval": 1,
+      "format": " {bandwidthDownBytes}  {bandwidthUpBytes}",
+      "format-disconnected": "⚠",
+      "tooltip": false,
+    },
+    "pulseaudio": {
+      // "scroll-step": 5,
+      "format": "{icon} {volume: >3}%",
+      "format-bluetooth": "{volume}% {icon}",
+      "format-bluetooth-muted": "{icon} {format_source}",
+      "format-muted": "󰝟 muted",
+      "format-icons": {
+        "headphones": "",
+        "handsfree": "",
+        "headset": "",
+        "phone": "",
+        "portable": "",
+        "car": "",
+        "default": ["", ""],
+      },
+      "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+      "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
+      "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-",
+    },
 
-        "custom/launcher": {
-            "format": "",
-            "on-click": "~/.config/rofi/bin/app-menu",
-            "tooltip": false
-        },
-        "custom/notification": {
-            "tooltip": true,
-            "format": "<span size='16pt'>{icon}</span>",
-            "format-icons": {
-                "notification": "󱅫",
-                "none": "󰂜",
-                "dnd-notification": "󰂠",
-                "dnd-none": "󰪓",
-                "inhibited-notification": "󰂛",
-                "inhibited-none": "󰪑",
-                "dnd-inhibited-notification": "󰂛",
-                "dnd-inhibited-none": "󰪑"
-            },
-            "return-type": "json",
-            "exec-if": "which swaync-client",
-            "exec": "swaync-client -swb",
-            "on-click": "swaync-client -t -sw",
-            "on-click-right": "swaync-client -d -sw",
-            "escape": true
-        },
-        "custom/updates": {
-            "format": "󰅢 {}",
-            "return-type": "json",
-            "exec": "cat ~/.cache/total-update-tooltip",
-            "exec-if": "[ -f ~/.cache/total-update-tooltip ]",
-            "interval": 10,
-            "on-click": "ghostty -e bash -c 'echo \"Updating Flatpak...\"; flatpak update -y; echo; echo \"Preparing DNF offline update...\"; sudo dnf offline-upgrade download && { read -p \"Reboot now to install DNF updates? (y/n): \" -n 1 -r; echo; [[ $REPLY =~ ^[Yy]$ ]] && sudo dnf offline-upgrade reboot || echo \"Updates will install on next reboot.\"; } || echo \"No DNF updates available.\"; read -p \"Press Enter to close...\"'"
-        }
-    }
+    "custom/launcher": {
+      "format": "󰣇",
+      "on-click": "~/.config/rofi/bin/app-menu",
+      "tooltip": false,
+    },
+    "custom/notification": {
+      "tooltip": true,
+      "format": "<span size='16pt'>{icon}</span>",
+      "format-icons": {
+        "notification": "󱅫",
+        "none": "󰂜",
+        "dnd-notification": "󰂠",
+        "dnd-none": "󰪓",
+        "inhibited-notification": "󰂛",
+        "inhibited-none": "󰪑",
+        "dnd-inhibited-notification": "󰂛",
+        "dnd-inhibited-none": "󰪑",
+      },
+      "return-type": "json",
+      "exec-if": "which swaync-client",
+      "exec": "swaync-client -swb",
+      "on-click": "swaync-client -t -sw",
+      "on-click-right": "swaync-client -d -sw",
+      "escape": true,
+    },
+    "custom/updates": {
+      "format": "󰅢 {}",
+      "return-type": "json",
+      "exec": "cat ~/.cache/total-update-tooltip",
+      "exec-if": "[ -f ~/.cache/total-update-tooltip ]",
+      "interval": 10,
+      "hide-empty-text": true,
+      "on-click": "~/.config/waybar/scripts/update-click.sh",
+      "tooltip": true,
+    },
+  },
 ]
