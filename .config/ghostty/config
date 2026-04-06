@@ -6,7 +6,7 @@ font-size = 13
 theme = "Matugen"
 
 # Window Configuration
-window-decoration = true
+window-decoration = none
 window-padding-balance = true
 
 # Cursor Configuration
@@ -18,10 +18,13 @@ mouse-hide-while-typing = true
 copy-on-select = true
 confirm-close-surface = false
 
-shell-integration = none
+# shell-integration = none
 
 # launch with fullscreen mode
-fullscreen = true
+# fullscreen = true
+
+# start the window in a maximized state
+maximize = true
 
 # Disable annoying copied to clipboard
 # app-notifications = no-clipboard-copy,no-config-reload
@@ -37,6 +40,9 @@ keybind = ctrl+minus=decrease_font_size:1
 keybind = ctrl+zero=reset_font_size
 keybind = f11=toggle_window_decorations
 keybind = ctrl+shift+f=toggle_fullscreen
+keybind = ctrl+shift+o=toggle_tab_overview
+keybind = ctrl+shift+s=new_split:right
+keybind = ctrl+shift+d=new_split:down
 
 # Tab configuration
 gtk-titlebar = false
