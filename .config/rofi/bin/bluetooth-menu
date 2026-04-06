@@ -69,6 +69,14 @@ toggle_bluetooth() {
         echo "false"
     else
         log "INFO" "Enabling Bluetooth"
+
+        # Unblock bluetooth if it's soft-blocked
+        if rfkill list bluetooth | grep -q "Soft blocked: yes"; then
+            log "INFO" "Unblocking Bluetooth with rfkill"
+            rfkill unblock bluetooth
+            sleep 0.5
+        fi
+
         notify-send -a "Bluetooth Manager" -i "bluetooth-active" \
             "Enabling Bluetooth" "Searching for devices..."
         bluetoothctl power on >/dev/null 2>&1
@@ -100,9 +108,9 @@ scan_devices() {
     local scan_output
     scan_output=$(
         (
+            echo "agent on"
+            echo "default-agent"
             echo "scan on"
-            agent on
-            default-agent
             sleep "$SCAN_TIMEOUT"
             echo "scan off"
             echo "quit"
@@ -484,8 +492,8 @@ main_menu() {
 
     # ── build menu (no trailing \n) ──
     local menu=""
-    menu="  Paired Devices\n"
-    menu="${menu}  Rescan\n"
+    menu="󰾰  Paired Devices\n"
+    menu="${menu}󰑓  Rescan\n"
     menu="${menu}󰂲 Disable Bluetooth"
 
     for entry in "${device_data[@]}"; do
