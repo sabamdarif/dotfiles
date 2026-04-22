@@ -388,6 +388,7 @@ list_pdf_viewers() {
     local pdf_apps=(
         "evince:Evince (GNOME Document Viewer)"
         "org.gnome.Evince:Evince"
+        "org.gnome.Papers:Papers (GNOME)"
         "okular:Okular (KDE)"
         "org.kde.okular:Okular"
         "atril:Atril (MATE)"
