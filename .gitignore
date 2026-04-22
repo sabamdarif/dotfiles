@@ -104,3 +104,4 @@
 /.local/bin/claude
 /.local/bin/uvicorn
 /.local/bin/watchmedo
+/.var/app/com.rustdesk.RustDesk

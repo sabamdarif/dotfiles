@@ -86,13 +86,13 @@ setwall() {
     fi
     log "New wallpaper copied successfully to $WALLPAPER_PATH"
 
-    # Set wallpaper with swww or swaybg
-    if command -v swww >/dev/null 2>&1; then
-        log "Using swww to set wallpaper"
+    # Set wallpaper with awww or swaybg
+    if command -v awww >/dev/null 2>&1; then
+        log "Using awww to set wallpaper"
         if is_gif "$wallpaper"; then
-            log "Setting animated GIF with swww"
+            log "Setting animated GIF with awww"
         fi
-        swww img "$WALLPAPER_PATH" --transition-type center --transition-duration 2 2>&1 | tee -a "$LOG_FILE"
+        awww img "$WALLPAPER_PATH" --transition-type center --transition-duration 2 2>&1 | tee -a "$LOG_FILE"
     elif command -v swaybg >/dev/null 2>&1; then
         log "Using swaybg to set wallpaper"
         if is_gif "$wallpaper"; then
@@ -107,7 +107,7 @@ setwall() {
             swaybg -i "$WALLPAPER_PATH" -m fill &
         fi
     else
-        log "ERROR: Neither swww nor swaybg found"
+        log "ERROR: Neither awww nor swaybg found"
     fi
 
     # Create blurred version

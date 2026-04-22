@@ -338,3 +338,5 @@ image/x-sony-arw=io.github.woelper.Oculante.desktop
 image/x-sony-srf=io.github.woelper.Oculante.desktop
 image/x-sony-sr2=io.github.woelper.Oculante.desktop
 image/x-panasonic-raw=io.github.woelper.Oculante.desktop
+text/xml=app.zen_browser.zen.desktop
+x-scheme-handler/ftp=app.zen_browser.zen.desktop
