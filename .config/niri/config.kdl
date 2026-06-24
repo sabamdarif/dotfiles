@@ -11,6 +11,8 @@ include "config.d/autostart.kdl"
 include "config.d/window-rule.kdl"
 include "config.d/keybinding.kdl"
 include "config.d/animations.kdl"
+include "config.d/layer-rules.kdl"
+include "config.d/blur.kdl"
 
 // Make the wallpaper stationary, rather than moving with workspaces.
 layer-rule {

@@ -11,6 +11,9 @@ window-rule {
     match app-id="com.mitchellh.ghostty"
     opacity 1.0
     default-column-width {}
+    background-effect {
+        blur true
+    }
 }
 
 // Open the Firefox picture-in-picture player as floating by default.
@@ -26,9 +29,13 @@ window-rule {
 
 // maximizes the window by default
 window-rule {
+    match app-id="org.gnome.Nautilus"
     match app-id="^libreoffice.*"
     match app-id="app.zen_browser.zen"
     open-maximized true
+    background-effect {
+        blur true
+    }
 }
 
 window-rule {

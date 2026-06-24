@@ -105,3 +105,14 @@
 /.local/bin/uvicorn
 /.local/bin/watchmedo
 /.var/app/com.rustdesk.RustDesk
+/.local/bin/graphify
+/.var/app/com.indomitusgroup.indipdf
+/.var/app/org.inkscape.Inkscape
+/.local/bin/fonttools
+/.local/bin/pd
+/.local/bin/proot-distro
+/.local/bin/py.test
+/.local/bin/pyftmerge
+/.local/bin/pyftsubset
+/.local/bin/pytest
+/.local/bin/ttx

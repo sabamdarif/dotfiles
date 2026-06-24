@@ -11,8 +11,8 @@ binds {
     Mod+Period hotkey-overlay-title="Emoji Selector" {spawn "~/.config/rofi/bin/emoji_selector";}
     Mod+W hotkey-overlay-title="Wallpaper Selector" {spawn "~/.config/rofi/bin/set-wallpaper";}
     Mod+Shift+F hotkey-overlay-title="File Search (fd)" {spawn "~/.config/rofi/bin/rofi-fd-search";}
-    Mod+Alt+M hotkey-overlay-title="Open YouTube Music AppImage" {
-    spawn "env" "DESKTOPINTEGRATION=1" "/home/sabamdarif/AppImages/youtube_music.appimage" "--no-sandbox";
+    Mod+Alt+M hotkey-overlay-title="Open YouTube Music" {
+    spawn "pear-desktop";
     }
     Mod+Alt+D hotkey-overlay-title="Open Vesktop" {spawn "flatpak" "run" "dev.vencord.Vesktop";}
     Mod+Alt+T hotkey-overlay-title="Open Telegram" {spawn "flatpak" "run" "org.telegram.desktop";}

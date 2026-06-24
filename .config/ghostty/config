@@ -49,3 +49,12 @@ gtk-titlebar = false
 
 # extra
 clipboard-paste-protection = false
+
+# Basic transparency
+background-opacity = 0.9
+
+# Blur looks better with higher opacity
+# background-opacity = 0.95
+
+# Unfocused windows more transparent
+unfocused-split-opacity = 0.7

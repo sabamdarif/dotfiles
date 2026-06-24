@@ -1,0 +1,46 @@
+layer-rule {
+  background-effect {
+    blur true
+    xray false
+  }
+}
+
+layer-rule {
+  match namespace="^swaync-notification-window$"
+  match namespace="^swaync-control-center$"
+  block-out-from "screencast"
+  background-effect { // this will be temporary hopefully
+    blur false
+  }
+}
+
+layer-rule {
+  match namespace="^swww-daemonblur$"
+  place-within-backdrop true
+}
+
+layer-rule {
+  match namespace="^waybar$"
+  shadow {
+    on
+    // offset x=0 y=10
+  }
+}
+
+layer-rule {
+  match namespace="^rofi$"
+  geometry-corner-radius 20
+  shadow {
+    on
+  }
+}
+
+layer-rule {
+  match namespace="^swayosd$"
+  geometry-corner-radius 20
+  shadow {
+    on
+  }
+}
+
+

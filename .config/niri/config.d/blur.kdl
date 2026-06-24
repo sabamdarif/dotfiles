@@ -1,0 +1,11 @@
+// Global blur settings
+blur {
+    passes 3
+    offset 3.0
+
+    // Reduce banding
+    noise 0.02
+
+    // Boost colors slightly
+    saturation 1.2
+}
