@@ -116,3 +116,4 @@
 /.local/bin/pyftsubset
 /.local/bin/pytest
 /.local/bin/ttx
+/.local/bin/chroot-distro

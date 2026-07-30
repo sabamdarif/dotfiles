@@ -1,9 +1,9 @@
-layer-rule {
-  background-effect {
-    blur true
-    xray false
-  }
-}
+// layer-rule {
+//   background-effect {
+//     blur true
+//     xray false
+//   }
+// }
 
 layer-rule {
   match namespace="^swaync-notification-window$"

@@ -5,21 +5,22 @@ binds {
     Mod+Return hotkey-overlay-title="Open Terminal (Ghostty)" {spawn "ghostty";}
     Mod+E hotkey-overlay-title="Open File Manager (Nautilus)" {spawn "nautilus";}
     Mod+B hotkey-overlay-title="Open Browser (Zen)" {spawn "flatpak" "run" "app.zen_browser.zen";}
-    Mod+Space hotkey-overlay-title="Open Main Menu (Rofi)" {spawn "~/.config/rofi/bin/app-menu";}
-    Mod+Shift+R hotkey-overlay-title="Reload All (Custom Script)" {spawn "~/.local/bin/reload_all";}
-    Mod+V hotkey-overlay-title="Clipboard Monitor" {spawn "~/.config/rofi/bin/clipboard_monitor";}
-    Mod+Period hotkey-overlay-title="Emoji Selector" {spawn "~/.config/rofi/bin/emoji_selector";}
-    Mod+W hotkey-overlay-title="Wallpaper Selector" {spawn "~/.config/rofi/bin/set-wallpaper";}
-    Mod+Shift+F hotkey-overlay-title="File Search (fd)" {spawn "~/.config/rofi/bin/rofi-fd-search";}
+    Mod+Space hotkey-overlay-title="Open Launcher (Quickshell)" {spawn "qs" "-c" "end4-pC" "ipc" "call" "search" "toggle";}
+    // Mod+Shift+R hotkey-overlay-title="Reload All (Custom Script)" {spawn "~/.local/bin/reload_all";}
+    Mod+V hotkey-overlay-title="Clipboard History (Quickshell)" {spawn "qs" "-c" "end4-pC" "ipc" "call" "clipboard" "toggle";}
+    Mod+Period hotkey-overlay-title="Emoji Selector (Quickshell)" {spawn "qs" "-c" "end4-pC" "ipc" "call" "search" "emojiToggle";}
+    Mod+W hotkey-overlay-title="Wallpaper Selector (Quickshell)" {spawn "qs" "-c" "end4-pC" "ipc" "call" "wallpaperSelector" "toggle";}
+    // Mod+Shift+F hotkey-overlay-title="File Search (fd)" {spawn "~/.config/rofi/bin/rofi-fd-search";}
     Mod+Alt+M hotkey-overlay-title="Open YouTube Music" {
     spawn "pear-desktop";
     }
     Mod+Alt+D hotkey-overlay-title="Open Vesktop" {spawn "flatpak" "run" "dev.vencord.Vesktop";}
     Mod+Alt+T hotkey-overlay-title="Open Telegram" {spawn "flatpak" "run" "org.telegram.desktop";}
-    Mod+S hotkey-overlay-title="Settings Menu" {spawn "~/.config/rofi/bin/settings-menu";}
+    Mod+S hotkey-overlay-title="Settings (Quickshell)" {spawn "qs" "-c" "end4-pC" "ipc" "call" "settings" "toggle";}
+    Ctrl+Alt+Delete hotkey-overlay-title="Session Menu (Quickshell)" {spawn "qs" "-c" "end4-pC" "ipc" "call" "session" "toggle";}
 
     Mod+Q { close-window; }
-    Mod+Shift+L hotkey-overlay-title="Lock screen" { spawn "hyprlock"; }
+    Mod+Shift+L hotkey-overlay-title="Lock screen (Quickshell)" { spawn "qs" "-c" "end4-pC" "ipc" "call" "lock" "activate"; }
     Mod+Shift+E { quit; }
     Mod+F { fullscreen-window; }
     Mod+M { maximize-column; }
@@ -86,20 +87,22 @@ binds {
     Mod+Minus { focus-workspace-down; }
 
     Mod+Shift+S hotkey-overlay-title="Take Full screenshot" { spawn "~/.config/niri/scripts/screenshot.sh" "--fullscreen"; }
-    Mod+Alt+Shift+S hotkey-overlay-title="Select Area And Take screenshot" { spawn "~/.config/niri/scripts/screenshot.sh" "--select-area"; }
+    Mod+Alt+Shift+S hotkey-overlay-title="Region Screenshot (Quickshell)" { spawn "qs" "-c" "end4-pC" "ipc" "call" "region" "screenshot"; }
+    Mod+Alt+Shift+O hotkey-overlay-title="Region OCR (Quickshell)" { spawn "qs" "-c" "end4-pC" "ipc" "call" "region" "ocr"; }
     // F12 { spawn "gnome-calculator"; }
 
-    XF86AudioPlay { spawn "playerctl" "play-pause"; }
-    XF86AudioNext { spawn "playerctl" "next"; }
-    XF86AudioPrev { spawn "playerctl" "previous"; }
+    XF86AudioPlay { spawn "qs" "-c" "end4-pC" "ipc" "call" "mpris" "playPause"; }
+    XF86AudioNext { spawn "qs" "-c" "end4-pC" "ipc" "call" "mpris" "next"; }
+    XF86AudioPrev { spawn "qs" "-c" "end4-pC" "ipc" "call" "mpris" "previous"; }
 
-    XF86AudioRaiseVolume allow-when-locked=true { spawn "swayosd-client" "--output-volume" "5"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn "swayosd-client" "--output-volume" "-5"; }
-    XF86AudioMute allow-when-locked=true { spawn "swayosd-client" "--output-volume" "mute-toggle"; }
-    XF86AudioMicMute allow-when-locked=true { spawn "swayosd-client" "--input-volume" "mute-toggle"; }
+    // Volume via quickshell so the overamplify setting applies
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "qs" "-c" "end4-pC" "ipc" "call" "osdVolume" "increment"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "qs" "-c" "end4-pC" "ipc" "call" "osdVolume" "decrement"; }
+    XF86AudioMute allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+    XF86AudioMicMute allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
 
-    XF86MonBrightnessUp allow-when-locked=true { spawn "swayosd-client" "--brightness" "+2"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "swayosd-client" "--brightness" "-2"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "qs" "-c" "end4-pC" "ipc" "call" "brightness" "increment"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "qs" "-c" "end4-pC" "ipc" "call" "brightness" "decrement"; }
 
-    Caps_Lock allow-when-locked=true { spawn "swayosd-client" "--caps-lock"; }
+    Caps_Lock allow-when-locked=true { spawn "qs" "-c" "end4-pC" "ipc" "call" "keylocks" "capsLock"; }
 }

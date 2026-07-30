@@ -116,3 +116,9 @@ hotkey-overlay {
 // A ~ at the front will be expanded to the home directory.
 // The path is formatted with strftime(3) to give you the screenshot date and time.
 screenshot-path "~/Pictures/Screenshots/screenshot-%Y%m%d-%H%M%S.png"
+
+
+include optional=true "qssettings/shell.kdl"
+include optional=true "qssettings/outputs.kdl"
+include optional=true "qssettings/autostart.kdl"
+include optional=true "qssettings/binds.kdl"
