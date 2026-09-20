@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+#
+# claude-switch.sh — switch between Claude Code provider configs
+# (ANTHROPIC_BASE_URL / API keys / model overrides) stored as full
+# settings.json snapshots, picked interactively via fzf with a
+# secret-masked preview.
+#
+# Usage:
+#   claude-switch.sh                 interactive fzf switch (default)
+#   claude-switch.sh list            list saved provider profiles
+#   claude-switch.sh save <name>     save current settings.json as profile <name>
+#   claude-switch.sh current         show which profile is currently active
+#   claude-switch.sh rm <name>       delete a saved profile
+#
+set -euo pipefail
+
+CLAUDE_DIR="${CLAUDE_DIR:-$HOME/.claude}"
+SETTINGS_FILE="$CLAUDE_DIR/settings.json"
+PROVIDERS_DIR="$CLAUDE_DIR/providers"
+BACKUP_DIR="$CLAUDE_DIR/backups"
+
+die() {
+    echo "error: $*" >&2
+    exit 1
+}
+
+need() { command -v "$1" >/dev/null 2>&1 || die "'$1' is required but not installed"; }
+need fzf
+need jq
+
+mkdir -p "$PROVIDERS_DIR" "$BACKUP_DIR"
+
+# ---------------------------------------------------------------------------
+# Mask secrets so previews/listings never dump a live key to the terminal.
+# Keeps first 4 and last 4 chars, blanks the middle.
+# ---------------------------------------------------------------------------
+mask_secrets() {
+    jq '
+        (.env // {}) |= with_entries(
+            if (.key | test("API_KEY|AUTH_TOKEN|TOKEN|SECRET"; "i"))
+               and (.value | type == "string") and (.value | length > 8)
+            then .value = (.value[0:4] + ("*" * (( .value | length) - 8)) + .value[-4:])
+            else .
+            end
+        )
+    '
+}
+
+# ---------------------------------------------------------------------------
+# One-time migration: if no profiles exist yet, pull in settings.json and
+# settings.json.bak (if present) as the first two named profiles.
+# ---------------------------------------------------------------------------
+migrate_existing() {
+    [ -n "$(ls -A "$PROVIDERS_DIR" 2>/dev/null)" ] && return 0
+
+    name_from_settings() {
+        local f="$1"
+        local url
+        url=$(jq -r '.env.ANTHROPIC_BASE_URL // empty' "$f" 2>/dev/null || true)
+        if [ -n "$url" ]; then
+            echo "$url" | sed -E 's#https?://##; s#/.*##; s/^cc\.//; s/^capi\.//; s/\..*$//'
+        else
+            echo "provider"
+        fi
+    }
+
+}
+
+# ---------------------------------------------------------------------------
+# Figure out which saved profile (if any) matches the live settings.json,
+# by comparing masked+normalized JSON so key rotation doesn't break the match.
+# ---------------------------------------------------------------------------
+current_profile() {
+    [ -f "$SETTINGS_FILE" ] || {
+        echo ""
+        return
+    }
+    local cur
+    cur=$(jq -S . "$SETTINGS_FILE" 2>/dev/null || echo "")
+    [ -z "$cur" ] && {
+        echo ""
+        return
+    }
+    local f
+    for f in "$PROVIDERS_DIR"/*.json; do
+        [ -e "$f" ] || continue
+        if diff -q <(jq -S . "$f" 2>/dev/null) <(echo "$cur") >/dev/null 2>&1; then
+            basename "$f" .json
+            return
+        fi
+    done
+    echo ""
+}
+
+list_providers() {
+    local active
+    active=$(current_profile)
+    local f
+    for f in "$PROVIDERS_DIR"/*.json; do
+        [ -e "$f" ] || continue
+        local n
+        n=$(basename "$f" .json)
+        if [ "$n" = "$active" ]; then
+            echo "* $n  (active)"
+        else
+            echo "  $n"
+        fi
+    done
+}
+
+do_save() {
+    local name="${1:-}"
+    [ -n "$name" ] || die "usage: claude-switch.sh save <name>"
+    [ -f "$SETTINGS_FILE" ] || die "no settings.json found at $SETTINGS_FILE"
+    cp "$SETTINGS_FILE" "$PROVIDERS_DIR/${name}.json"
+    echo "saved current settings.json as profile '$name'"
+}
+
+do_rm() {
+    local name="${1:-}"
+    [ -n "$name" ] || die "usage: claude-switch.sh rm <name>"
+    local f="$PROVIDERS_DIR/${name}.json"
+    [ -f "$f" ] || die "no such profile: $name"
+    rm -i "$f"
+}
+
+# ---------------------------------------------------------------------------
+# fzf's {} placeholder is a blind text substitution across the *entire*
+# preview command string -- it will clobber any literal "{}" that shows up
+# inside a jq filter too (e.g. `.env // {}`). To avoid that collision, the
+# masking logic lives in its own helper script file; fzf only ever sees the
+# placeholder as a positional argument to that script, never inlined
+# next to jq syntax.
+# ---------------------------------------------------------------------------
+write_preview_script() {
+    local script="$1"
+    cat >"$script" <<'PREVIEW_EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+name="$1"
+dir="$2"
+jq -S . "$dir/${name}.json" | jq -C '
+    (.env // {}) |= with_entries(
+        if (.key | test("API_KEY|AUTH_TOKEN|TOKEN|SECRET"; "i"))
+           and (.value | type == "string") and (.value | length > 8)
+        then .value = (.value[0:4] + ("*" * ((.value | length) - 8)) + .value[-4:])
+        else .
+        end
+    )'
+PREVIEW_EOF
+    chmod +x "$script"
+}
+
+do_switch() {
+    local active
+    active=$(current_profile)
+
+    local preview_script="$CLAUDE_DIR/.provider-preview.sh"
+    write_preview_script "$preview_script"
+
+    local choice
+    choice=$(
+        for f in "$PROVIDERS_DIR"/*.json; do
+            [ -e "$f" ] || continue
+            basename "$f" .json
+        done | fzf \
+            --prompt="provider> " \
+            --header="Switch Claude Code provider (currently: ${active:-unknown})" \
+            --preview="'$preview_script' {} '$PROVIDERS_DIR'" \
+            --preview-window=right:65%:wrap
+    )
+
+    [ -n "$choice" ] || {
+        echo "no selection, aborting."
+        exit 0
+    }
+
+    if [ "$choice" = "$active" ]; then
+        echo "'$choice' is already active. nothing to do."
+        exit 0
+    fi
+
+    local src="$PROVIDERS_DIR/${choice}.json"
+    [ -f "$src" ] || die "profile file missing: $src"
+
+    cp "$src" "$SETTINGS_FILE"
+    echo "switched to provider: $choice"
+    echo "restart/reopen your Claude Code session for the change to take effect."
+}
+
+main() {
+    migrate_existing
+
+    local cmd="${1:-switch}"
+    case "$cmd" in
+    switch | "") do_switch ;;
+    list) list_providers ;;
+    save)
+        shift
+        do_save "${1:-}"
+        ;;
+    current) current_profile ;;
+    rm)
+        shift
+        do_rm "${1:-}"
+        ;;
+    -h | --help)
+        sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+        ;;
+    *)
+        die "unknown command: $cmd (try: switch, list, save <name>, current, rm <name>)"
+        ;;
+    esac
+}
+
+main "$@"

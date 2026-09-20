@@ -34,7 +34,7 @@ binds {
     Mod+Up    { focus-window-up; }
     Mod+Down  { focus-window-down; }
 
-    Mod+L     { focus-column-right; }
+    Mod+L hotkey-overlay-title="Lock screen (Quickshell)" { spawn "qs" "-c" "end4-pC" "ipc" "call" "lock" "activate"; }
     Mod+H     { focus-column-left; }
     Mod+K     { focus-window-or-workspace-up; }
     Mod+J     { focus-window-or-workspace-down; }
@@ -86,8 +86,8 @@ binds {
     Mod+Shift+Minus { move-workspace-down; }
     Mod+Minus { focus-workspace-down; }
 
-    Mod+Shift+S hotkey-overlay-title="Take Full screenshot" { spawn "~/.config/niri/scripts/screenshot.sh" "--fullscreen"; }
-    Mod+Alt+Shift+S hotkey-overlay-title="Region Screenshot (Quickshell)" { spawn "qs" "-c" "end4-pC" "ipc" "call" "region" "screenshot"; }
+    Mod+Shift+S hotkey-overlay-title="Full Screenshot (Quickshell)" { spawn "qs" "-c" "end4-pC" "ipc" "call" "region" "screenshot"; }
+    Alt+Mod+Shift+S hotkey-overlay-title="Area Screenshot (Quickshell)" { spawn "qs" "-c" "end4-pC" "ipc" "call" "region" "areaScreenshot"; }
     Mod+Alt+Shift+O hotkey-overlay-title="Region OCR (Quickshell)" { spawn "qs" "-c" "end4-pC" "ipc" "call" "region" "ocr"; }
     // F12 { spawn "gnome-calculator"; }
 

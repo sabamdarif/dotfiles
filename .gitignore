@@ -117,3 +117,5 @@
 /.local/bin/pytest
 /.local/bin/ttx
 /.local/bin/chroot-distro
+/.var/app/io.ente.auth
+/.var/app/io.github.nolight132.sonora

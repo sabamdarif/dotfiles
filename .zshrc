@@ -112,7 +112,7 @@ fi
 # Load Zinit
 source "$HOME/.local/share/zinit/zinit.git/zinit.zsh"
 autoload -Uz _zinit
-(( ${+_comps} )) && _comps[zinit]=_zinit
+((${+_comps})) && _comps[zinit]=_zinit
 
 # -----------------------------------------------------------------------------
 # HELPER FUNCTIONS (moved after instant prompt to avoid console output)
@@ -205,7 +205,7 @@ zi ice from'gh-r' lbin'!**/rg' nocompile
 zi light BurntSushi/ripgrep
 
 # Install zoxide with initialization
-zi ice from'gh-r' lbin'!' nocompile atload'eval "$(zoxide init zsh --cmd cd)"'
+zi ice from'gh-r' lbin'!' nocompile
 zi light ajeetdsouza/zoxide
 
 # Install grex with alias
@@ -223,7 +223,7 @@ function _pip_completion() {
     reply=(
         $(
             COMP_WORDS="$words[*]"
-            COMP_CWORD=$(( cword-1 ))
+            COMP_CWORD=$((cword - 1))
             PIP_AUTO_COMPLETE=1 $words 2>/dev/null
         )
     )
@@ -254,7 +254,6 @@ zi light zsh-users/zsh-autosuggestions
 zi light-mode for \
     $ZI_REPO/fast-syntax-highlighting
 
-
 # FZF history search - Fuzzy search through command history
 zi ice joshskidmore/zsh-fzf-history-search
 
@@ -275,8 +274,8 @@ zi light marlonrichert/zsh-autocomplete
 #       zicompinit; zicdreplay
 #       _zsh_highlight_bind_widgets
 #       _zsh_autosuggest_bind_widgets' \
-    #     as'null' id-as'zinit/cleanup' lucid nocd wait \
-    #   $ZI_REPO/null
+#     as'null' id-as'zinit/cleanup' lucid nocd wait \
+#   $ZI_REPO/null
 #
 
 # -----------------------------------------------------------------------------
@@ -289,8 +288,8 @@ if [[ ! -f ~/.config/.mynvim-installed ]]; then
     fi
     echo "Cloning nvim config..."
     mkdir -p ~/.config
-    git clone https://github.com/sabamdarif/mynvim ~/.config/nvim && \
-        touch ~/.config/.mynvim-installed && \
+    git clone https://github.com/sabamdarif/mynvim ~/.config/nvim &&
+        touch ~/.config/.mynvim-installed &&
         echo "Neovim config installed to ~/.config/nvim"
 fi
 
@@ -300,3 +299,13 @@ unset ZI_REPO ZI_REPO
 # -----------------------------------------------------------------------------
 # Load Powerlevel10k configuration (run `p10k configure` to customize)
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# bun completions
+[ -s "/home/sabamdarif/.bun/_bun" ] && source "/home/sabamdarif/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+export _ZO_DOCTOR=0
+eval "$(zoxide init zsh --cmd cd)"

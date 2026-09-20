@@ -7,6 +7,7 @@ else
 fi
 alias ls='eza --icons'
 alias neofetch='fastfetch'
+alias chd="chroot-distro"
 #set zoxiide as cd
 # eval "$(zoxide init --cmd cd zsh)"
 # Alias's to change the directory

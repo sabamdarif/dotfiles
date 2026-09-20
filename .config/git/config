@@ -10,6 +10,13 @@
     compression = 9  # trade cpu for network
     whitespace = error  # threat incorrect whitespace as errors
     preloadindex = true  # preload index for faster status
+    pager = delta # use git-delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[diff]
+    algorithm = histogram
 
 [advice]  # disable advices
     addEmptyPathspec = false
@@ -49,4 +56,9 @@
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
 [gpg]
-	program = gpg
+    program = gpg
+
+[delta]
+    side-by-side = true
+    line-numbers = true
+    navigate = true

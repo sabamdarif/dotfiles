@@ -21,6 +21,8 @@ window-rule {
     match app-id="app.zen_browser.zen" title="^Picture-in-Picture$"
     match app-id="nm-connection-editor"
     // match app-id="org.gnome.Nautilus"
+    match app-id="org.gnome.NautilusPreviewer"
+    match app-id="org.gnome.Nautilus" title="Open workspace"
     match app-id="blueman-manager"
     match app-id="com.mitchellh.ghostty" title="^Fastfetch$"
     match app-id="org.kde.kdeconnect.app"
@@ -32,6 +34,7 @@ window-rule {
     match app-id="org.gnome.Nautilus"
     match app-id="^libreoffice.*"
     match app-id="app.zen_browser.zen"
+    match app-id="org.quickshell" title="Settings"
     open-maximized true
     background-effect {
         blur true
