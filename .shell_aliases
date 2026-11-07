@@ -5,7 +5,6 @@ if command -v batcat &>/dev/null; then
 else
     alias cat='bat --theme OneHalfDark -p'
 fi
-alias ls='eza --icons'
 alias neofetch='fastfetch'
 alias chd="chroot-distro"
 #set zoxiide as cd
@@ -21,6 +20,7 @@ alias vi='nvim'
 alias vim='nvim'
 alias n='nvim'
 alias py="python3"
+alias lg="lazygit"
 alias diff="delta --side-by-side --diff-so-fancy"
 # Search files in the current folder
 alias f="find . | grep "
@@ -43,12 +43,12 @@ alias '..'='cd ..'
 alias '...'='cd ../..'
 alias '....'='cd ../../..'
 alias '.....'='cd ../../../..'
-alias ls="eza --icons"
-alias la="eza --icons -lgha --group-directories-first"
-alias l="eza --icons -lgha --group-directories-first"
-alias ly="eza --icons -lgha --group-directories-first"
-alias lt="eza --icons --tree"
-alias lta="eza --icons --tree -lgha"
+alias ls="eza --icons=auto"
+alias la="eza --icons=auto -lgha --group-directories-first"
+alias l="eza --icons=auto -lgha --group-directories-first"
+alias ly="eza --icons=auto -lgha --group-directories-first"
+alias lt="eza --tree --icons=auto"
+alias lta="eza --tree --icons=auto -lgha"
 # others
 alias kill9="kill -9"
 alias myip="curl ifconfig.me" # Show public IP

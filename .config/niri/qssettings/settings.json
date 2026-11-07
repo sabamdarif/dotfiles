@@ -1,7 +1,7 @@
 {
     "animations": {
         "enable": true,
-        "slowdown": 1.5
+        "slowdown": 1
     },
     "autostart": [
     ],
@@ -21,7 +21,7 @@
             "saturation": 1.2
         },
         "border": {
-            "enable": true,
+            "enable": false,
             "width": 1
         },
         "focusRing": {
@@ -36,7 +36,8 @@
         }
     },
     "input": {
-        "focusFollowsMouse": false,
+        "focusFollowsMouse": true,
+        "focusFollowsMouseMaxScroll": "0%",
         "kbLayout": "us",
         "mouse": {
             "accelSpeed": 0,

@@ -103,6 +103,4 @@ binds {
 
     XF86MonBrightnessUp allow-when-locked=true { spawn "qs" "-c" "end4-pC" "ipc" "call" "brightness" "increment"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn "qs" "-c" "end4-pC" "ipc" "call" "brightness" "decrement"; }
-
-    Caps_Lock allow-when-locked=true { spawn "qs" "-c" "end4-pC" "ipc" "call" "keylocks" "capsLock"; }
 }

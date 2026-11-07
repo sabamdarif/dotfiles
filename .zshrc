@@ -231,8 +231,8 @@ function _pip_completion() {
 compctl -K _pip_completion pip3
 
 # Install trash-cli via pip
-zi ice atclone"pip install --user trash-cli" \
-    atpull"pip install --user --upgrade trash-cli" \
+zi ice atclone"pip install --user trash-cli --break-system-packages" \
+    atpull"pip install --user --upgrade trash-cli --break-system-packages" \
     run-atpull
 
 # -----------------------------------------------------------------------------
@@ -258,7 +258,18 @@ zi light-mode for \
 zi ice joshskidmore/zsh-fzf-history-search
 
 # Zsh autocomplete - Real-time type-ahead autocompletion
+# Runtime fix for upstream bugs #901/#907 (PR #903), no patch file needed:
+#  1. Prepend the auto-cloned zasync dir to fpath so the plugin's own
+#     `autoload -Uz +X zasync` loads it by name instead of the broken
+#     path-autoload that left it uncallable (killed as-you-type completion).
+#  2. Autoload the plugin's Completions/_autocomplete__* helpers, which
+#     otherwise never register when compinit ran before the plugin.
+# Both are update-proof (no plugin files modified). Delete once #903 merges.
 zi ice atload'
+local _za_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zasync"
+[[ -d $_za_dir ]] && fpath=( "$_za_dir" ${fpath[@]} )
+builtin autoload -Uz ~/.local/share/zinit/plugins/marlonrichert---zsh-autocomplete/Completions/_autocomplete__*~*.zwc(D-:)
+unset _za_dir
 bindkey              "^I" menu-select
 bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete'
 zi light marlonrichert/zsh-autocomplete
